@@ -42,7 +42,7 @@ export class PlatformCircuitBreakerGuard implements CanActivate {
     }
 
     const maintenanceMessage =
-      'Service temporarily unavailable due to scheduled maintenance. Please try again later.';
+      'Platform deposits and withdrawals are temporarily unavailable due to a security incident or maintenance window. Please try again later.';
 
     throw new HttpException(
       {

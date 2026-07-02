@@ -2,6 +2,7 @@ import {
   Injectable,
   InternalServerErrorException,
   Inject,
+  BadRequestException,
 } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
@@ -43,12 +44,16 @@ export class PlatformCircuitBreakerService {
     adminId: string,
     reason?: string,
   ): Promise<PlatformCircuitBreakerState> {
+    this.assertAdminIdentity(adminId);
+    this.assertReason(reason);
+
     try {
       await this.cacheManager.set(this.REDIS_KEY, true);
       this.logger.errorEvent('platform_circuit_breaker_activated', {
         adminId,
         reason: reason || 'Manual activation',
         timestamp: new Date().toISOString(),
+        action: 'open',
       });
       return { active: true };
     } catch (error) {
@@ -67,12 +72,16 @@ export class PlatformCircuitBreakerService {
     adminId: string,
     reason?: string,
   ): Promise<PlatformCircuitBreakerState> {
+    this.assertAdminIdentity(adminId);
+    this.assertReason(reason);
+
     try {
       await this.cacheManager.set(this.REDIS_KEY, false);
       this.logger.errorEvent('platform_circuit_breaker_deactivated', {
         adminId,
         reason: reason || 'Manual deactivation',
         timestamp: new Date().toISOString(),
+        action: 'close',
       });
       return { active: false };
     } catch (error) {
@@ -84,6 +93,26 @@ export class PlatformCircuitBreakerService {
       throw new InternalServerErrorException(
         'Failed to deactivate circuit breaker',
       );
+    }
+  }
+
+  private assertAdminIdentity(adminId: string): void {
+    if (typeof adminId !== 'string' || adminId.trim().length === 0) {
+      throw new BadRequestException('Admin identity is required');
+    }
+  }
+
+  private assertReason(reason?: string): void {
+    if (reason === undefined) {
+      return;
+    }
+
+    if (typeof reason !== 'string') {
+      throw new BadRequestException('Reason must be a string when provided');
+    }
+
+    if (reason.trim().length === 0) {
+      throw new BadRequestException('Reason must not be empty when provided');
     }
   }
 }

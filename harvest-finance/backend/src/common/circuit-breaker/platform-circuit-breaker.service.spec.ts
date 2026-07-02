@@ -117,6 +117,13 @@ describe('PlatformCircuitBreakerService', () => {
         'Failed to activate circuit breaker',
       );
     });
+
+    it('should reject an empty admin identity', async () => {
+      await expect(service.activate('   ')).rejects.toThrow(
+        'Admin identity is required',
+      );
+      expect(mockCacheManager.set).not.toHaveBeenCalled();
+    });
   });
 
   describe('deactivate', () => {
@@ -155,6 +162,13 @@ describe('PlatformCircuitBreakerService', () => {
       await expect(service.deactivate('admin-123')).rejects.toThrow(
         'Failed to deactivate circuit breaker',
       );
+    });
+
+    it('should reject a non-string reason', async () => {
+      await expect(
+        service.deactivate('admin-123', 123 as unknown as string),
+      ).rejects.toThrow('Reason must be a string when provided');
+      expect(mockCacheManager.set).not.toHaveBeenCalled();
     });
   });
 });

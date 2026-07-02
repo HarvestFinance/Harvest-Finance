@@ -25,6 +25,7 @@ import { DashboardStatsDto } from './dto/dashboard-stats.dto';
 import { PlatformAnalyticsDto } from './dto/analytics.dto';
 import { CreateVaultDto, UpdateVaultDto } from './dto/vault-crud.dto';
 import { UpdateUserStatusDto } from './dto/user-status.dto';
+import { CircuitBreakerActionDto } from './dto/circuit-breaker.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -141,7 +142,7 @@ export class AdminController {
   @ApiResponse({ status: 200, description: 'Circuit breaker activated' })
   async openCircuitBreaker(
     @Request() req: any,
-    @Body() body?: { reason?: string },
+    @Body() body?: CircuitBreakerActionDto,
   ): Promise<{ active: boolean }> {
     return this.adminService.openCircuitBreaker(req.user.id, body?.reason);
   }
@@ -155,7 +156,7 @@ export class AdminController {
   @ApiResponse({ status: 200, description: 'Circuit breaker deactivated' })
   async closeCircuitBreaker(
     @Request() req: any,
-    @Body() body?: { reason?: string },
+    @Body() body?: CircuitBreakerActionDto,
   ): Promise<{ active: boolean }> {
     return this.adminService.closeCircuitBreaker(req.user.id, body?.reason);
   }
