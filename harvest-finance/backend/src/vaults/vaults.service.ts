@@ -238,6 +238,10 @@ export class VaultsService {
 
     const userTotalDeposits = await this.getUserTotalDeposits(userId);
 
+    if (result.vault) {
+      await this.withdrawalQueueService.processQueue(vaultId, Number(result.vault.totalDeposits));
+    }
+
     this.logger.log(
       `Deposit of ${amount} initiated for vault ${vaultId} by user ${userId}`,
       'VaultsService',
@@ -452,6 +456,8 @@ export class VaultsService {
       }
 
       if (r.vault) {
+        await this.withdrawalQueueService.processQueue(r.vault.id, Number(r.vault.totalDeposits));
+
         this.vaultGateway.emitDeposit({
           vaultId: r.vault.id,
           vaultName: r.vault.vaultName,

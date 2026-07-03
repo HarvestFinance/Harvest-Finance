@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { VaultsService } from './vaults.service';
+import { WithdrawalQueueService } from './withdrawal-queue.service';
 import { ExternalPaymentEventType } from './dto/external-payment-notification.dto';
 import { PaymentReceivedEvent, DepositCompletedEvent, WithdrawalConfirmedEvent, DomainEventNames } from '../domain-events';
 import { User } from '../database/entities/user.entity';
@@ -31,7 +32,6 @@ import { VaultGateway } from '../realtime/vault.gateway';
 import { ContractCacheService } from '../common/cache/contract-cache.service';
 import { InputSanitizerService } from '../common/sanitization/input-sanitizer.service';
 import { DepositEventService } from './deposit-event.service';
-import { WithdrawalQueueService } from './withdrawal-queue.service';
 
 const USER_ID = '11111111-1111-1111-1111-111111111111';
 const OTHER_USER_ID = '99999999-9999-9999-9999-999999999999';
@@ -83,6 +83,21 @@ describe('VaultsService — Yield Strategy Integration', () => {
     update: jest.fn(),
   };
 
+  const mockDataSource = {
+    transaction: jest.fn((cb: (em: typeof mockManager) => unknown) =>
+      cb(mockManager),
+    ),
+    getRepository: jest.fn((entity) => {
+      if (entity === User) return mockUserRepository;
+      if (entity === VaultApproval) return mockVaultApprovalRepository;
+      if (entity === Vault) return mockVaultRepository;
+      if (entity === Deposit) return mockDepositRepository;
+      if (entity === Withdrawal) return mockWithdrawalRepository;
+      if (entity === VaultReservation) return mockVaultReservationRepository;
+      return null;
+    }),
+  };
+
   const mockVaultRepository = {
     findOne: jest.fn(),
     find: jest.fn(),
@@ -126,21 +141,6 @@ describe('VaultsService — Yield Strategy Integration', () => {
     decrement: jest.fn(),
     update: jest.fn(),
     findOne: jest.fn(),
-    getRepository: jest.fn((entity) => {
-      if (entity === User) return mockUserRepository;
-      if (entity === VaultApproval) return mockVaultApprovalRepository;
-      if (entity === Vault) return mockVaultRepository;
-      if (entity === Deposit) return mockDepositRepository;
-      if (entity === Withdrawal) return mockWithdrawalRepository;
-      if (entity === VaultReservation) return mockVaultReservationRepository;
-      return null;
-    }),
-  };
-
-  const mockDataSource = {
-    transaction: jest.fn((cb: (em: typeof mockManager) => unknown) =>
-      cb(mockManager),
-    ),
     getRepository: jest.fn((entity) => {
       if (entity === User) return mockUserRepository;
       if (entity === VaultApproval) return mockVaultApprovalRepository;
@@ -203,6 +203,19 @@ describe('VaultsService — Yield Strategy Integration', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         VaultsService,
+        { 
+          provide: 'VaultReservationRepository', 
+          useValue: { 
+            findOne: jest.fn().mockResolvedValue(null), 
+            save: jest.fn(),
+            createQueryBuilder: jest.fn().mockReturnValue({
+              select: jest.fn().mockReturnThis(),
+              where: jest.fn().mockReturnThis(),
+              andWhere: jest.fn().mockReturnThis(),
+              getRawOne: jest.fn().mockResolvedValue({ total: 0 }),
+            }),
+          } 
+        },
         { provide: getRepositoryToken(Vault), useValue: mockVaultRepository },
         {
           provide: getRepositoryToken(Deposit),
@@ -227,6 +240,7 @@ describe('VaultsService — Yield Strategy Integration', () => {
         { provide: ContractCacheService, useValue: mockContractCache },
         { provide: InputSanitizerService, useValue: mockSanitizer },
         { provide: DepositEventService, useValue: mockDepositEventService },
+        { provide: WithdrawalQueueService, useValue: { processQueue: jest.fn().mockResolvedValue(undefined) } },
         { provide: EventEmitter2, useValue: mockEventEmitter },
         { provide: WithdrawalQueueService, useValue: mockWithdrawalQueueService },
       ],

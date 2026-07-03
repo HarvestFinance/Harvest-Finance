@@ -3,6 +3,7 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { VaultsController } from './vaults.controller';
 import { VaultsService } from './vaults.service';
+import { SimulationService } from './simulation.service';
 import { CommandHandlers } from './cqrs/commands/handlers';
 import { QueryHandlers } from './cqrs/queries/handlers';
 import { EventHandlers } from './cqrs/events/handlers';
@@ -19,6 +20,7 @@ import { DepositEventService } from './deposit-event.service';
 import { WithdrawalConfirmedHandler } from './events/withdrawal-confirmed.handler';
 import { StellarModule } from '../stellar/stellar.module';
 import { VaultAccountMonitorService } from './vault-account-monitor.service';
+import { WithdrawalQueueService } from './withdrawal-queue.service';
 import { InsuranceFundService } from './insurance-fund.service';
 import { InsuranceFundController } from './insurance-fund.controller';
 import { AuthModule } from '../auth/auth.module';
@@ -31,15 +33,27 @@ import { WithdrawalQueueService } from './withdrawal-queue.service';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Vault, Deposit, DepositEvent, Withdrawal, VaultReservation, VaultApyHistory, InsuranceClaim, User]),
+    CqrsModule,
     AuthModule,
     NotificationsModule,
     RealtimeModule,
     CommonModule,
     StellarModule,
-    CqrsModule,
   ],
   controllers: [VaultsController, InsuranceFundController],
-  providers: [VaultsService, DepositEventService, WithdrawalConfirmedHandler, VaultAccountMonitorService, InsuranceFundService, WithdrawalQueueService],
-  exports: [VaultsService, DepositEventService, InsuranceFundService, WithdrawalQueueService],
+  providers: [
+    VaultsService,
+    SimulationService,
+    DepositEventService,
+    WithdrawalConfirmedHandler,
+    VaultAccountMonitorService,
+    WithdrawalQueueService,
+    InsuranceFundService,
+    ...CommandHandlers,
+    ...QueryHandlers,
+    ...EventHandlers,
+    VaultReadRepository,
+  ],
+  exports: [VaultsService, SimulationService, DepositEventService, WithdrawalQueueService, InsuranceFundService],
 })
 export class VaultsModule {}

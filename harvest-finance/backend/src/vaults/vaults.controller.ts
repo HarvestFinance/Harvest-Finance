@@ -21,6 +21,7 @@ import {
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { VaultsService } from './vaults.service';
+import { SimulationService } from './simulation.service';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { DepositFundsCommand } from './cqrs/commands/deposit-funds.command';
 import { WithdrawFundsCommand } from './cqrs/commands/withdraw-funds.command';
@@ -39,6 +40,9 @@ import {
 } from './dto/vault-response.dto';
 import { PaginationQueryDto } from './dto/pagination-query.dto';
 import { DepositEventResponseDto } from './dto/deposit-event-response.dto';
+import { SimulateDepositDto } from './dto/simulate-deposit.dto';
+import { SimulateStrategyChangeDto } from './dto/simulate-strategy-change.dto';
+import { SimulationResultDto } from './dto/simulation-result.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PlatformCircuitBreakerGuard } from '../common/guards/platform-circuit-breaker.guard';
 import { RiskService } from '../analytics/risk.service';
@@ -54,8 +58,10 @@ import { WithdrawalQueueService } from './withdrawal-queue.service';
 export class VaultsController {
   constructor(
     private readonly vaultsService: VaultsService,
+    private readonly simulationService: SimulationService,
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
+    private readonly riskService: RiskService,
   ) {}
 
   @Post('deposits/batch')
@@ -110,6 +116,56 @@ export class VaultsController {
     return this.commandBus.execute(
       new DepositFundsCommand(vaultId, secureDepositDto.userId, secureDepositDto.amount, secureDepositDto.idempotencyKey),
     );
+  }
+
+  @Post(':vaultId/simulate-deposit')
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Simulate a deposit without committing state' })
+  @ApiParam({
+    name: 'vaultId',
+    description: 'Vault ID (UUID)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiBody({ type: SimulateDepositDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Simulation result',
+    type: SimulationResultDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - Invalid amount',
+  })
+  @ApiResponse({ status: 404, description: 'Vault not found' })
+  async simulateDeposit(
+    @Param('vaultId') vaultId: string,
+    @Body() dto: SimulateDepositDto,
+  ): Promise<SimulationResultDto> {
+    return this.simulationService.simulateDeposit(vaultId, dto);
+  }
+
+  @Post(':vaultId/simulate-strategy-change')
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Simulate a strategy change without committing state' })
+  @ApiParam({
+    name: 'vaultId',
+    description: 'Vault ID (UUID)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiBody({ type: SimulateStrategyChangeDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Simulation result',
+    type: SimulationResultDto,
+  })
+  @ApiResponse({ status: 404, description: 'Vault not found' })
+  async simulateStrategyChange(
+    @Param('vaultId') vaultId: string,
+    @Body() dto: SimulateStrategyChangeDto,
+  ): Promise<SimulationResultDto> {
+    return this.simulationService.simulateStrategyChange(vaultId, dto);
   }
 
   @Post(':vaultId/withdraw')
@@ -269,6 +325,20 @@ export class VaultsController {
   })
   async getMyVaults(@Request() req: any): Promise<VaultResponseDto[]> {
     return this.vaultsService.getUserVaults(req.user.id);
+  }
+
+  @Get(':vaultId/risk-metrics')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get depositor concentration risk metrics for a vault' })
+  @ApiParam({
+    name: 'vaultId',
+    description: 'Vault ID (UUID)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiResponse({ status: 200, description: 'Risk metrics retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Vault not found' })
+  async getVaultRiskMetrics(@Param('vaultId') vaultId: string): Promise<any> {
+    return this.riskService.getVaultDepositorConcentration(vaultId);
   }
 
   @Get(':vaultId')

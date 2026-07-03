@@ -68,6 +68,21 @@ describe('VaultsService', () => {
     update: jest.fn(),
   };
 
+  const mockDataSource = {
+    transaction: jest.fn((cb: (em: typeof mockEntityManager) => unknown) =>
+      cb(mockEntityManager),
+    ),
+    getRepository: jest.fn((entity) => {
+      if (entity === User) return mockUserRepository;
+      if (entity === VaultApproval) return mockVaultApprovalRepository;
+      if (entity === Vault) return mockVaultRepository;
+      if (entity === Deposit) return mockDepositRepository;
+      if (entity === Withdrawal) return mockWithdrawalRepository;
+      if (entity === VaultReservation) return mockVaultReservationRepository;
+      return null;
+    }),
+  };
+
   const mockVaultRepository = {
     findOne: jest.fn(),
     find: jest.fn(),
@@ -158,6 +173,17 @@ describe('VaultsService', () => {
   const mockNotificationsService = {
     create: jest.fn().mockResolvedValue(undefined),
   };
+  const mockVaultReservationRepository = {
+    findOne: jest.fn().mockResolvedValue(null),
+    save: jest.fn(),
+    createQueryBuilder: jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getRawOne: jest.fn().mockResolvedValue({ total: 0 }),
+    }),
+  };
+
   const mockLogger = { log: jest.fn(), error: jest.fn(), warn: jest.fn() };
   const mockVaultGateway = {
     emitDeposit: jest.fn(),
@@ -194,6 +220,7 @@ describe('VaultsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         VaultsService,
+        { provide: 'VaultReservationRepository', useValue: mockVaultReservationRepository },
         { provide: getRepositoryToken(Vault), useValue: mockVaultRepository },
         {
           provide: getRepositoryToken(Deposit),
