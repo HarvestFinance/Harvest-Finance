@@ -33,7 +33,7 @@ import { Logger, UseGuards } from '@nestjs/common';
  *  - "alert:threshold"    → AlertEvent (sent to "admin" room or specific "farmer:<userId>" room)
  */
 @WebSocketGateway({
-  cors: { origin: '*' },
+  cors: { origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'] },
   namespace: '/realtime',
 })
 export class RealtimeGateway

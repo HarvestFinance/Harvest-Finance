@@ -56,9 +56,9 @@ export class RegisterDto {
    password: string;
 
   /**
-   * The platform role assigned to the new account.
-   * Determines which features and resources the user can access.
-   * Must be one of: FARMER, BUYER, INSPECTOR, ADMIN.
+   * The user's Stellar blockchain public key (56-character G... address).
+   * Required when `use_custodial_wallet` is false or not supplied.
+   * Optional when `use_custodial_wallet` is true — the platform will generate a wallet.
    */
   @ApiProperty({
     example: 'FARMER',

@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  UnauthorizedException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy as PassportStrategyBase } from 'passport-strategy';
 import { ConfigService } from '@nestjs/config';
@@ -10,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as StellarSdk from '@stellar/stellar-sdk';
 import { User, UserRole } from '../../database/entities/user.entity';
+import { randomBytes } from 'crypto';
 
 export interface StellarPayload {
   stellar_address: string;
@@ -257,11 +254,7 @@ export class StellarStrategy extends PassportStrategy(
    * Generate random nonce for challenge
    */
   private generateRandomNonce(): string {
-    const nonce = new Array(32);
-    for (let i = 0; i < 32; i++) {
-      nonce[i] = Math.floor(Math.random() * 256);
-    }
-    return Buffer.from(nonce).toString('hex');
+    return randomBytes(32).toString('hex');
   }
 
   private async createStellarUser(clientPublicKey: string): Promise<User> {

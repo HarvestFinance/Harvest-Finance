@@ -213,23 +213,6 @@ export class StellarClientService implements OnModuleInit, OnModuleDestroy {
     return Math.ceil(p90 * 1.1);
   }
 
-  public async submitTransaction(
-    transaction: StellarSdk.Transaction | StellarSdk.FeeBumpTransaction,
-  ): Promise<StellarSdk.Horizon.HorizonApi.SubmitTransactionResponse> {
-    const fee = await this.estimateFee();
-    const maxFee = this.configService.get<number>('STELLAR_MAX_FEE_STROOPS', 10000);
-
-    if (fee > maxFee) {
-      this.logger.warn(
-        `Estimated fee ${fee} stroops exceeds cap ${maxFee} stroops — queuing for retry`,
-      );
-      throw new Error('FEE_EXCEEDS_CAP');
-    }
-
-    this.logger.log(`Submitting transaction with fee=${fee} stroops`);
-    return this.server.submitTransaction(transaction);
-  }
-
   private handleStreamError(error: any) {
     this.logger.warn(`Stellar payment stream error: ${error?.message || error}`);
     this.isConnected = false;

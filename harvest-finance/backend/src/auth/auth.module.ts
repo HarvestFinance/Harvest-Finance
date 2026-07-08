@@ -10,7 +10,6 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { StellarStrategy } from './strategies/stellar.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { GithubStrategy } from './strategies/github.strategy';
-import { SessionsController } from './sessions.controller';
 import { User } from '../database/entities/user.entity';
 import { UserOAuthLink } from '../database/entities/user-oauth-link.entity';
 import { Session } from '../database/entities/session.entity';
@@ -45,6 +44,7 @@ import { CustodialWalletService } from '../wallets/custodial-wallet.service';
     StellarStrategy,
     GoogleStrategy,
     GithubStrategy,
+    CustodialWalletService,
   ],
   exports: [
     AuthService,
@@ -53,9 +53,7 @@ import { CustodialWalletService } from '../wallets/custodial-wallet.service';
     GoogleStrategy,
     GithubStrategy,
     PassportModule,
+    CustodialWalletService,
   ],
-  controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, StellarStrategy, GoogleStrategy, GithubStrategy, CustodialWalletService],
-  exports: [AuthService, JwtStrategy, StellarStrategy, GoogleStrategy, GithubStrategy, PassportModule, CustodialWalletService],
 })
 export class AuthModule {}

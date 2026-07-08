@@ -1,40 +1,37 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { OrderEntity } from './entities/order.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, DataSource } from 'typeorm';
+import { Order, OrderStatus } from '../database/entities/order.entity';
 import { v4 as uuidv4 } from 'uuid';
-import { OrderStatus } from './order-status.enum';
 
 @Injectable()
 export class OrdersRepository {
   private readonly logger = new Logger(OrdersRepository.name);
-  private items: OrderEntity[] = [];
 
-  async create(data: Partial<OrderEntity>): Promise<OrderEntity> {
-    const now = new Date();
-    const entity = new OrderEntity({
+  constructor(
+    @InjectRepository(Order)
+    private repo: Repository<Order>,
+    private dataSource: DataSource,
+  ) {}
+
+  async create(data: Partial<Order>): Promise<Order> {
+    const entity = this.repo.create({
       id: uuidv4(),
       status: OrderStatus.PENDING,
-      createdAt: now,
-      updatedAt: now,
-      escrowTxHash: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
       ...data,
     });
-    this.items.push(entity);
-    return entity;
+    return this.repo.save(entity);
   }
 
-  async findById(id: string): Promise<OrderEntity | undefined> {
-    return this.items.find((i) => i.id === id);
+  async findById(id: string): Promise<Order | null> {
+    return this.repo.findOne({ where: { id } });
   }
 
-  async save(entity: OrderEntity): Promise<OrderEntity> {
-    const idx = this.items.findIndex((i) => i.id === entity.id);
+  async save(entity: Order): Promise<Order> {
     entity.updatedAt = new Date();
-    if (idx === -1) {
-      this.items.push(entity);
-    } else {
-      this.items[idx] = entity;
-    }
-    return entity;
+    return this.repo.save(entity);
   }
 
   async findAll(filter: {
@@ -48,45 +45,41 @@ export class OrdersRepository {
     sort?: string;
     role?: 'FARMER' | 'BUYER' | undefined;
     userId?: string | undefined;
-  }): Promise<{ items: OrderEntity[]; total: number }> {
-    let res = this.items.slice();
+  }): Promise<{ items: Order[]; total: number }> {
+    const qb = this.repo.createQueryBuilder('order');
+
     if (filter.status) {
-      res = res.filter((r) => r.status === filter.status);
+      qb.andWhere('order.status = :status', { status: filter.status });
     }
     if (filter.cropType) {
-      res = res.filter((r) => r.cropType === filter.cropType);
+      qb.andWhere('order.cropType = :cropType', { cropType: filter.cropType });
     }
     if (filter.search) {
-      const s = filter.search.toLowerCase();
-      res = res.filter(
-        (r) =>
-          r.cropType.toLowerCase().includes(s) ||
-          r.buyerName.toLowerCase().includes(s),
+      qb.andWhere(
+        '(LOWER(order.cropType) LIKE :s OR LOWER(order.buyerId) LIKE :s)',
+        { s: `%${filter.search.toLowerCase()}%` },
       );
     }
     if (filter.startDate) {
-      const sd = new Date(filter.startDate);
-      res = res.filter((r) => r.createdAt >= sd);
+      qb.andWhere('order.createdAt >= :startDate', { startDate: new Date(filter.startDate) });
     }
     if (filter.endDate) {
-      const ed = new Date(filter.endDate);
-      res = res.filter((r) => r.createdAt <= ed);
+      qb.andWhere('order.createdAt <= :endDate', { endDate: new Date(filter.endDate) });
     }
     if (filter.role === 'FARMER') {
-      // Farmers should only see open orders (PENDING)
-      res = res.filter((r) => r.status === OrderStatus.PENDING);
+      qb.andWhere('order.status = :status', { status: OrderStatus.PENDING });
     }
     if (filter.role === 'BUYER' && filter.userId) {
-      res = res.filter((r) => r.buyerId === filter.userId);
+      qb.andWhere('order.buyerId = :buyerId', { buyerId: filter.userId });
     }
 
-    const total = res.length;
-    // sort by createdAt desc by default
-    res.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    qb.orderBy('order.createdAt', 'DESC');
+
     const page = filter.page ?? 1;
     const limit = filter.limit ?? 10;
-    const start = (page - 1) * limit;
-    const items = res.slice(start, start + limit);
+    qb.skip((page - 1) * limit).take(limit);
+
+    const [items, total] = await qb.getManyAndCount();
     return { items, total };
   }
 }

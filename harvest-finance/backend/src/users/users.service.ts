@@ -57,22 +57,41 @@ export class UsersService {
       }
     }
 
-    // Update user fields
-    const updatedUser = {
-      ...user,
-      ...updateProfileDto,
+    const updatePayload: Partial<User> = {
       updatedAt: new Date(),
     };
 
-    // Handle name fields separately
+    if (updateProfileDto.email !== undefined) {
+      updatePayload.email = updateProfileDto.email;
+    }
     if (updateProfileDto.first_name !== undefined) {
-      updatedUser.firstName = updateProfileDto.first_name;
+      updatePayload.firstName = updateProfileDto.first_name;
     }
     if (updateProfileDto.last_name !== undefined) {
-      updatedUser.lastName = updateProfileDto.last_name;
+      updatePayload.lastName = updateProfileDto.last_name;
+    }
+    if (updateProfileDto.phone !== undefined) {
+      updatePayload.phone = updateProfileDto.phone;
+    }
+    if (updateProfileDto.address !== undefined) {
+      updatePayload.address = updateProfileDto.address;
+    }
+    if (updateProfileDto.profile_image_url !== undefined) {
+      updatePayload.profileImageUrl = updateProfileDto.profile_image_url;
+    }
+    if (updateProfileDto.stellar_address !== undefined) {
+      updatePayload.stellarAddress = updateProfileDto.stellar_address;
     }
 
-    await this.userRepository.save(updatedUser);
+    await this.userRepository.update(userId, updatePayload);
+
+    const updatedUser = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!updatedUser) {
+      throw new NotFoundException('User not found');
+    }
 
     return this.mapUserToProfileResponse(updatedUser);
   }

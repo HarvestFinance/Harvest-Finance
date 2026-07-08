@@ -7,7 +7,6 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory, HttpAdapterHost } from '@nestjs/core';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { HttpAdapterHost } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ThrottlerExceptionFilter } from './common/filters/throttler-exception.filter';
@@ -144,22 +143,14 @@ async function bootstrap() {
   const server = await app.listen(port);
   console.log(`Application is running on: http://localhost:${port}`);
 
-  // Graceful shutdown handler for WebSocket connections
+  // Graceful shutdown handler
   const gracefulShutdown = async (signal: string) => {
-    console.log(`Received ${signal}, closing WebSocket connections gracefully...`);
+    console.log(`Received ${signal}, closing gracefully...`);
 
     try {
-      // Get Socket.io server instance from the app
-      const httpServer = app.getHttpServer();
-
-      // Close Socket.io connections
-      if (ioAdapter && (ioAdapter as any).server) {
-        (ioAdapter as any).server.close();
-      }
-
       // Close HTTP server
       await new Promise<void>((resolve, reject) => {
-        httpServer.close((err) => {
+        server.close((err) => {
           if (err) reject(err);
           else resolve();
         });

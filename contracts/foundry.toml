@@ -18,19 +18,19 @@ depth = 15
 fail_on_revert = false
 
 [rpc_endpoints]
-mainnet = "${ETH_RPC_URL}"
+stellar = "${STELLAR_RPC_URL}"
 
 # Fork profile — runs only the mainnet fork test file.
-# Usage: ETH_RPC_URL=<alchemy-or-infura-url> forge test --profile fork -vvv
+# Usage: STELLAR_RPC_URL=<stellar-rpc-url> forge test --profile fork -vvv
 [profile.fork]
 src = "src"
 out = "out"
 libs = ["lib"]
-test = "test"
-match_path = "test/VaultMainnetFork.t.sol"
-# Pin a stable block for reproducible results. Update periodically.
-# Block ~20 000 000 ≈ June 2024.
-fork_block_number = 20_000_000
+test = "legacy-tests"
+match_path = "legacy-tests/VaultMainnetFork.t.sol"
+# Pin a stable ledger for reproducible results. Update periodically.
+# Ledger ~20000000 ≈ 2024.
+fork_block_number = 20000000
 
 [profile.fork.fuzz]
 runs = 256

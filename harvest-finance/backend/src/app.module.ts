@@ -77,28 +77,36 @@ import { CoopReview } from './database/entities/coop-review.entity';
 import { CropCycle } from './database/entities/crop-cycle.entity';
 import { InsurancePlan } from './database/entities/insurance-plan.entity';
 import { InsuranceSubscription } from './database/entities/insurance-subscription.entity';
+import { SecurityEvent } from './database/entities/security-event.entity';
 import { CreateInitialSchema1700000000000 } from './database/migrations/1700000000000-CreateInitialSchema';
 import { CreateAchievements1700000000004 } from './database/migrations/1700000000004-CreateAchievements';
 import { CreateRewards1700000000005 } from './database/migrations/1700000000005-CreateRewards';
 import { CreateNotifications1700000000006 } from './database/migrations/1700000000006-CreateNotifications';
 import { CreateWithdrawals1700000000007 } from './database/migrations/1700000000007-CreateWithdrawals';
 import { CreateFarmVaults1700000000008 } from './database/migrations/1700000000008-CreateFarmVaults';
-import { CreateInsurance1700000000009 } from './database/migrations/1700000000009-CreateInsurance';
 import { AddInsuranceNotificationType1700000000010 } from './database/migrations/1700000000010-AddInsuranceNotificationType';
 import { CreateSorobanEvents1700000000011 } from './database/migrations/1700000000011-CreateSorobanEvents';
-import { CreateYieldAnalytics1700000000012 } from './database/migrations/1700000000012-CreateYieldAnalytics';
 import { AddSorobanEventQueryIndexes1700000000013 } from './database/migrations/1700000000013-AddSorobanEventQueryIndexes';
+import { AddMultiSignatureToVaults1700000000014 } from './database/migrations/1700000000014-AddMultiSignatureToVaults';
+import { CreateVaultApprovals1700000000015 } from './database/migrations/1700000000015-CreateVaultApprovals';
 import { CreateDepositEvents1700000000016 } from './database/migrations/1700000000016-CreateDepositEvents';
-import { CreateStrategyAndApyHistory1700000000017 } from './database/migrations/1700000000017-CreateStrategyAndApyHistory';
-import { CreateVaultScoreHistory1700000000018 } from './database/migrations/1700000000018-CreateVaultScoreHistory';
-
-import { CreateVaultReservations1700000000018 } from './database/migrations/1700000000018-CreateVaultReservations';
+import { AddSolanaAddressToUsers1700000000017 } from './database/migrations/1700000000017-AddSolanaAddressToUsers';
+import { CreateVaultApyHistory1700000000017 } from './database/migrations/1700000000026-CreateVaultApyHistory';
+import { AddSuspendedVaultStatusAndStellarAccount1700000000018 } from './database/migrations/1700000000018-AddSuspendedVaultStatusAndStellarAccount';
+import { CreateVaultReservations1700000000018 } from './database/migrations/1700000000027-CreateVaultReservations';
+import { CreateVaultScoreHistory1700000000018 } from './database/migrations/1700000000028-CreateVaultScoreHistory';
+import { AddVaultFees1700000000019 } from './database/migrations/1700000000019-AddVaultFees';
+import { CreateIndexerState1700000000019 } from './database/migrations/1700000000029-CreateIndexerState';
+import { AddUserLoginLockout1700000000020 } from './database/migrations/1700000000020-AddUserLoginLockout';
+import { AddContractVersionToSorobanEvents1700000000021 } from './database/migrations/1700000000021-AddContractVersionToSorobanEvents';
+import { CreateCustodialWallets1700000000021 } from './database/migrations/1700000000030-CreateCustodialWallets';
+import { AddDepositorConcentrationThreshold1700000000022 } from './database/migrations/1700000000022-AddDepositorConcentrationThreshold';
+import { AddPhoneAndNotificationPreferencesToUsers1700000000022 } from './database/migrations/1700000000031-AddPhoneAndNotificationPreferencesToUsers';
+import { AddRefreshTokenRotation1700000000022 } from './database/migrations/1700000000032-AddRefreshTokenRotation';
+import { CreateSessionsAndOAuthLinks1700000000022 } from './database/migrations/1700000000033-CreateSessionsAndOAuthLinks';
+import { AddEmailVerificationToUsers1700000000023 } from './database/migrations/1700000000023-AddEmailVerificationToUsers';
+import { CreateInsuranceClaims1700000000013 } from './database/migrations/1700000000024-CreateInsuranceClaims';
 import { VaultReservation } from './vaults/entities/vault-reservation.entity';
-import { Session } from './database/entities/session.entity';
-import { SecurityEvent } from './database/entities/security-event.entity';
-import { CreateVaultApyHistory1700000000017 } from './database/migrations/1700000000017-CreateVaultApyHistory';
-import { CreateSessionsAndOAuthLinks1700000000022 } from './database/migrations/1700000000022-CreateSessionsAndOAuthLinks';
-import { AddRefreshTokenRotation1700000000022 } from './database/migrations/1700000000022-AddRefreshTokenRotation';
 import { DomainEventsModule } from './domain-events';
 import { DomainEventHandlersModule } from './common/events';
 import { WebhooksModule } from './webhooks/webhooks.module';
@@ -158,20 +166,28 @@ import { WebhooksModule } from './webhooks/webhooks.module';
           CreateNotifications1700000000006,
           CreateWithdrawals1700000000007,
           CreateFarmVaults1700000000008,
-          CreateInsurance1700000000009,
           AddInsuranceNotificationType1700000000010,
           CreateSorobanEvents1700000000011,
-          CreateYieldAnalytics1700000000012,
+          AddMultiSignatureToVaults1700000000014,
           AddSorobanEventQueryIndexes1700000000013,
+          CreateVaultApprovals1700000000015,
           CreateDepositEvents1700000000016,
-          CreateStrategyAndApyHistory1700000000017,
-          CreateVaultScoreHistory1700000000018,
-          CreateVaultReservations1700000000018,
-          AddDepositorConcentrationThreshold1700000000022,
+          AddSolanaAddressToUsers1700000000017,
           CreateVaultApyHistory1700000000017,
-          CreateSessionsAndOAuthLinks1700000000022,
+          AddSuspendedVaultStatusAndStellarAccount1700000000018,
+          CreateVaultReservations1700000000018,
+          CreateVaultScoreHistory1700000000018,
+          AddVaultFees1700000000019,
+          CreateIndexerState1700000000019,
+          AddUserLoginLockout1700000000020,
+          AddContractVersionToSorobanEvents1700000000021,
           CreateCustodialWallets1700000000021,
+          AddDepositorConcentrationThreshold1700000000022,
+          AddPhoneAndNotificationPreferencesToUsers1700000000022,
           AddRefreshTokenRotation1700000000022,
+          CreateSessionsAndOAuthLinks1700000000022,
+          AddEmailVerificationToUsers1700000000023,
+          CreateInsuranceClaims1700000000013,
         ],
         synchronize: false,
         migrationsRun: false,

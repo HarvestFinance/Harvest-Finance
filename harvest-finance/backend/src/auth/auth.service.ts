@@ -18,7 +18,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { CustomLoggerService } from '../logger/custom-logger.service';
 import { User, UserRole, WalletType } from '../database/entities/user.entity';
 import { UserOAuthLink } from '../database/entities/user-oauth-link.entity';
-const zxcvbn = require('zxcvbn');
+import zxcvbn from 'zxcvbn';
 import * as crypto from 'crypto';
 import { Session } from '../database/entities/session.entity';
 import { SecurityEvent, SecurityEventType } from '../database/entities/security-event.entity';
@@ -48,6 +48,9 @@ import { CustodialWalletService } from '../wallets/custodial-wallet.service';
 
 @Injectable()
 export class AuthService {
+  // TODO(SECURITY): The hardcoded fallback secrets ('super_secret_jwt_key' and
+  // 'super_secret_refresh_jwt_key') below are only dev fallbacks. They MUST be
+  // removed once real secrets are provided via env vars (JWT_SECRET / JWT_REFRESH_SECRET).
   private readonly saltRounds = 10;
   private readonly accessTokenExpiry = '1h';
   private readonly refreshTokenExpiry = '7d';
@@ -91,7 +94,7 @@ export class AuthService {
    * Register a new user
    */
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
-    const { email, password, role, full_name, phone_number, stellar_address, use_custodial_wallet } =
+    const { email, password, full_name, phone_number, stellar_address, use_custodial_wallet } =
       registerDto;
 
     // Validate: user must supply either a stellar_address OR opt into a custodial wallet
@@ -133,7 +136,7 @@ export class AuthService {
     const user = this.userRepository.create({
       email,
       password: hashedPassword,
-      role: role,
+      role: UserRole.BUYER,
       firstName,
       lastName,
       phone: phone_number || null,
@@ -341,10 +344,8 @@ export class AuthService {
     const { refresh_token } = refreshTokenDto;
 
     // Step 1 — verify JWT signature & expiry
-    let payload: { sub: string; email: string; role: string; jti?: string };
+    let payload: { sub: string; email: string; role: string; sessionId?: string };
     try {
-      // Verify refresh token signature and expiry
-      const payload = await this.jwtService.verifyAsync(refresh_token, {
       payload = await this.jwtService.verifyAsync(refresh_token, {
         secret:
           this.configService.get<string>('JWT_REFRESH_SECRET') ||
@@ -354,7 +355,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
 
-    // Step 2 — find the matching session by scanning hashed tokens for this user
+    // Step 2 — resolve the user
     const user = await this.userRepository.findOne({
       where: { id: payload.sub },
     });
@@ -363,52 +364,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-      // Validate the refresh token against the stored session record.
-      // The sessionId claim was embedded at token-generation time.
-      if (payload.sessionId) {
-        const session = await this.sessionRepository.findOne({
-          where: { id: payload.sessionId, user: { id: user.id } },
-          select: ['id', 'refreshToken', 'expiresAt'],
-        });
-
-        if (!session || session.expiresAt < new Date()) {
-          throw new UnauthorizedException('Session has expired or been revoked');
-        }
-
-        const tokenMatches = await bcrypt.compare(
-          refresh_token,
-          session.refreshToken,
-        );
-        if (!tokenMatches) {
-          throw new UnauthorizedException('Invalid refresh token');
-        }
-
-        // Touch lastUsedAt so the sessions list reflects recent activity
-        await this.sessionRepository.update(session.id, {
-          lastUsedAt: new Date(),
-        });
-      }
-
-      // Issue a new access token (same session, same refresh token — no rotation)
-      const accessToken = await this.jwtService.signAsync(
-        {
-          sub: user.id,
-          email: user.email,
-          role: user.role,
-          sessionId: payload.sessionId,
-        },
-        {
-          expiresIn: this.accessTokenExpiry,
-          secret:
-            this.configService.get<string>('JWT_SECRET') ||
-            'super_secret_jwt_key',
-        },
-      );
-
-      return { access_token: accessToken, token_type: 'Bearer' };
-    } catch (error) {
-      if (error instanceof UnauthorizedException) throw error;
-    // Fetch all non-expired sessions for this user so we can bcrypt-compare
+    // Fetch all sessions for this user so we can bcrypt-compare the refresh token.
     const candidateSessions = await this.sessionRepository.find({
       where: { user: { id: user.id } },
       relations: ['user'],
@@ -423,11 +379,11 @@ export class AuthService {
     }
 
     if (!matchedSession) {
-      // Token is cryptographically valid but not in the DB — treat as stolen
+      // Token is cryptographically valid but not in the DB — treat as stolen.
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
 
-    // Step 3 — reuse detection: token was already consumed
+    // Step 3 — reuse detection: token was already consumed (revoked).
     if (matchedSession.isRevoked) {
       await this.revokeFamilyAndAlert(matchedSession.familyId, user, refresh_token);
       throw new UnauthorizedException(
@@ -435,7 +391,11 @@ export class AuthService {
       );
     }
 
-    // Step 4 — atomically revoke the current session
+    if (matchedSession.expiresAt < new Date()) {
+      throw new UnauthorizedException('Session has expired');
+    }
+
+    // Step 4 — atomically revoke the current session.
     const newSessionId = uuidv4(); // reserve the ID so we can set replacedBy
     await this.sessionRepository.update(matchedSession.id, {
       isRevoked: true,
@@ -443,7 +403,7 @@ export class AuthService {
       lastUsedAt: new Date(),
     });
 
-    // Step 5 — generate new token pair
+    // Step 5 — generate new token pair.
     const jwtPayload = { sub: user.id, email: user.email, role: user.role };
 
     const [accessToken, newRefreshToken] = await Promise.all([
@@ -460,7 +420,7 @@ export class AuthService {
       }),
     ]);
 
-    // Step 6 — store the new session in the SAME family
+    // Step 6 — store the new session in the SAME family.
     const hashedNewRefreshToken = await bcrypt.hash(newRefreshToken, this.saltRounds);
     const newSession = this.sessionRepository.create({
       id: newSessionId,
@@ -481,7 +441,7 @@ export class AuthService {
       'AuthService',
     );
 
-    // Step 7 — return both tokens
+    // Step 7 — return both tokens.
     return {
       access_token: accessToken,
       refresh_token: newRefreshToken,
@@ -623,12 +583,8 @@ export class AuthService {
       resetPasswordExpires: new Date(Date.now() + this.resetTokenExpiry),
     });
 
-    // In production, send email with reset token
-    // For now, we'll log it
-    this.logger.log(
-      `Password reset token for ${email}: ${resetToken}`,
-      'AuthService',
-    );
+    // In production, send email with reset token instead of logging it.
+    // The plaintext token must never be logged (security risk).
 
     return {
       success: true,
@@ -712,33 +668,34 @@ export class AuthService {
     userAgent?: string,
     ipAddress?: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
-    // Save the session first so we can embed its ID in the JWT payload.
-    const hashedRefreshTokenPlaceholder = ''; // filled in after hashing below
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    const deviceName = deriveDeviceName(userAgent);
+    return this.generateSessionTokens(user, { userAgent, ipAddress });
+  }
 
-    // Create a temporary session to get the UUID before signing tokens.
-    const session = this.sessionRepository.create({
-      user,
-      refreshToken: hashedRefreshTokenPlaceholder,
-      userAgent: userAgent ?? null,
-      ipAddress: ipAddress ?? null,
-      deviceName,
-      lastUsedAt: new Date(),
-      expiresAt,
-    });
-    await this.sessionRepository.save(session);
-
+  /**
    * Generate access and refresh tokens and persist a new session row.
    * Each call starts a brand-new token family (used on login/register/OAuth).
    */
-  private async generateTokens(
+  private async generateSessionTokens(
     user: User,
     context?: { userAgent?: string; ipAddress?: string },
   ): Promise<{
     accessToken: string;
     refreshToken: string;
   }> {
+    const deviceName = deriveDeviceName(context?.userAgent);
+
+    // Create the session row first so we can embed its ID in the JWT payload.
+    const session = this.sessionRepository.create({
+      user,
+      refreshToken: '',
+      userAgent: context?.userAgent ?? 'Unknown',
+      ipAddress: context?.ipAddress ?? 'Unknown',
+      deviceName,
+      lastUsedAt: new Date(),
+      expiresAt: new Date(Date.now() + this.refreshTokenExpiryMs),
+    });
+    await this.sessionRepository.save(session);
+
     const payload = {
       sub: user.id,
       email: user.email,
@@ -761,12 +718,11 @@ export class AuthService {
       }),
     ]);
 
-    // Persist hashed refresh token onto the already-saved session row.
-    // Store hashed refresh token with a new family ID
+    // Persist hashed refresh token with a new family ID (new family for every fresh login)
     const hashedRefreshToken = await bcrypt.hash(refreshToken, this.saltRounds);
     await this.sessionRepository.update(session.id, {
       refreshToken: hashedRefreshToken,
-      familyId: uuidv4(),   // new family for every fresh login
+      familyId: uuidv4(),
       isRevoked: false,
       replacedBy: null,
       userAgent: context?.userAgent ?? 'Unknown',

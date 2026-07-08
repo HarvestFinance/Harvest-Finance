@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as StellarSdk from 'stellar-sdk';
+import * as StellarSdk from '@stellar/stellar-sdk';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { stellarAuthSchema, type StellarAuthFormData } from '@/lib/validations/auth';
 
