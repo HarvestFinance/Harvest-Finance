@@ -34,15 +34,41 @@ import { CoopListing } from './entities/coop-listing.entity';
 import { CoopOrder } from './entities/coop-order.entity';
 import { CoopReview } from './entities/coop-review.entity';
 import { VaultReservation } from '../vaults/entities/vault-reservation.entity';
+import { IndexerState } from './entities/indexer-state.entity';
 
 import { CreateInitialSchema1700000000000 } from './migrations/1700000000000-CreateInitialSchema';
+import { CreateVaultsAndDeposits1700000000001 } from './migrations/1700000000001-CreateVaultsAndDeposits';
+import { CreateAchievements1700000000004 } from './migrations/1700000000004-CreateAchievements';
+import { CreateRewards1700000000005 } from './migrations/1700000000005-CreateRewards';
+import { CreateNotifications1700000000006 } from './migrations/1700000000006-CreateNotifications';
+import { CreateWithdrawals1700000000007 } from './migrations/1700000000007-CreateWithdrawals';
+import { CreateFarmVaults1700000000008 } from './migrations/1700000000008-CreateFarmVaults';
+import { CreateAiQueryHistory1700000000009 } from './migrations/1700000000009-CreateAiQueryHistory';
+import { CreateInsurance1700000000009 } from './migrations/1700000000009-CreateInsurance';
+import { AddInsuranceNotificationType1700000000010 } from './migrations/1700000000010-AddInsuranceNotificationType';
 import { CreateSorobanEvents1700000000011 } from './migrations/1700000000011-CreateSorobanEvents';
+import { CreateCommunityAndMarketplace1700000000012 } from './migrations/1700000000012-CreateCommunityAndMarketplace';
+import { CreateYieldAnalytics1700000000012 } from './migrations/1700000000012-CreateYieldAnalytics';
 import { AddSorobanEventQueryIndexes1700000000013 } from './migrations/1700000000013-AddSorobanEventQueryIndexes';
+import { CreateInsuranceClaims1700000000013 } from './migrations/1700000000013-CreateInsuranceClaims';
+import { AddMultiSignatureToVaults1700000000014 } from './migrations/1700000000014-AddMultiSignatureToVaults';
+import { CreateVaultApprovals1700000000015 } from './migrations/1700000000015-CreateVaultApprovals';
 import { CreateDepositEvents1700000000016 } from './migrations/1700000000016-CreateDepositEvents';
+import { AddSolanaAddressToUsers1700000000017 } from './migrations/1700000000017-AddSolanaAddressToUsers';
 import { CreateStrategyAndApyHistory1700000000017 } from './migrations/1700000000017-CreateStrategyAndApyHistory';
-import { CreateVaultScoreHistory1700000000018 } from './migrations/1700000000018-CreateVaultScoreHistory';
+import { AddSuspendedVaultStatusAndStellarAccount1700000000018 } from './migrations/1700000000018-AddSuspendedVaultStatusAndStellarAccount';
 import { CreateVaultReservations1700000000018 } from './migrations/1700000000018-CreateVaultReservations';
+import { CreateVaultScoreHistory1700000000018 } from './migrations/1700000000018-CreateVaultScoreHistory';
+import { AddVaultFees1700000000019 } from './migrations/1700000000019-AddVaultFees';
+import { CreateIndexerState1700000000019 } from './migrations/1700000000019-CreateIndexerState';
+import { AddUserLoginLockout1700000000020 } from './migrations/1700000000020-AddUserLoginLockout';
+import { AddContractVersionToSorobanEvents1700000000021 } from './migrations/1700000000021-AddContractVersionToSorobanEvents';
+import { CreateCustodialWallets1700000000021 } from './migrations/1700000000021-CreateCustodialWallets';
+import { AddDepositorConcentrationThreshold1700000000022 } from './migrations/1700000000022-AddDepositorConcentrationThreshold';
+import { AddPhoneAndNotificationPreferencesToUsers1700000000022 } from './migrations/1700000000022-AddPhoneAndNotificationPreferencesToUsers';
+import { AddRefreshTokenRotation1700000000022 } from './migrations/1700000000022-AddRefreshTokenRotation';
 import { CreateSessionsAndOAuthLinks1700000000022 } from './migrations/1700000000022-CreateSessionsAndOAuthLinks';
+import { AddEmailVerificationToUsers1700000000023 } from './migrations/1700000000023-AddEmailVerificationToUsers';
 
 // Load environment variables
 config();
@@ -95,18 +121,43 @@ const options: DataSourceOptions = {
 
   migrations: [
     CreateInitialSchema1700000000000,
+    CreateVaultsAndDeposits1700000000001,
+    CreateAchievements1700000000004,
+    CreateRewards1700000000005,
+    CreateNotifications1700000000006,
+    CreateWithdrawals1700000000007,
+    CreateFarmVaults1700000000008,
+    CreateAiQueryHistory1700000000009,
+    CreateInsurance1700000000009,
+    AddInsuranceNotificationType1700000000010,
     CreateSorobanEvents1700000000011,
+    CreateCommunityAndMarketplace1700000000012,
+    CreateYieldAnalytics1700000000012,
     AddSorobanEventQueryIndexes1700000000013,
+    CreateInsuranceClaims1700000000013,
+    AddMultiSignatureToVaults1700000000014,
+    CreateVaultApprovals1700000000015,
     CreateDepositEvents1700000000016,
+    AddSolanaAddressToUsers1700000000017,
     CreateStrategyAndApyHistory1700000000017,
-    CreateVaultScoreHistory1700000000018,
+    AddSuspendedVaultStatusAndStellarAccount1700000000018,
     CreateVaultReservations1700000000018,
+    CreateVaultScoreHistory1700000000018,
+    AddVaultFees1700000000019,
+    CreateIndexerState1700000000019,
+    AddUserLoginLockout1700000000020,
+    AddContractVersionToSorobanEvents1700000000021,
+    CreateCustodialWallets1700000000021,
+    AddDepositorConcentrationThreshold1700000000022,
+    AddPhoneAndNotificationPreferencesToUsers1700000000022,
     CreateSessionsAndOAuthLinks1700000000022,
+    AddRefreshTokenRotation1700000000022,
+    AddEmailVerificationToUsers1700000000023,
   ],
 
   // synchronize must remain false in all non-test environments.
   // Use `npm run migration:run` to apply schema changes safely.
-  synchronize: isTestEnv,
+  synchronize: process.env.NODE_ENV === 'test',
   migrationsRun: false,
   logging: process.env.NODE_ENV === 'development',
 };

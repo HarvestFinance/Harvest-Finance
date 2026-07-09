@@ -58,10 +58,10 @@ export class Transaction {
   @Column({ type: 'decimal', precision: 12, scale: 2 })
   amount: number;
 
-  @Column({ name: 'asset_code', default: 'XLM' })
+  @Column({ name: 'asset_code', type: 'varchar', default: 'XLM' })
   assetCode: string;
 
-  @Column({ name: 'asset_issuer', nullable: true })
+  @Column({ name: 'asset_issuer', type: 'varchar', nullable: true })
   assetIssuer: string | null;
 
   @Column({
@@ -78,19 +78,19 @@ export class Transaction {
   })
   type: TransactionType;
 
-  @Column({ name: 'source_account', nullable: true })
+  @Column({ name: 'source_account', type: 'varchar', nullable: true })
   sourceAccount: string | null;
 
-  @Column({ name: 'destination_account', nullable: true })
+  @Column({ name: 'destination_account', type: 'varchar', nullable: true })
   destinationAccount: string | null;
 
-  @Column({ name: 'stellar_memo', nullable: true })
+  @Column({ name: 'stellar_memo', type: 'varchar', nullable: true })
   stellarMemo: string | null;
 
   @Column({ name: 'confirmed_at', type: 'timestamp', nullable: true })
   confirmedAt: Date | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   memo: string | null;
 
   @CreateDateColumn({ name: 'created_at' })

@@ -35,13 +35,13 @@ export class CommunityPost {
   @Column({ name: 'author_id' })
   authorId: string;
 
-  @Column({ name: 'group_id', nullable: true })
+  @Column({ name: 'group_id', type: 'uuid', nullable: true })
   groupId: string | null;
 
   @Column({ type: 'text' })
   content: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   title: string | null;
 
   @Column({ type: 'enum', enum: PostType, default: PostType.GENERAL })
@@ -50,7 +50,7 @@ export class CommunityPost {
   @Column({ type: 'enum', enum: PostStatus, default: PostStatus.ACTIVE })
   status: PostStatus;
 
-  @Column({ name: 'image_url', nullable: true })
+  @Column({ name: 'image_url', type: 'text', nullable: true })
   imageUrl: string | null;
 
   @Column({ type: 'simple-array', nullable: true })

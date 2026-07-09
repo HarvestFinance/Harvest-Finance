@@ -618,7 +618,7 @@ export class CreateInitialSchema1700000000000 implements MigrationInterface {
           {
             name: 'history',
             type: 'jsonb',
-            default: '[]',
+            default: "'[]'",
           },
           {
             name: 'last_updated',

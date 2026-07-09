@@ -8,7 +8,6 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { User } from './user.entity';
 
 /**
@@ -56,9 +55,6 @@ export class Session {
    */
   @Column({ name: 'replaced_by', type: 'uuid', nullable: true })
   replacedBy: string | null;
-
-  @Column({ name: 'user_agent', nullable: true })
-  userAgent: string;
 
   /** Client IP address captured at login time. */
   @Column({ name: 'ip_address', type: 'varchar', nullable: true })

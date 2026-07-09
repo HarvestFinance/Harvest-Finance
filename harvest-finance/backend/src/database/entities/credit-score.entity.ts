@@ -79,7 +79,7 @@ export class CreditScore {
   @Column({ name: 'last_updated', type: 'timestamp', default: null })
   lastUpdated: Date | null;
 
-  @Column({ name: 'last_order_id', nullable: true })
+  @Column({ name: 'last_order_id', type: 'varchar', nullable: true })
   lastOrderId: string | null;
 
   @CreateDateColumn({ name: 'created_at' })

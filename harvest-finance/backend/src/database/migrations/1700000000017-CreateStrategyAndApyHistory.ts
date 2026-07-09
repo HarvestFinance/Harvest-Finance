@@ -2,6 +2,7 @@ import {
   MigrationInterface,
   QueryRunner,
   Table,
+  TableColumn,
   TableForeignKey,
   TableIndex,
 } from 'typeorm';
@@ -52,7 +53,7 @@ export class CreateStrategyAndApyHistory1700000000017 implements MigrationInterf
     // ─── Vaults: add strategy_id column ──────────────────────────────────────
     await queryRunner.addColumn(
       'vaults',
-      new Table({
+      new TableColumn({
         name: 'strategy_id',
         type: 'uuid',
         isNullable: true,
