@@ -27,7 +27,7 @@ export class CommunityComment {
   @Column({ type: 'text' })
   content: string;
 
-  @Column({ name: 'parent_id', nullable: true })
+  @Column({ name: 'parent_id', type: 'uuid', nullable: true })
   parentId: string | null;
 
   @Column({ name: 'like_count', default: 0 })

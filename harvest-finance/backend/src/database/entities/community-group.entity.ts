@@ -33,7 +33,7 @@ export class CommunityGroup {
   @Column({ type: 'enum', enum: GroupCategory, default: GroupCategory.GENERAL })
   category: GroupCategory;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   coverImageUrl: string | null;
 
   @Column({ name: 'created_by_id' })

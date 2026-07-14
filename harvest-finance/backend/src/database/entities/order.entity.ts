@@ -70,16 +70,16 @@ export class Order {
   @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING })
   status: OrderStatus;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   description: string | null;
 
-  @Column({ name: 'delivery_address', nullable: true })
+  @Column({ name: 'delivery_address', type: 'text', nullable: true })
   deliveryAddress: string | null;
 
   @Column({ name: 'expected_delivery_date', type: 'date', nullable: true })
   expectedDeliveryDate: Date | null;
 
-  @Column({ name: 'escrow_tx_hash', nullable: true })
+  @Column({ name: 'escrow_tx_hash', type: 'varchar', nullable: true })
   escrowTxHash: string | null;
 
   @CreateDateColumn({ name: 'created_at' })

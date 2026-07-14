@@ -54,7 +54,7 @@ export class CoopOrder {
   @Column({ type: 'text', nullable: true })
   notes: string | null;
 
-  @Column({ name: 'delivery_address', nullable: true })
+  @Column({ name: 'delivery_address', type: 'varchar', nullable: true })
   deliveryAddress: string | null;
 
   @Column({
