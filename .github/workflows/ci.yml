@@ -194,18 +194,18 @@ jobs:
           version: nightly
 
       - name: Run forge tests
-        working-directory: contracts
+        working-directory: contracts-legacy
         run: forge test -vvv || true
 
       - name: Forge coverage
-        working-directory: contracts
+        working-directory: contracts-legacy
         run: forge coverage --report lcov || true
 
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         with:
           name: contracts-coverage
-          path: contracts/lcov.info
+          path: contracts-legacy/lcov.info
 
   # ── Smart Contract Fork Tests ─────────────────────────────────────────────────
   contracts-fork-test:
@@ -224,7 +224,7 @@ jobs:
           version: nightly
 
       - name: Run mainnet fork tests
-        working-directory: contracts
+        working-directory: contracts-legacy
         env:
           ETH_RPC_URL: ${{ secrets.ETH_RPC_URL }}
         run: make test-fork
