@@ -70,10 +70,10 @@ export class Order {
   @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING })
   status: OrderStatus;
 
-  @Column({ type: 'varchar', nullable: true })
+  @Column({ type: 'text', nullable: true })
   description: string | null;
 
-  @Column({ name: 'delivery_address', type: 'varchar', nullable: true })
+  @Column({ name: 'delivery_address', type: 'text', nullable: true })
   deliveryAddress: string | null;
 
   @Column({ name: 'expected_delivery_date', type: 'date', nullable: true })

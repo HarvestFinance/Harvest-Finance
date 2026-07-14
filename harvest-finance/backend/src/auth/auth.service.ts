@@ -3,6 +3,7 @@ import {
   ConflictException,
   UnauthorizedException,
   BadRequestException,
+  NotFoundException,
   Inject,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -37,6 +38,12 @@ import {
   StellarAuthResponseDto,
   StellarChallengeResponseDto,
 } from './dto/stellar-auth.dto';
+import {
+  RevokeSessionResponseDto,
+  SessionListResponseDto,
+  SessionResponseDto,
+} from './dto/session.dto';
+import { deriveDeviceName } from './utils/device-name.util';
 import { CustodialWalletService } from '../wallets/custodial-wallet.service';
 
 @Injectable()
@@ -46,6 +53,7 @@ export class AuthService {
   private readonly refreshTokenExpiry = '7d';
   private readonly refreshTokenExpiryMs = 7 * 24 * 60 * 60 * 1000; // 7 days
   private readonly resetTokenExpiry = 3600000; // 1 hour in milliseconds
+  private readonly verificationTokenExpiry = '24h'; // 24 hours for email verification
 
   private get maxLoginAttempts(): number {
     return this.configService.get<number>('MAX_LOGIN_ATTEMPTS', 5);
@@ -165,6 +173,20 @@ export class AuthService {
     // Generate tokens
     const tokens = await this.generateTokens(user);
 
+    // Generate email verification JWT (expires in 24 hours)
+    const verificationToken = await this.jwtService.signAsync(
+      { sub: user.id, email: user.email, type: 'email_verification' },
+      {
+        expiresIn: this.verificationTokenExpiry,
+        secret:
+          this.configService.get<string>('JWT_SECRET') ||
+          'super_secret_jwt_key',
+      },
+    );
+
+    // Send verification email
+    await this.sendVerificationEmail(user.email, verificationToken);
+
     this.logger.log(`New user registered: ${email}`, 'AuthService');
 
     return {
@@ -177,7 +199,11 @@ export class AuthService {
   /**
    * Login user
    */
-  async login(loginDto: LoginDto): Promise<AuthResponseDto> {
+  async login(
+    loginDto: LoginDto,
+    userAgent?: string,
+    ipAddress?: string,
+  ): Promise<AuthResponseDto> {
     const { email, password } = loginDto;
 
     // Find user with password
@@ -245,7 +271,7 @@ export class AuthService {
     await this.userRepository.update(user.id, { lastLogin: new Date(), lockedUntil: null });
 
     // Generate tokens
-    const tokens = await this.generateTokens(user);
+    const tokens = await this.generateTokens(user, userAgent, ipAddress);
 
     this.logger.log(`User logged in successfully: ${email}`, 'AuthService');
 
@@ -294,6 +320,10 @@ export class AuthService {
   }
 
   /**
+   * Refresh access token.
+   *
+   * Validates the refresh token against the stored (hashed) session record and
+   * updates `lastUsedAt` so the sessions list stays current.
    * Refresh access token — implements refresh token rotation with family-level
    * reuse detection.
    *
@@ -313,6 +343,8 @@ export class AuthService {
     // Step 1 — verify JWT signature & expiry
     let payload: { sub: string; email: string; role: string; jti?: string };
     try {
+      // Verify refresh token signature and expiry
+      const payload = await this.jwtService.verifyAsync(refresh_token, {
       payload = await this.jwtService.verifyAsync(refresh_token, {
         secret:
           this.configService.get<string>('JWT_REFRESH_SECRET') ||
@@ -331,6 +363,51 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
+      // Validate the refresh token against the stored session record.
+      // The sessionId claim was embedded at token-generation time.
+      if (payload.sessionId) {
+        const session = await this.sessionRepository.findOne({
+          where: { id: payload.sessionId, user: { id: user.id } },
+          select: ['id', 'refreshToken', 'expiresAt'],
+        });
+
+        if (!session || session.expiresAt < new Date()) {
+          throw new UnauthorizedException('Session has expired or been revoked');
+        }
+
+        const tokenMatches = await bcrypt.compare(
+          refresh_token,
+          session.refreshToken,
+        );
+        if (!tokenMatches) {
+          throw new UnauthorizedException('Invalid refresh token');
+        }
+
+        // Touch lastUsedAt so the sessions list reflects recent activity
+        await this.sessionRepository.update(session.id, {
+          lastUsedAt: new Date(),
+        });
+      }
+
+      // Issue a new access token (same session, same refresh token — no rotation)
+      const accessToken = await this.jwtService.signAsync(
+        {
+          sub: user.id,
+          email: user.email,
+          role: user.role,
+          sessionId: payload.sessionId,
+        },
+        {
+          expiresIn: this.accessTokenExpiry,
+          secret:
+            this.configService.get<string>('JWT_SECRET') ||
+            'super_secret_jwt_key',
+        },
+      );
+
+      return { access_token: accessToken, token_type: 'Bearer' };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) throw error;
     // Fetch all non-expired sessions for this user so we can bcrypt-compare
     const candidateSessions = await this.sessionRepository.find({
       where: { user: { id: user.id } },
@@ -560,54 +637,57 @@ export class AuthService {
   }
 
   /**
-   * Reset password
-   */
-  async resetPassword(
-    resetPasswordDto: ResetPasswordDto,
-  ): Promise<{ success: boolean; message: string }> {
-    const { token, new_password } = resetPasswordDto;
+    * Reset password
+    */
+   async resetPassword(
+     resetPasswordDto: ResetPasswordDto,
+   ): Promise<{ success: boolean; message: string }> {
+     const { token, new_password } = resetPasswordDto;
 
-    // Find users with active reset tokens
-    const activeUsers = await this.userRepository.find({
-      where: {
-        resetPasswordExpires: MoreThan(new Date()),
-      },
-      select: ['id', 'password', 'resetPasswordToken', 'resetPasswordExpires'],
-    });
+     // Validate password strength before processing
+     await this.validatePasswordStrength(new_password);
 
-    let user: User | null = null;
-    for (const u of activeUsers) {
-      if (
-        u.resetPasswordToken &&
-        (await bcrypt.compare(token, u.resetPasswordToken))
-      ) {
-        user = u;
-        break;
-      }
-    }
+     // Find users with active reset tokens
+     const activeUsers = await this.userRepository.find({
+       where: {
+         resetPasswordExpires: MoreThan(new Date()),
+       },
+       select: ['id', 'password', 'resetPasswordToken', 'resetPasswordExpires'],
+     });
 
-    if (!user) {
-      throw new BadRequestException('Invalid or expired reset token');
-    }
+     let user: User | null = null;
+     for (const u of activeUsers) {
+       if (
+         u.resetPasswordToken &&
+         (await bcrypt.compare(token, u.resetPasswordToken))
+       ) {
+         user = u;
+         break;
+       }
+     }
 
-    // Hash new password
-    const hashedPassword = await bcrypt.hash(new_password, this.saltRounds);
+     if (!user) {
+       throw new BadRequestException('Invalid or expired reset token');
+     }
 
-    // Update password and clear reset token
-    await this.userRepository.update(user.id, {
-      password: hashedPassword,
-      resetPasswordToken: null,
-      resetPasswordExpires: null,
-    });
+     // Hash new password
+     const hashedPassword = await bcrypt.hash(new_password, this.saltRounds);
 
-    // Invalidate all sessions by blacklisting current token
-    // (in production, you'd implement a more comprehensive session invalidation)
+     // Update password and clear reset token
+     await this.userRepository.update(user.id, {
+       password: hashedPassword,
+       resetPasswordToken: null,
+       resetPasswordExpires: null,
+     });
 
-    return {
-      success: true,
-      message: 'Password reset successfully',
-    };
-  }
+     // Invalidate all sessions by blacklisting current token
+     // (in production, you'd implement a more comprehensive session invalidation)
+
+     return {
+       success: true,
+       message: 'Password reset successfully',
+     };
+   }
 
   /**
    * Validate user (for JWT strategy)
@@ -620,6 +700,35 @@ export class AuthService {
   }
 
   /**
+   * Generate access and refresh tokens, persisting a session record enriched
+   * with the caller's User-Agent and IP address.
+   *
+   * @param user         - Authenticated user entity
+   * @param userAgent    - Raw User-Agent header (optional)
+   * @param ipAddress    - Client IP address (optional)
+   */
+  async generateTokens(
+    user: User,
+    userAgent?: string,
+    ipAddress?: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    // Save the session first so we can embed its ID in the JWT payload.
+    const hashedRefreshTokenPlaceholder = ''; // filled in after hashing below
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const deviceName = deriveDeviceName(userAgent);
+
+    // Create a temporary session to get the UUID before signing tokens.
+    const session = this.sessionRepository.create({
+      user,
+      refreshToken: hashedRefreshTokenPlaceholder,
+      userAgent: userAgent ?? null,
+      ipAddress: ipAddress ?? null,
+      deviceName,
+      lastUsedAt: new Date(),
+      expiresAt,
+    });
+    await this.sessionRepository.save(session);
+
    * Generate access and refresh tokens and persist a new session row.
    * Each call starts a brand-new token family (used on login/register/OAuth).
    */
@@ -634,6 +743,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       role: user.role,
+      sessionId: session.id, // allows DELETE /auth/sessions to identify current session
     };
 
     const [accessToken, refreshToken] = await Promise.all([
@@ -651,10 +761,10 @@ export class AuthService {
       }),
     ]);
 
+    // Persist hashed refresh token onto the already-saved session row.
     // Store hashed refresh token with a new family ID
     const hashedRefreshToken = await bcrypt.hash(refreshToken, this.saltRounds);
-    const session = this.sessionRepository.create({
-      user,
+    await this.sessionRepository.update(session.id, {
       refreshToken: hashedRefreshToken,
       familyId: uuidv4(),   // new family for every fresh login
       isRevoked: false,
@@ -664,7 +774,6 @@ export class AuthService {
       lastUsedAt: new Date(),
       expiresAt: new Date(Date.now() + this.refreshTokenExpiryMs),
     });
-    await this.sessionRepository.save(session);
 
     return { accessToken, refreshToken };
   }
@@ -747,8 +856,12 @@ export class AuthService {
   /**
    * Log in user via OAuth and generate access/refresh tokens.
    */
-  async loginWithOAuth(user: User): Promise<AuthResponseDto> {
-    const tokens = await this.generateTokens(user);
+  async loginWithOAuth(
+    user: User,
+    userAgent?: string,
+    ipAddress?: string,
+  ): Promise<AuthResponseDto> {
+    const tokens = await this.generateTokens(user, userAgent, ipAddress);
     return {
       access_token: tokens.accessToken,
       refresh_token: tokens.refreshToken,
@@ -757,18 +870,73 @@ export class AuthService {
   }
 
   async validatePasswordStrength(password: string): Promise<void> {
-    const result = zxcvbn(password);
-    if (result.score < 3 || password.length < 12) {
-      throw new BadRequestException('Password is too weak. Must be at least 12 characters.');
+    // Check minimum length (12 characters)
+    if (password.length < 12) {
+      throw new BadRequestException(
+        'Password must be at least 12 characters long',
+      );
     }
+
+    // Check for at least one uppercase letter
+    if (!/[A-Z]/.test(password)) {
+      throw new BadRequestException(
+        'Password must contain at least one uppercase letter',
+      );
+    }
+
+    // Check for at least one lowercase letter
+    if (!/[a-z]/.test(password)) {
+      throw new BadRequestException(
+        'Password must contain at least one lowercase letter',
+      );
+    }
+
+    // Check for at least one digit
+    if (!/\d/.test(password)) {
+      throw new BadRequestException(
+        'Password must contain at least one digit',
+      );
+    }
+
+    // Check for at least one special character
+    if (!/[@$!%*?&]/.test(password)) {
+      throw new BadRequestException(
+        'Password must contain at least one special character (@$!%*?&)',
+      );
+    }
+
+    // Check HIBP (Have I Been Pwned) using k-anonymity model
+    // SHA-1 hash the password
     const hash = crypto.createHash('sha1').update(password).digest('hex').toUpperCase();
     const prefix = hash.slice(0, 5);
     const suffix = hash.slice(5);
+
     try {
-      const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`);
+      // Only send the first 5 characters of the hash to the API
+      const response = await fetch(
+        `https://api.pwnedpasswords.com/range/${prefix}`,
+        {
+          headers: {
+            'User-Agent': 'Harvest-Finance-Security',
+          },
+        },
+      );
+
+      if (!response.ok) {
+        this.logger.warn(
+          `HIBP API returned status ${response.status}`,
+          'AuthService',
+        );
+        return; // Don't block registration if HIBP is unavailable
+      }
+
       const text = await response.text();
-      if (text.includes(suffix)) {
-        throw new BadRequestException('Password has been found in a data breach. Please choose another.');
+      // Compare suffixes locally - the API returns lines in format "SUFFIX:COUNT"
+      const suffixes = text.split('\n').map((line) => line.split(':')[0]);
+      if (suffixes.includes(suffix)) {
+        throw new BadRequestException(
+          'Password has been found in a data breach. Please choose a stronger password.',
+        );
       }
     } catch (err) {
       if (err instanceof BadRequestException) throw err;
@@ -778,47 +946,203 @@ export class AuthService {
 
   async verifyEmail(token: string) {
     try {
-      const payload = await this.jwtService.verifyAsync(token, { secret: this.configService.get('JWT_SECRET') || 'super_secret_jwt_key' });
-      const user = await this.userRepository.findOne({ where: { id: payload.sub } });
-      if (user) {
-        user.emailVerifiedAt = new Date();
-        await this.userRepository.save(user);
-        return { success: true };
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: this.configService.get('JWT_SECRET') || 'super_secret_jwt_key',
+      });
+
+      // Ensure this is an email verification token
+      if (payload.type !== 'email_verification') {
+        throw new BadRequestException('Invalid token type');
       }
+
+      const user = await this.userRepository.findOne({ where: { id: payload.sub } });
+      if (!user) {
+        throw new BadRequestException('User not found');
+      }
+
+      // Already verified
+      if (user.emailVerifiedAt) {
+        return { success: true, message: 'Email is already verified' };
+      }
+
+      user.emailVerifiedAt = new Date();
+      await this.userRepository.save(user);
+      return { success: true, message: 'Email verified successfully' };
     } catch (e) {
+      if (e instanceof BadRequestException) {
+        throw e;
+      }
       throw new BadRequestException('Invalid or expired token');
     }
-    throw new BadRequestException('User not found');
   }
 
   async resendVerification(userId: string) {
     const user = await this.userRepository.findOne({ where: { id: userId } });
-    if (!user) throw new BadRequestException('User not found');
-    const token = await this.jwtService.signAsync({ sub: user.id }, { secret: this.configService.get('JWT_SECRET') || 'super_secret_jwt_key', expiresIn: '24h' });
-    this.logger.log(`Resending verification to ${user.email}: ${token}`, 'AuthService');
-    return { success: true };
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    // Already verified
+    if (user.emailVerifiedAt) {
+      throw new BadRequestException('Email is already verified');
+    }
+
+    // Rate limit: 3 requests per hour per user
+    const rateLimitKey = `resend_verification:${userId}`;
+    const currentCount = await this.cacheManager.get<number>(rateLimitKey) || 0;
+    if (currentCount >= 3) {
+      throw new BadRequestException(
+        'Too many verification requests. Please try again in 1 hour.',
+      );
+    }
+
+    const token = await this.jwtService.signAsync(
+      { sub: user.id, email: user.email, type: 'email_verification' },
+      {
+        secret: this.configService.get('JWT_SECRET') || 'super_secret_jwt_key',
+        expiresIn: this.verificationTokenExpiry,
+      },
+    );
+
+    // Increment rate limit counter (TTL 1 hour)
+    await this.cacheManager.set(rateLimitKey, currentCount + 1, 3600);
+
+    await this.sendVerificationEmail(user.email, token);
+    return { success: true, message: 'Verification email sent' };
   }
 
-  async getSessions(userId: string, page: number, limit: number) {
-    const [items, total] = await this.sessionRepository.findAndCount({
+  /**
+   * Send email verification link to the user.
+   * In production, replace the logger stub with a real mailer.
+   */
+  private async sendVerificationEmail(
+    email: string,
+    token: string,
+  ): Promise<void> {
+    const verificationLink = `http://localhost:3000/api/v1/auth/verify-email?token=${token}`;
+    const subject = 'Verify your email address';
+    const body = [
+      `Hello,`,
+      '',
+      'Please verify your email address by clicking the link below:',
+      verificationLink,
+      '',
+      'This link will expire in 24 hours.',
+      '',
+      'If you did not create an account, please ignore this email.',
+      '',
+      '— Harvest Finance Team',
+    ].join('\n');
+
+    // TODO: replace with real mail transport (e.g. nodemailer / @nestjs-modules/mailer)
+    this.logger.log(
+      `[VERIFICATION EMAIL] To: ${email} | Subject: ${subject}\n${body}`,
+      'AuthService',
+    );
+  }
+
+  /**
+   * Check if a user's email is verified.
+   */
+  async isEmailVerified(userId: string): Promise<boolean> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      select: ['emailVerifiedAt'],
+    });
+    return !!user?.emailVerifiedAt;
+  }
+
+  /**
+   * Return paginated active sessions for a user, flagging the caller's own session.
+   */
+  async getSessions(
+    userId: string,
+    page: number,
+    limit: number,
+    currentSessionId?: string,
+  ): Promise<SessionListResponseDto> {
+    const now = new Date();
+    const [sessions, total] = await this.sessionRepository.findAndCount({
       where: { user: { id: userId } },
+      order: { lastUsedAt: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
+      // expiresAt filter is handled in the query below instead
     });
-    return { items, total };
+
+    // Filter out expired sessions without a separate query
+    const activeSessions = sessions.filter((s) => s.expiresAt > now);
+
+    const items: SessionResponseDto[] = activeSessions.map((s) => ({
+      id: s.id,
+      deviceName: s.deviceName,
+      ipAddress: s.ipAddress,
+      userAgent: s.userAgent,
+      lastUsedAt: s.lastUsedAt,
+      createdAt: s.createdAt,
+      expiresAt: s.expiresAt,
+      isCurrent: currentSessionId ? s.id === currentSessionId : false,
+    }));
+
+    return { items, total, page, limit };
   }
 
-  async revokeSession(userId: string, sessionId: string) {
-    await this.sessionRepository.delete({ id: sessionId, user: { id: userId } });
-    return { success: true };
-  }
+  /**
+   * Revoke a single session belonging to the given user.
+   * Throws NotFoundException if the session does not exist or belongs to another user.
+   */
+  async revokeSession(
+    userId: string,
+    sessionId: string,
+  ): Promise<RevokeSessionResponseDto> {
+    const session = await this.sessionRepository.findOne({
+      where: { id: sessionId, user: { id: userId } },
+    });
 
-  async revokeAllSessions(userId: string, currentSessionId?: string) {
-    const query = this.sessionRepository.createQueryBuilder().delete().where('user_id = :userId', { userId });
-    if (currentSessionId) {
-      query.andWhere('id != :currentSessionId', { currentSessionId });
+    if (!session) {
+      throw new NotFoundException('Session not found');
     }
-    await query.execute();
-    return { success: true };
+
+    await this.sessionRepository.delete(session.id);
+    this.logger.log(
+      `Session ${sessionId} revoked for user ${userId}`,
+      'AuthService',
+    );
+
+    return { success: true, message: 'Session revoked successfully' };
+  }
+
+  /**
+   * Revoke all sessions for a user except the current one.
+   * If `currentSessionId` is not provided (e.g. legacy tokens), all sessions are revoked.
+   */
+  async revokeAllSessions(
+    userId: string,
+    currentSessionId?: string,
+  ): Promise<RevokeSessionResponseDto> {
+    const qb = this.sessionRepository
+      .createQueryBuilder('session')
+      .delete()
+      .where('session.user_id = :userId', { userId });
+
+    if (currentSessionId) {
+      qb.andWhere('session.id != :currentSessionId', { currentSessionId });
+    }
+
+    const result = await qb.execute();
+    const count: number = result.affected ?? 0;
+
+    this.logger.log(
+      `Revoked ${count} session(s) for user ${userId} (kept: ${currentSessionId ?? 'none'})`,
+      'AuthService',
+    );
+
+    return {
+      success: true,
+      message:
+        count === 0
+          ? 'No other sessions to revoke'
+          : `${count} session(s) revoked successfully`,
+    };
   }
 }

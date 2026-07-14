@@ -41,7 +41,6 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { RewardsModule } from './rewards/rewards.module';
 import { ObservabilityModule } from './observability/observability.module';
 import { AppConfigModule } from './config/config.module'; 
-import { TelegramModule } from './integrations/telegram/telegram.module';
 
 import {
   Achievement,
@@ -52,16 +51,19 @@ import {
   Notification,
   Order,
   Reward,
+  Session,
   SorobanEvent,
+  Strategy,
   Transaction,
   User,
   UserOAuthLink,
   Vault,
+  VaultApyHistory,
   VaultDeposit,
+  VaultScoreHistory,
   Verification,
   Withdrawal,
   YieldAnalytics,
-  VaultApyHistory,
 } from './database/entities';
 import { IndexerState } from './database/entities/indexer-state.entity';
 import { CommunityPost } from './database/entities/community-post.entity';
@@ -88,21 +90,21 @@ import { CreateSorobanEvents1700000000011 } from './database/migrations/17000000
 import { CreateYieldAnalytics1700000000012 } from './database/migrations/1700000000012-CreateYieldAnalytics';
 import { AddSorobanEventQueryIndexes1700000000013 } from './database/migrations/1700000000013-AddSorobanEventQueryIndexes';
 import { CreateDepositEvents1700000000016 } from './database/migrations/1700000000016-CreateDepositEvents';
+import { CreateStrategyAndApyHistory1700000000017 } from './database/migrations/1700000000017-CreateStrategyAndApyHistory';
+import { CreateVaultScoreHistory1700000000018 } from './database/migrations/1700000000018-CreateVaultScoreHistory';
+
 import { CreateVaultReservations1700000000018 } from './database/migrations/1700000000018-CreateVaultReservations';
-import { AddDepositorConcentrationThreshold1700000000022 } from './database/migrations/1700000000022-AddDepositorConcentrationThreshold';
 import { VaultReservation } from './vaults/entities/vault-reservation.entity';
 import { VaultApproval } from './database/entities/vault-approval.entity';
 import { InsuranceClaim } from './database/entities/insurance-claim.entity';
 import { Session } from './database/entities/session.entity';
 import { SecurityEvent } from './database/entities/security-event.entity';
 import { CreateVaultApyHistory1700000000017 } from './database/migrations/1700000000017-CreateVaultApyHistory';
+import { CreateSessionsAndOAuthLinks1700000000022 } from './database/migrations/1700000000022-CreateSessionsAndOAuthLinks';
 import { AddRefreshTokenRotation1700000000022 } from './database/migrations/1700000000022-AddRefreshTokenRotation';
 import { DomainEventsModule } from './domain-events';
 import { DomainEventHandlersModule } from './common/events';
 import { WebhooksModule } from './webhooks/webhooks.module';
-import { WalletsModule } from './wallets/wallets.module';
-import { CustodialWallet } from './wallets/entities/custodial-wallet.entity';
-import { CreateCustodialWallets1700000000021 } from './database/migrations/1700000000021-CreateCustodialWallets';
 
 @Module({
   imports: [
@@ -127,6 +129,7 @@ import { CreateCustodialWallets1700000000021 } from './database/migrations/17000
         entities: [
           User,
           UserOAuthLink,
+          Session,
           Order,
           Transaction,
           Verification,
@@ -173,10 +176,14 @@ YieldAnalytics,
           CreateYieldAnalytics1700000000012,
           AddSorobanEventQueryIndexes1700000000013,
           CreateDepositEvents1700000000016,
+          CreateStrategyAndApyHistory1700000000017,
+          CreateVaultScoreHistory1700000000018,
           CreateVaultReservations1700000000018,
           AddDepositorConcentrationThreshold1700000000022,
           CreateVaultApyHistory1700000000017,
+          CreateSessionsAndOAuthLinks1700000000022,
           CreateCustodialWallets1700000000021,
+          AddRefreshTokenRotation1700000000022,
         ],
         synchronize: false,
         migrationsRun: false,
@@ -217,7 +224,6 @@ YieldAnalytics,
     StateSyncModule,
     WebhooksModule,
     DomainEventHandlersModule,
-    TelegramModule,
   ],
   controllers: [AppController],
   providers: [

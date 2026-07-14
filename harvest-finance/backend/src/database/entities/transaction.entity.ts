@@ -58,7 +58,7 @@ export class Transaction {
   @Column({ type: 'decimal', precision: 12, scale: 2 })
   amount: number;
 
-  @Column({ name: 'asset_code', default: 'XLM' })
+  @Column({ name: 'asset_code', type: 'varchar', default: 'XLM' })
   assetCode: string;
 
   @Column({ name: 'asset_issuer', type: 'varchar', nullable: true })

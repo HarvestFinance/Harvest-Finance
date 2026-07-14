@@ -5,14 +5,10 @@ import { FarmVaultsController } from './farm-vaults.controller';
 import { FarmVault } from '../database/entities/farm-vault.entity';
 import { CropCycle } from '../database/entities/crop-cycle.entity';
 import { RealtimeModule } from '../realtime/realtime.module';
-import { CommonModule } from '../common/common.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([FarmVault, CropCycle]),
-    RealtimeModule,
-    CommonModule,
-  ],
+  imports: [TypeOrmModule.forFeature([FarmVault, CropCycle]), RealtimeModule, AuthModule],
   controllers: [FarmVaultsController],
   providers: [FarmVaultsService],
   exports: [FarmVaultsService],

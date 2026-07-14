@@ -86,7 +86,7 @@ export class User {
   })
   walletType: WalletType;
 
-  @Column({ name: 'solana_address', nullable: true })
+  @Column({ name: 'solana_address', type: 'varchar', nullable: true })
   solanaAddress: string | null;
 
   @Column({ name: 'ethereum_address', type: 'varchar', nullable: true })
@@ -107,30 +107,26 @@ export class User {
   @Column({ type: 'varchar', nullable: true })
   phone: string | null;
 
-  @Column({ type: 'varchar', nullable: true })
+  @Column({ type: 'text', nullable: true })
   address: string | null;
 
-  @Column({ name: 'profile_image_url', type: 'varchar', nullable: true })
+  @Column({ name: 'profile_image_url', type: 'text', nullable: true })
   profileImageUrl: string | null;
 
   @Column({ name: 'last_login', type: 'timestamp', nullable: true })
   lastLogin: Date | null;
 
-  @Column({ name: 'refresh_token', type: 'varchar', select: false, nullable: true })
-  @Exclude()
-  refreshToken: string | null;
-
-  @Column({ name: 'email_verified_at', nullable: true })
+  @Column({ name: 'email_verified_at', type: 'timestamp', nullable: true })
   emailVerifiedAt: Date | null;
 
-  @Column({ name: 'email_verification_token', nullable: true })
+  @Column({ name: 'email_verification_token', type: 'varchar', nullable: true })
   @Exclude()
   emailVerificationToken: string | null;
 
-  @Column({ name: 'phone_number', nullable: true })
+  @Column({ name: 'phone_number', type: 'varchar', nullable: true })
   phoneNumber: string | null;
 
-  @Column({ name: 'phone_verified_at', nullable: true })
+  @Column({ name: 'phone_verified_at', type: 'timestamp', nullable: true })
   phoneVerifiedAt: Date | null;
 
   @OneToMany(() => Session, (session) => session.user)

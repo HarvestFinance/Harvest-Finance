@@ -58,7 +58,7 @@ export class Verification {
   })
   status: VerificationStatus;
 
-  @Column({ type: 'varchar', nullable: true })
+  @Column({ type: 'text', nullable: true })
   notes: string | null;
 
   @Column({ name: 'inspection_date', type: 'date', nullable: true })

@@ -14,6 +14,7 @@ import { CommonModule } from '../common/common.module';
   imports: [
     CommonModule,
     TypeOrmModule.forFeature([Vault, Deposit, User, Reward, Withdrawal]),
+    AuthModule,
   ],
   controllers: [AdminController],
   providers: [AdminService, EmailTemplatingService],

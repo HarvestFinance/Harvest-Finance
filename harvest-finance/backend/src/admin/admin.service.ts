@@ -139,6 +139,14 @@ export class AdminService {
     createVaultDto: CreateVaultDto,
     adminId: string,
   ): Promise<Vault> {
+    // Check email verification
+    const isVerified = await this.authService.isEmailVerified(adminId);
+    if (!isVerified) {
+      throw new ForbiddenException(
+        'Email verification is required to create a vault. Please verify your email address.',
+      );
+    }
+
     const vault = this.vaultRepository.create({
       ...createVaultDto,
       ownerId: adminId,

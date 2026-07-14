@@ -82,7 +82,7 @@ export class CoopListing {
   @Column({ type: 'varchar', nullable: true })
   location: string | null;
 
-  @Column({ type: 'varchar', nullable: true, name: 'image_url' })
+  @Column({ type: 'text', nullable: true, name: 'image_url' })
   imageUrl: string | null;
 
   @Column({
