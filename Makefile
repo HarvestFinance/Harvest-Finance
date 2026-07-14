@@ -1,5 +1,5 @@
-BACKEND_DIR := harvest-finance/backend
-FRONTEND_DIR := harvest-finance/frontend
+BACKEND_DIR := backend
+FRONTEND_DIR := frontend
 
 .PHONY: help dev build test lint format \
         db:migrate db:migrate:revert db:seed db:seed:clear db:seed:reset \

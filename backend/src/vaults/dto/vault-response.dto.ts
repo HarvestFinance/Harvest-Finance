@@ -1,74 +1,180 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-
-/**
- * Response DTO for vault data exposed via the API.
- * Includes TVL watermark fields for social proof metrics.
- */
-export class VaultResponseDto {
-  @ApiProperty({ description: 'Unique vault identifier' })
-  id: string;
-
-  @ApiProperty({ description: 'Vault display name' })
-  name: string;
-
-  @ApiProperty({ description: 'On-chain token address for the vault asset' })
-  tokenAddress: string;
-
-  @ApiProperty({ description: 'ID of the vault owner' })
-  ownerId: string;
+  @ApiProperty({
+    example: 5.65,
+    description: 'Annual Percentage Rate (APR)',
+  })
+  apr: number;
 
   @ApiProperty({
-    description: 'Current total value locked in the vault (decimal string)',
-    example: '1000000.00',
+    example: 5.78,
+    description: 'Annual Percentage Yield (APY)',
   })
-  totalAssets: string;
+  apy: number;
 
   @ApiProperty({
-    description: 'All-time high TVL watermark (decimal string). Monotonically increasing.',
-    example: '2500000.00',
+    example: 'daily',
+    description: 'Compounding frequency used for APY calculation',
+    enum: ['daily', 'weekly', 'monthly'],
   })
-  tvlAtHighWatermark: string;
+  compoundingFrequency: string;
 
-  @ApiPropertyOptional({
-    description: 'Timestamp when the all-time high TVL watermark was achieved',
-    example: '2024-01-15T10:30:00.000Z',
+  @ApiProperty({
+    example: '2024-12-31T23:59:59Z',
+    description: 'Vault maturity date',
+    required: false,
   })
-  watermarkAchievedAt: Date | null;
+  maturityDate: Date | null;
 
-  @ApiProperty()
+  @ApiProperty({
+    example: '2024-06-30T23:59:59Z',
+    description: 'Lock period end date',
+    required: false,
+  })
+  lockPeriodEnd: Date | null;
+
+  @ApiProperty({
+    example: true,
+    description: 'Whether vault is publicly visible',
+  })
+  isPublic: boolean;
+
+  @ApiProperty({
+    example: false,
+    description: 'Whether vault requires multi-signature approval',
+  })
+  requiresMultiSignature: boolean;
+
+  @ApiProperty({
+    example: 2,
+    description: 'Number of approvals required for operations',
+  })
+  approvalThreshold: number;
+
+  @ApiProperty({
+    example: 1,
+    description: 'Number of current approvals',
+  })
+  currentApprovals: number;
+
+  @ApiProperty({
+    example: 'PENDING',
+    description: 'Current approval status (NOT_REQUIRED, PENDING, APPROVED)',
+  })
+  approvalStatus: string;
+
+  @ApiProperty({
+    example: '2023-01-01T00:00:00Z',
+    description: 'Vault creation date',
+  })
   createdAt: Date;
 
-  @ApiProperty()
+  @ApiProperty({
+    example: '2023-12-01T10:30:00Z',
+    description: 'Last update date',
+  })
   updatedAt: Date;
+
+  @ApiProperty({ example: 50, description: 'Entry fee in basis points' })
+  entryFeeBps: number;
+
+  @ApiProperty({ example: 50, description: 'Exit fee in basis points' })
+  exitFeeBps: number;
+
+  @ApiProperty({ example: 1000, description: 'Performance fee in basis points' })
+  performanceFeeBps: number;
+
+  @ApiProperty({ example: 'GXXX...', description: 'Fee recipient address', required: false, nullable: true })
+  feeAddress: string | null;
 }
 
-/**
- * Response DTO for the TVL leaderboard endpoint.
- * Ranks vaults by their all-time high TVL watermark descending.
- */
-export class VaultLeaderboardEntryDto {
-  @ApiProperty({ description: 'Leaderboard rank (1-indexed)' })
-  rank: number;
-
-  @ApiProperty({ description: 'Unique vault identifier' })
+export class DepositResponseDto {
+  @ApiProperty({
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'Deposit unique identifier',
+  })
   id: string;
 
-  @ApiProperty({ description: 'Vault display name' })
-  name: string;
+  @ApiProperty({
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'User ID who made the deposit',
+  })
+  userId: string;
 
   @ApiProperty({
-    description: 'All-time high TVL watermark (decimal string)',
-    example: '2500000.00',
+    example: '456e7890-e89b-12d3-a456-426614174111',
+    description: 'Vault ID where deposit was made',
   })
-  tvlAtHighWatermark: string;
-
-  @ApiPropertyOptional({
-    description: 'Timestamp when the all-time high TVL watermark was achieved',
-  })
-  watermarkAchievedAt: Date | null;
+  vaultId: string;
 
   @ApiProperty({
-    description: 'Current total value locked in the vault (decimal string)',
+    example: 'CONFIRMED',
+    description: 'Deposit status',
   })
-  totalAssets: string;
+  status: string;
+
+  @ApiProperty({
+    example: 1000.5,
+    description: 'Deposit amount',
+  })
+  amount: number;
+
+  @ApiProperty({
+    example: 'tx_hash_123456789',
+    description: 'Blockchain transaction hash',
+    required: false,
+  })
+  transactionHash: string | null;
+
+  @ApiProperty({
+    example: '2023-01-01T00:00:00Z',
+    description: 'Deposit creation date',
+  })
+  createdAt: Date;
+
+  @ApiProperty({
+    example: '2023-01-01T00:05:00Z',
+    description: 'Deposit confirmation date',
+    required: false,
+  })
+  confirmedAt: Date | null;
+}
+
+export class DepositVaultResponseDto {
+  @ApiProperty({
+    description: 'Updated vault information',
+    type: VaultResponseDto,
+    nullable: true,
+  })
+  vault: VaultResponseDto | null;
+
+  @ApiProperty({
+    description: 'Deposit information',
+    type: DepositResponseDto,
+  })
+  deposit: DepositResponseDto;
+
+  @ApiProperty({
+    example: 25000.75,
+    description: "User's total deposits across all vaults",
+  })
+  userTotalDeposits: number;
+
+  @ApiProperty({ example: 5.0, description: 'Fee amount deducted' })
+  feeAmount: number;
+
+  @ApiProperty({ example: 995.0, description: 'Net amount credited after fee deduction' })
+  netAmount: number;
+}
+
+export class BatchDepositResponseDto {
+  @ApiProperty({
+    description: 'Per-deposit results (in request order)',
+    type: [DepositVaultResponseDto],
+  })
+  results: DepositVaultResponseDto[];
+
+  @ApiProperty({
+    example: 25000.75,
+    description: "User's total deposits across all vaults after batch",
+  })
+  userTotalDeposits: number;
 }

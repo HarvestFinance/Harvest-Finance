@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dir: [harvest-finance/backend, harvest-finance/frontend]
+        dir: [backend, frontend]
     defaults:
       run:
         working-directory: ${{ matrix.dir }}

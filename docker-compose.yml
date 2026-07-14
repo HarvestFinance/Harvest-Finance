@@ -34,7 +34,7 @@ services:
 
   backend:
     build:
-      context: harvest-finance/backend
+      context: backend
       target: builder          # Use the build stage so code hot-reloads via volume
     restart: unless-stopped
     depends_on:
@@ -42,7 +42,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    env_file: harvest-finance/backend/.env
+    env_file: backend/.env
     environment:
       NODE_ENV: development
       DB_HOST: postgres
@@ -52,7 +52,7 @@ services:
     ports:
       - "3001:3001"
     volumes:
-      - ./harvest-finance/backend/src:/app/src
+      - ./backend/src:/app/src
     command: npm run start:dev
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3001/health || exit 1"]
@@ -63,7 +63,7 @@ services:
 
   frontend:
     build:
-      context: harvest-finance/frontend
+      context: frontend
       target: deps
     restart: unless-stopped
     depends_on:
@@ -73,8 +73,8 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./harvest-finance/frontend/src:/app/src
-      - ./harvest-finance/frontend/public:/app/public
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
     command: npm run dev
 
 volumes:

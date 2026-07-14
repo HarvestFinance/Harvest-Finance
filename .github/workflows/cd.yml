@@ -57,8 +57,8 @@ jobs:
       - name: Build & push backend
         uses: docker/build-push-action@v6
         with:
-          context: harvest-finance/backend
-          file: harvest-finance/backend/Dockerfile
+          context: backend
+          file: backend/Dockerfile
           push: true
           tags: |
             ${{ env.IMAGE_BACKEND }}:${{ github.sha }}
@@ -71,8 +71,8 @@ jobs:
       - name: Build & push frontend
         uses: docker/build-push-action@v6
         with:
-          context: harvest-finance/frontend
-          file: harvest-finance/frontend/Dockerfile
+          context: frontend
+          file: frontend/Dockerfile
           push: true
           tags: |
             ${{ env.IMAGE_FRONTEND }}:${{ github.sha }}

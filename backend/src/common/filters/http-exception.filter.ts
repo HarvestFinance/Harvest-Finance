@@ -1,52 +1,98 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
+import { CustomLoggerService } from '../../logger/custom-logger.service';
+import { randomUUID } from 'crypto';
 
+/**
+ * Global exception filter to catch all NestJS and unhandled exceptions.
+ * Formats all error responses into a consistent JSON structure:
+ * {
+ *   "statusCode": number,
+ *   "message": "Error description or array of error details",
+ *   "errorCode": "String error code",
+ *   "timestamp": "ISO 8601 string",
+ *   "path": "request url path",
+ *   "requestId": "UUID"
+ * }
+ */
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
-  private readonly logger = new Logger(HttpExceptionFilter.name);
+  constructor(
+    private readonly logger: CustomLoggerService,
+    private readonly httpAdapterHost: HttpAdapterHost,
+  ) {}
 
-  constructor(private readonly httpAdapterHost: HttpAdapterHost) {}
-
-  catch(exception: unknown, host: ArgumentsHost) {
+  catch(exception: unknown, host: ArgumentsHost): void {
     const { httpAdapter } = this.httpAdapterHost;
     const ctx = host.switchToHttp();
     const request = ctx.getRequest();
     const response = ctx.getResponse();
+    
+    const path = httpAdapter.getRequestUrl(request) || '/';
+    const method = httpAdapter.getRequestMethod(request) || 'UNKNOWN';
 
-    // Generate or extract request ID for correlation
-    const requestId =
-      request.headers['x-request-id'] ||
-      request.id ||
-      `req-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+    // Retrieve x-request-id from headers or generate one
+    const headers = request.headers || {};
+    const requestId = headers['x-request-id'] || randomUUID();
 
-    // Determine HTTP status code
-    const httpStatus =
+    const status =
       exception instanceof HttpException
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    // Extract message from exception
-    const message =
+    const exceptionResponse =
       exception instanceof HttpException
-        ? (exception.response as any)?.message || exception.message
-        : exception.message ||
-          'Internal server error';
+        ? exception.getResponse()
+        : null;
 
-    // Use status code as error code (can be customized further)
-    const errorCode = httpStatus.toString();
+    let message: any = 'Internal server error';
+    let errorCode = 'INTERNAL_SERVER_ERROR';
 
-    // Build response envelope
-    const responseBody = {
-      statusCode: httpStatus,
-      message,
-      errorCode,
+    if (exceptionResponse) {
+      if (typeof exceptionResponse === 'string') {
+        message = exceptionResponse;
+      } else if (typeof exceptionResponse === 'object') {
+        message = (exceptionResponse as any).message || exceptionResponse;
+        errorCode =
+          (exceptionResponse as any).error ||
+          (exceptionResponse as any).code ||
+          this.getErrorCodeFromStatus(status);
+      }
+    } else if (exception instanceof Error) {
+      message = exception.message;
+    }
+
+    if (errorCode === 'INTERNAL_SERVER_ERROR' && status !== HttpStatus.INTERNAL_SERVER_ERROR) {
+      errorCode = this.getErrorCodeFromStatus(status);
+    }
+
+    // Determine error code: prefer existing errorCode on exception, fallback to status code
+    const errorCode =
+      (exception as any).errorCode ||
+      (exception instanceof HttpException ? status.toString() : '500');
+
+    const errorResponse = {
+      statusCode: status,
+      message:
+        typeof message === 'string'
+          ? message
+          : (message as any).message || message,
+      errorCode: errorCode,
       timestamp: new Date().toISOString(),
       path: httpAdapter.getRequestUrl(request),
-      requestId,
+      requestId: requestId,
     };
 
-    // Log error with request ID for correlation
-    const logMessage = `[Request ID: ${requestId}] ${message}`;
+    // Log error with requestId for correlation; include stack trace in development
+    const logMessage = `[Request ID: ${requestId}] ${request.method} ${httpAdapter.getRequestUrl(
+      request,
+    )} - Error: ${JSON.stringify(errorResponse.message)}`;
     if (
       process.env.NODE_ENV !== 'production' &&
       exception instanceof Error &&
@@ -57,7 +103,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
       this.logger.error(logMessage);
     }
 
-    // Send response
-    httpAdapter.reply(response, responseBody, httpStatus);
+    httpAdapter.reply(response, errorResponse, status);
   }
 }
+
+    
