@@ -14,6 +14,7 @@ import { JwtAuthGuard as AuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../database/entities/user.entity';
+import { PlatformCircuitBreakerGuard } from '../common/guards/platform-circuit-breaker.guard';
 import { InsuranceClaimStatus } from '../database/entities/insurance-claim.entity';
 
 class DepositToFundDto {
@@ -38,6 +39,7 @@ export class InsuranceFundController {
   constructor(private readonly insuranceFundService: InsuranceFundService) {}
 
   @Post('deposit')
+  @UseGuards(PlatformCircuitBreakerGuard)
   async depositToFund(@Body() body: DepositToFundDto) {
     if (!body.userId || typeof body.amount !== 'number') {
       throw new BadRequestException('userId and amount are required');

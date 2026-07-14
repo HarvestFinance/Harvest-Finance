@@ -65,6 +65,7 @@ export class VaultsController {
   @Post('deposits/batch')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
+  @UseGuards(PlatformCircuitBreakerGuard)
   @ApiOperation({ summary: 'Submit multiple deposits atomically' })
   @ApiBody({ type: BatchDepositDto })
   @ApiResponse({
@@ -82,6 +83,7 @@ export class VaultsController {
   @Post(':vaultId/deposit')
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
+  @UseGuards(PlatformCircuitBreakerGuard)
   @ApiOperation({ summary: 'Deposit funds into a vault' })
   @ApiParam({
     name: 'vaultId',
@@ -167,6 +169,7 @@ export class VaultsController {
   @Post(':vaultId/withdraw')
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
+  @UseGuards(PlatformCircuitBreakerGuard)
   @ApiOperation({ summary: 'Withdraw funds from a vault' })
   @ApiParam({
     name: 'vaultId',

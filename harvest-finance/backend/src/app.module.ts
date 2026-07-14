@@ -78,6 +78,7 @@ import { CropCycle } from './database/entities/crop-cycle.entity';
 import { InsurancePlan } from './database/entities/insurance-plan.entity';
 import { InsuranceSubscription } from './database/entities/insurance-subscription.entity';
 import { CreateInitialSchema1700000000000 } from './database/migrations/1700000000000-CreateInitialSchema';
+import { CreateVaultsAndDeposits1700000000001 } from './database/migrations/1700000000001-CreateVaultsAndDeposits';
 import { CreateAchievements1700000000004 } from './database/migrations/1700000000004-CreateAchievements';
 import { CreateRewards1700000000005 } from './database/migrations/1700000000005-CreateRewards';
 import { CreateNotifications1700000000006 } from './database/migrations/1700000000006-CreateNotifications';
@@ -94,6 +95,8 @@ import { CreateVaultScoreHistory1700000000018 } from './database/migrations/1700
 
 import { CreateVaultReservations1700000000018 } from './database/migrations/1700000000018-CreateVaultReservations';
 import { VaultReservation } from './vaults/entities/vault-reservation.entity';
+import { VaultApproval } from './database/entities/vault-approval.entity';
+import { InsuranceClaim } from './database/entities/insurance-claim.entity';
 import { Session } from './database/entities/session.entity';
 import { SecurityEvent } from './database/entities/security-event.entity';
 import { CreateVaultApyHistory1700000000017 } from './database/migrations/1700000000017-CreateVaultApyHistory';
@@ -145,14 +148,23 @@ import { WebhooksModule } from './webhooks/webhooks.module';
           InsuranceSubscription,
           SorobanEvent,
           IndexerState,
-          YieldAnalytics,
-          Strategy,
-          VaultApyHistory,
-          VaultScoreHistory,
-          VaultReservation,
-        ],
+YieldAnalytics,
+           VaultReservation,
+           CustodialWallet,
+           VaultApproval,
+           InsuranceClaim,
+           CommunityPost,
+           CommunityComment,
+           PostReaction,
+           CommunityGroup,
+           GroupMembership,
+           CoopListing,
+           CoopOrder,
+           CoopReview,
+         ],
         migrations: [
           CreateInitialSchema1700000000000,
+          CreateVaultsAndDeposits1700000000001,
           CreateAchievements1700000000004,
           CreateRewards1700000000005,
           CreateNotifications1700000000006,

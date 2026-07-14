@@ -1,3 +1,4 @@
 {
-    "wake.compiler.solc.remappings": []
+    "wake.compiler.solc.remappings": [],
+    "git.ignoreLimitWarning": true
 }

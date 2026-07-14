@@ -37,9 +37,11 @@ import { RealtimeModule } from '../realtime/realtime.module';
 import { CommonModule } from '../common/common.module';
 import { AnalyticsModule } from '../analytics/analytics.module';
 
+import { WithdrawalQueueService } from './withdrawal-queue.service';
+
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Vault, Deposit, DepositEvent, Withdrawal, VaultReservation, VaultApyHistory, InsuranceClaim]),
+    TypeOrmModule.forFeature([Vault, Deposit, DepositEvent, Withdrawal, VaultReservation, VaultApyHistory, InsuranceClaim, User]),
     CqrsModule,
     AuthModule,
     NotificationsModule,

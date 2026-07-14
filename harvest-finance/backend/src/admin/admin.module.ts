@@ -8,10 +8,11 @@ import { Deposit } from '../database/entities/deposit.entity';
 import { User } from '../database/entities/user.entity';
 import { Reward } from '../database/entities/reward.entity';
 import { Withdrawal } from '../database/entities/withdrawal.entity';
-import { AuthModule } from '../auth/auth.module';
+import { CommonModule } from '../common/common.module';
 
 @Module({
   imports: [
+    CommonModule,
     TypeOrmModule.forFeature([Vault, Deposit, User, Reward, Withdrawal]),
     AuthModule,
   ],

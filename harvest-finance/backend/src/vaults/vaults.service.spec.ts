@@ -60,14 +60,15 @@ describe('VaultsService', () => {
     deposits: [],
   };
 
-  const mockEntityManager = {
-    save: jest.fn(),
-    increment: jest.fn(),
-    decrement: jest.fn(),
-    update: jest.fn(),
+  const mockUserRepository = {
     findOne: jest.fn(),
-    find: jest.fn(),
-    getRepository: jest.fn(),
+    save: jest.fn(),
+  };
+
+  const mockVaultApprovalRepository = {
+    findOne: jest.fn(),
+    save: jest.fn(),
+    update: jest.fn(),
   };
 
   const mockDataSource = {
@@ -85,6 +86,71 @@ describe('VaultsService', () => {
     update: jest.fn(),
     count: jest.fn(),
   };
+
+  const mockDepositRepository = {
+    create: jest.fn(),
+    findOne: jest.fn(),
+    find: jest.fn(),
+    update: jest.fn(),
+    createQueryBuilder: jest.fn(),
+  };
+
+  const mockWithdrawalRepository = {
+    create: jest.fn(),
+    findOne: jest.fn(),
+    update: jest.fn(),
+  };
+
+  const mockReservationQB = {
+    select: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    getRawOne: jest.fn().mockResolvedValue({ total: 0 }),
+  };
+
+  const mockVaultReservationRepository = {
+    findOne: jest.fn(),
+    find: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    createQueryBuilder: jest.fn().mockReturnValue(mockReservationQB),
+  };
+
+  const mockEntityManager = {
+    save: jest.fn(),
+    increment: jest.fn(),
+    decrement: jest.fn(),
+    update: jest.fn(),
+    findOne: jest.fn(),
+    find: jest.fn(),
+    getRepository: jest.fn((entity) => {
+      if (entity === User) return mockUserRepository;
+      if (entity === VaultApproval) return mockVaultApprovalRepository;
+      if (entity === Vault) return mockVaultRepository;
+      if (entity === Deposit) return mockDepositRepository;
+      if (entity === Withdrawal) return mockWithdrawalRepository;
+      if (entity === VaultReservation) return mockVaultReservationRepository;
+      return null;
+    }),
+  };
+
+  const mockDataSource = {
+    transaction: jest.fn((cb: (em: typeof mockEntityManager) => unknown) =>
+      cb(mockEntityManager),
+    ),
+    getRepository: jest.fn((entity) => {
+      if (entity === User) return mockUserRepository;
+      if (entity === VaultApproval) return mockVaultApprovalRepository;
+      if (entity === Vault) return mockVaultRepository;
+      if (entity === Deposit) return mockDepositRepository;
+      if (entity === Withdrawal) return mockWithdrawalRepository;
+      if (entity === VaultReservation) return mockVaultReservationRepository;
+      return null;
+    }),
+  };
+
   const mockApyHistoryQB = {
     where: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),
@@ -98,32 +164,7 @@ describe('VaultsService', () => {
     save: jest.fn(),
     createQueryBuilder: jest.fn().mockReturnValue(mockApyHistoryQB),
   };
-  const mockDepositRepository = {
-    create: jest.fn(),
-    findOne: jest.fn(),
-    find: jest.fn(),
-    update: jest.fn(),
-    createQueryBuilder: jest.fn(),
-  };
-  const mockWithdrawalRepository = {
-    create: jest.fn(),
-    findOne: jest.fn(),
-    update: jest.fn(),
-  };
-  const mockReservationQB = {
-    select: jest.fn().mockReturnThis(),
-    where: jest.fn().mockReturnThis(),
-    andWhere: jest.fn().mockReturnThis(),
-    getRawOne: jest.fn().mockResolvedValue({ total: null }),
-  };
-  const mockReservationRepository = {
-    findOne: jest.fn().mockResolvedValue(null),
-    find: jest.fn().mockResolvedValue([]),
-    create: jest.fn((dto) => dto),
-    save: jest.fn(),
-    update: jest.fn().mockResolvedValue({ affected: 0 }),
-    createQueryBuilder: jest.fn().mockReturnValue(mockReservationQB),
-  };
+
   const mockNotificationsService = {
     create: jest.fn().mockResolvedValue(undefined),
   };
@@ -167,10 +208,6 @@ const buildQB = (total: string | null) => ({
         VaultsService,
         { provide: getRepositoryToken(Vault), useValue: mockVaultRepository },
         {
-          provide: getRepositoryToken(VaultApyHistory),
-          useValue: mockVaultApyHistoryRepository,
-        },
-        {
           provide: getRepositoryToken(Deposit),
           useValue: mockDepositRepository,
         },
@@ -180,7 +217,11 @@ const buildQB = (total: string | null) => ({
         },
         {
           provide: getRepositoryToken(VaultReservation),
-          useValue: mockReservationRepository,
+          useValue: mockVaultReservationRepository,
+        },
+        {
+          provide: getRepositoryToken(VaultApyHistory),
+          useValue: mockVaultApyHistoryRepository,
         },
         { provide: DataSource, useValue: mockDataSource },
         { provide: NotificationsService, useValue: mockNotificationsService },
@@ -1132,7 +1173,7 @@ const buildQB = (total: string | null) => ({
       // Stub dataSource.getRepository to return a mock user repo that returns no admin
       mockDataSource.getRepository.mockReturnValue({
         findOne: jest.fn().mockResolvedValue({ role: 'FARMER' }),
-      });
+      } as any);
 
       await expect(
         service.pauseVault('vault-1', 'user-1'),
@@ -1188,7 +1229,7 @@ const buildQB = (total: string | null) => ({
       mockVaultRepository.findOne.mockResolvedValue(frozenVault);
       mockDataSource.getRepository.mockReturnValue({
         findOne: jest.fn().mockResolvedValue({ role: 'FARMER' }),
-      });
+      } as any);
 
       await expect(
         service.resumeVault('vault-1', 'user-1'),
@@ -1226,7 +1267,7 @@ const buildQB = (total: string | null) => ({
       mockVaultRepository.findOne.mockResolvedValue(otherOwnerVault);
       mockDataSource.getRepository.mockReturnValue({
         findOne: jest.fn().mockResolvedValue({ role: 'FARMER' }),
-      });
+      } as any);
 
       await expect(
         service.updateVaultMultiSignatureConfig('vault-1', 'user-1', true, 2),
@@ -1444,7 +1485,7 @@ const buildQB = (total: string | null) => ({
     beforeEach(() => {
       mockDataSource.getRepository.mockReturnValue({
         findOne: jest.fn().mockResolvedValue(null),
-      });
+      } as any);
       mockReservationQB.getRawOne.mockResolvedValue({ total: null });
     });
 
@@ -1460,7 +1501,7 @@ const buildQB = (total: string | null) => ({
           isActive: true,
           createdAt: new Date(),
         };
-        mockReservationRepository.save.mockResolvedValue(savedReservation);
+        mockVaultReservationRepository.save.mockResolvedValue(savedReservation);
 
         const result = await service.createReservation('vault-1', 'user-1', {
           walletAddress: 'GBXXX',
@@ -1470,7 +1511,7 @@ const buildQB = (total: string | null) => ({
 
         expect(result.walletAddress).toBe('GBXXX');
         expect(result.reservedAmount).toBe(2000);
-        expect(mockReservationRepository.create).toHaveBeenCalledWith(
+        expect(mockVaultReservationRepository.create).toHaveBeenCalledWith(
           expect.objectContaining({
             vaultId: 'vault-1',
             walletAddress: 'GBXXX',
@@ -1511,8 +1552,8 @@ const buildQB = (total: string | null) => ({
         mockVaultRepository.findOne.mockResolvedValue(mockVault);
         mockDataSource.getRepository.mockReturnValue({
           findOne: jest.fn().mockResolvedValue({ stellarAddress: 'GBRESERVED' }),
-        });
-        mockReservationRepository.findOne.mockResolvedValue({
+        } as any);
+        mockVaultReservationRepository.findOne.mockResolvedValue({
           reservedAmount: 500,
         });
 
@@ -1533,11 +1574,11 @@ const buildQB = (total: string | null) => ({
 
     describe('expireReservations', () => {
       it('should deactivate expired reservations', async () => {
-        mockReservationRepository.update.mockResolvedValue({ affected: 3 });
+        mockVaultReservationRepository.update.mockResolvedValue({ affected: 3 });
 
         await service.expireReservations();
 
-        expect(mockReservationRepository.update).toHaveBeenCalledWith(
+        expect(mockVaultReservationRepository.update).toHaveBeenCalledWith(
           expect.objectContaining({ isActive: true }),
           { isActive: false },
         );

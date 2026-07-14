@@ -2,19 +2,19 @@ import { ObjectType, Field, Float } from '@nestjs/graphql';
 
 @ObjectType()
 export class AssetBalance {
-  @Field()
+  @Field(() => String)
   assetCode: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   assetIssuer?: string | null;
 
-  @Field()
+  @Field(() => String)
   balance: string;
 }
 
 @ObjectType()
 export class StellarAccountSnapshot {
-  @Field()
+  @Field(() => String)
   publicKey: string;
 
   @Field()
@@ -23,19 +23,19 @@ export class StellarAccountSnapshot {
   @Field(() => [AssetBalance])
   balances: AssetBalance[];
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   error?: string | null;
 }
 
 @ObjectType()
 export class VaultHolding {
-  @Field()
+  @Field(() => String)
   vaultId: string;
 
-  @Field()
+  @Field(() => String)
   vaultName: string;
 
-  @Field()
+  @Field(() => String)
   vaultType: string;
 
   @Field(() => Float)
@@ -44,10 +44,10 @@ export class VaultHolding {
 
 @ObjectType()
 export class PortfolioResponse {
-  @Field()
+  @Field(() => String)
   userId: string;
 
-  @Field()
+  @Field(() => String)
   generatedAt: string;
 
   @Field(() => [StellarAccountSnapshot])
