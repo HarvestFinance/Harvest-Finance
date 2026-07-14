@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { searchHelp, getAllArticles, Article } from '../../../lib/help-search';
+import { searchHelp, getAllArticles, Article } from '../../lib/help-search';
 
 const NO_RESULTS_KEY = 'help_no_results';
 
