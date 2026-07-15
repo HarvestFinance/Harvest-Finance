@@ -43,6 +43,8 @@ services:
       NODE_ENV: production
       DB_HOST: postgres
       REDIS_HOST: redis
+      DATABASE_URL: ${DATABASE_URL}
+      DIRECT_URL: ${DIRECT_URL}
     networks:
       - internal
       - web

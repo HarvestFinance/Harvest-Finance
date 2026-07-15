@@ -16,4 +16,3 @@ import { HttpMetricsInterceptor } from './http-metrics.interceptor';
   exports: [MetricsService],
 })
 export class MetricsModule {}
-

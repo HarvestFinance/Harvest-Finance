@@ -19,7 +19,9 @@ jest.mock('stellar-sdk', () => {
         }),
         transactions: jest.fn().mockReturnValue({
           transaction: jest.fn().mockReturnValue({
-            call: jest.fn().mockResolvedValue({ memo_type: 'none', memo: undefined }),
+            call: jest
+              .fn()
+              .mockResolvedValue({ memo_type: 'none', memo: undefined }),
           }),
         }),
         feeStats: jest.fn(),
@@ -31,7 +33,7 @@ jest.mock('stellar-sdk', () => {
 
 describe('StellarClientService – fee estimation', () => {
   let service: StellarClientService;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   let mockServer: any;
 
   const buildModule = async (maxFeeStroops?: number) => {
@@ -43,10 +45,13 @@ describe('StellarClientService – fee estimation', () => {
           useValue: {
             get: (key: string, defaultValue?: unknown) => {
               if (key === 'STELLAR_NETWORK') return 'testnet';
-              if (key === 'STELLAR_PLATFORM_PUBLIC_KEY') return 'GTESTPUBLICKEY';
+              if (key === 'STELLAR_PLATFORM_PUBLIC_KEY')
+                return 'GTESTPUBLICKEY';
               if (key === 'NODE_ENV') return 'test';
               if (key === 'STELLAR_MAX_FEE_STROOPS') {
-                return maxFeeStroops !== undefined ? maxFeeStroops : defaultValue;
+                return maxFeeStroops !== undefined
+                  ? maxFeeStroops
+                  : defaultValue;
               }
               return defaultValue;
             },
@@ -63,7 +68,9 @@ describe('StellarClientService – fee estimation', () => {
     const ServerConstructor = StellarSdk.Horizon.Server as jest.MockedClass<
       typeof StellarSdk.Horizon.Server
     >;
-    mockServer = ServerConstructor.mock.results[ServerConstructor.mock.results.length - 1].value;
+    mockServer =
+      ServerConstructor.mock.results[ServerConstructor.mock.results.length - 1]
+        .value;
   };
 
   beforeEach(async () => {
@@ -117,7 +124,9 @@ describe('StellarClientService – fee estimation', () => {
       await buildModule(10000); // explicit cap
       mockServer.feeStats.mockResolvedValue({ fee_charged: { p90: '9100' } });
 
-      await expect(service.submitTransaction(fakeTx)).rejects.toThrow('FEE_EXCEEDS_CAP');
+      await expect(service.submitTransaction(fakeTx)).rejects.toThrow(
+        'FEE_EXCEEDS_CAP',
+      );
     });
 
     it('does NOT call server.submitTransaction() when fee exceeds cap', async () => {
@@ -126,13 +135,17 @@ describe('StellarClientService – fee estimation', () => {
       await buildModule(10000);
       mockServer.feeStats.mockResolvedValue({ fee_charged: { p90: '9100' } });
 
-      await expect(service.submitTransaction(fakeTx)).rejects.toThrow('FEE_EXCEEDS_CAP');
+      await expect(service.submitTransaction(fakeTx)).rejects.toThrow(
+        'FEE_EXCEEDS_CAP',
+      );
       expect(mockServer.submitTransaction).not.toHaveBeenCalled();
     });
 
     it('calls server.submitTransaction() and returns its result when fee is within cap', async () => {
       // fee = ceil(100 * 1.1) = 110 < cap of 10000
-      const fakeResponse = { hash: 'abc123' } as unknown as StellarSdk.Horizon.HorizonApi.SubmitTransactionResponse;
+      const fakeResponse = {
+        hash: 'abc123',
+      } as unknown as StellarSdk.Horizon.HorizonApi.SubmitTransactionResponse;
       jest.clearAllMocks();
       await buildModule(10000);
       mockServer.feeStats.mockResolvedValue({ fee_charged: { p90: '100' } });
@@ -149,14 +162,18 @@ describe('StellarClientService – fee estimation', () => {
       mockServer.feeStats.mockResolvedValue({ fee_charged: { p90: '9100' } });
 
       // Default module (no explicit maxFeeStroops override)
-      await expect(service.submitTransaction(fakeTx)).rejects.toThrow('FEE_EXCEEDS_CAP');
+      await expect(service.submitTransaction(fakeTx)).rejects.toThrow(
+        'FEE_EXCEEDS_CAP',
+      );
     });
 
     it('does not throw when fee exactly equals the cap', async () => {
       // fee = ceil(9090.9...) ~ ceil(9090 * 1.1) = ceil(9999) = 9999 < 10000  — use p90=9091 → ceil(9091*1.1)=ceil(10000.1)=10001 > cap
       // Use p90 such that ceil(p90*1.1) == cap:  p90=9091 → 10000.1 → ceil=10001 (exceeds)
       // p90=9090 → 9999 → ceil=9999 (within)
-      const fakeResponse = { hash: 'def456' } as unknown as StellarSdk.Horizon.HorizonApi.SubmitTransactionResponse;
+      const fakeResponse = {
+        hash: 'def456',
+      } as unknown as StellarSdk.Horizon.HorizonApi.SubmitTransactionResponse;
       jest.clearAllMocks();
       await buildModule(10000);
       mockServer.feeStats.mockResolvedValue({ fee_charged: { p90: '9090' } });

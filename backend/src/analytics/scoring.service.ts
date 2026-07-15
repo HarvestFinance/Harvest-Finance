@@ -103,8 +103,7 @@ export class ScoringService {
     if (mean === 0) return 50;
 
     const variance =
-      apys.reduce((sum, apy) => sum + Math.pow(apy - mean, 2), 0) /
-      apys.length;
+      apys.reduce((sum, apy) => sum + Math.pow(apy - mean, 2), 0) / apys.length;
 
     const stdDev = Math.sqrt(variance);
     const cv = stdDev / mean;
@@ -247,9 +246,7 @@ export class ScoringService {
   /**
    * Get score breakdown for a vault.
    */
-  async getVaultScoreBreakdown(
-    vaultId: string,
-  ): Promise<ScoreBreakdown> {
+  async getVaultScoreBreakdown(vaultId: string): Promise<ScoreBreakdown> {
     const vault = await this.vaultRepo.findOne({
       where: { id: vaultId },
     });

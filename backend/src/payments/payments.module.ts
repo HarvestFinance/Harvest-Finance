@@ -34,7 +34,11 @@ import { PaystackFiatOnRampProvider } from './providers/paystack-fiat-on-ramp.pr
             );
         }
       },
-      inject: [ConfigService, MockFiatOnRampProvider, PaystackFiatOnRampProvider],
+      inject: [
+        ConfigService,
+        MockFiatOnRampProvider,
+        PaystackFiatOnRampProvider,
+      ],
     },
     PaymentService,
   ],

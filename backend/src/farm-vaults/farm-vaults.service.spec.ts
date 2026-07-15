@@ -1,4 +1,8 @@
-import { BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { FarmVaultsService } from './farm-vaults.service';
 
 describe('FarmVaultsService - amount validation', () => {

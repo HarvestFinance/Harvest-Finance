@@ -18,10 +18,12 @@ import { v4 as uuidv4 } from 'uuid';
 import { CustomLoggerService } from '../logger/custom-logger.service';
 import { User, UserRole, WalletType } from '../database/entities/user.entity';
 import { UserOAuthLink } from '../database/entities/user-oauth-link.entity';
-const zxcvbn = require('zxcvbn');
 import * as crypto from 'crypto';
 import { Session } from '../database/entities/session.entity';
-import { SecurityEvent, SecurityEventType } from '../database/entities/security-event.entity';
+import {
+  SecurityEvent,
+  SecurityEventType,
+} from '../database/entities/security-event.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -60,11 +62,15 @@ export class AuthService {
   }
 
   private get lockoutWindowMs(): number {
-    return this.configService.get<number>('LOCKOUT_WINDOW_MINUTES', 15) * 60 * 1000;
+    return (
+      this.configService.get<number>('LOCKOUT_WINDOW_MINUTES', 15) * 60 * 1000
+    );
   }
 
   private get lockoutDurationMs(): number {
-    return this.configService.get<number>('LOCKOUT_DURATION_MINUTES', 30) * 60 * 1000;
+    return (
+      this.configService.get<number>('LOCKOUT_DURATION_MINUTES', 30) * 60 * 1000
+    );
   }
 
   private lockoutAttemptsKey(userId: string): string {
@@ -85,14 +91,21 @@ export class AuthService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private logger: CustomLoggerService,
     private custodialWalletService: CustodialWalletService,
-  ) {}
+  ) { }
 
   /**
    * Register a new user
    */
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
-    const { email, password, role, full_name, phone_number, stellar_address, use_custodial_wallet } =
-      registerDto;
+    const {
+      email,
+      password,
+      role,
+      full_name,
+      phone_number,
+      stellar_address,
+      use_custodial_wallet,
+    } = registerDto;
 
     // Validate: user must supply either a stellar_address OR opt into a custodial wallet
     if (!stellar_address && !use_custodial_wallet) {
@@ -127,7 +140,9 @@ export class AuthService {
     // Determine wallet type and Stellar address
     // Self-custody takes precedence when both fields are supplied.
     const isSelfCustody = !!stellar_address;
-    const walletType = isSelfCustody ? WalletType.SELF_CUSTODY : WalletType.CUSTODIAL;
+    const walletType = isSelfCustody
+      ? WalletType.SELF_CUSTODY
+      : WalletType.CUSTODIAL;
 
     // Create new user (without stellarAddress for custodial — we set it after wallet creation)
     const user = this.userRepository.create({
@@ -148,24 +163,30 @@ export class AuthService {
     // Create custodial wallet if requested and no self-custody address provided
     if (!isSelfCustody && use_custodial_wallet) {
       try {
-        const publicKey = await this.custodialWalletService.createCustodialWallet(
-          user.id,
-          password, // plaintext password — used for key derivation before bcrypt hashing
-        );
+        const publicKey =
+          await this.custodialWalletService.createCustodialWallet(
+            user.id,
+            password, // plaintext password — used for key derivation before bcrypt hashing
+          );
         // Link the generated public key to the user record
-        await this.userRepository.update(user.id, { stellarAddress: publicKey });
+        await this.userRepository.update(user.id, {
+          stellarAddress: publicKey,
+        });
         user.stellarAddress = publicKey;
         this.logger.log(
           `Custodial wallet created for new user ${email}: ${publicKey}`,
           'AuthService',
         );
       } catch (err) {
-        // Clean up: delete the partially-created user to keep the DB consistent
         await this.userRepository.delete(user.id);
+
+        const message = err instanceof Error ? err.message : String(err);
+
         this.logger.error(
-          `Failed to create custodial wallet for ${email}: ${err.message}`,
+          `Failed to create custodial wallet for ${email}: ${message}`,
           'AuthService',
         );
+
         throw err;
       }
     }
@@ -268,7 +289,10 @@ export class AuthService {
     await this.resetLoginAttempts(user.id);
 
     // Update last login
-    await this.userRepository.update(user.id, { lastLogin: new Date(), lockedUntil: null });
+    await this.userRepository.update(user.id, {
+      lastLogin: new Date(),
+      lockedUntil: null,
+    });
 
     // Generate tokens
     const tokens = await this.generateTokens(user, userAgent, ipAddress);
@@ -286,7 +310,7 @@ export class AuthService {
     const key = this.lockoutAttemptsKey(user.id);
     const windowSec = Math.ceil(this.lockoutWindowMs / 1000);
 
-    const current = await this.cacheManager.get<number>(key) ?? 0;
+    const current = (await this.cacheManager.get<number>(key)) ?? 0;
     const next = current + 1;
 
     await this.cacheManager.set(key, next, windowSec);
@@ -343,14 +367,12 @@ export class AuthService {
     // Step 1 — verify JWT signature & expiry
     let payload: { sub: string; email: string; role: string; jti?: string };
     try {
-      // Verify refresh token signature and expiry
-      const payload = await this.jwtService.verifyAsync(refresh_token, {
       payload = await this.jwtService.verifyAsync(refresh_token, {
         secret:
           this.configService.get<string>('JWT_REFRESH_SECRET') ||
           'super_secret_refresh_jwt_key',
       });
-    } catch {
+    } catch (e) {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
 
@@ -363,51 +385,6 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-      // Validate the refresh token against the stored session record.
-      // The sessionId claim was embedded at token-generation time.
-      if (payload.sessionId) {
-        const session = await this.sessionRepository.findOne({
-          where: { id: payload.sessionId, user: { id: user.id } },
-          select: ['id', 'refreshToken', 'expiresAt'],
-        });
-
-        if (!session || session.expiresAt < new Date()) {
-          throw new UnauthorizedException('Session has expired or been revoked');
-        }
-
-        const tokenMatches = await bcrypt.compare(
-          refresh_token,
-          session.refreshToken,
-        );
-        if (!tokenMatches) {
-          throw new UnauthorizedException('Invalid refresh token');
-        }
-
-        // Touch lastUsedAt so the sessions list reflects recent activity
-        await this.sessionRepository.update(session.id, {
-          lastUsedAt: new Date(),
-        });
-      }
-
-      // Issue a new access token (same session, same refresh token — no rotation)
-      const accessToken = await this.jwtService.signAsync(
-        {
-          sub: user.id,
-          email: user.email,
-          role: user.role,
-          sessionId: payload.sessionId,
-        },
-        {
-          expiresIn: this.accessTokenExpiry,
-          secret:
-            this.configService.get<string>('JWT_SECRET') ||
-            'super_secret_jwt_key',
-        },
-      );
-
-      return { access_token: accessToken, token_type: 'Bearer' };
-    } catch (error) {
-      if (error instanceof UnauthorizedException) throw error;
     // Fetch all non-expired sessions for this user so we can bcrypt-compare
     const candidateSessions = await this.sessionRepository.find({
       where: { user: { id: user.id } },
@@ -429,7 +406,11 @@ export class AuthService {
 
     // Step 3 — reuse detection: token was already consumed
     if (matchedSession.isRevoked) {
-      await this.revokeFamilyAndAlert(matchedSession.familyId, user, refresh_token);
+      await this.revokeFamilyAndAlert(
+        matchedSession.familyId,
+        user,
+        refresh_token,
+      );
       throw new UnauthorizedException(
         'Refresh token reuse detected. All sessions have been revoked for your security.',
       );
@@ -450,7 +431,8 @@ export class AuthService {
       this.jwtService.signAsync(jwtPayload, {
         expiresIn: this.accessTokenExpiry,
         secret:
-          this.configService.get<string>('JWT_SECRET') || 'super_secret_jwt_key',
+          this.configService.get<string>('JWT_SECRET') ||
+          'super_secret_jwt_key',
       }),
       this.jwtService.signAsync(jwtPayload, {
         expiresIn: this.refreshTokenExpiry,
@@ -461,7 +443,10 @@ export class AuthService {
     ]);
 
     // Step 6 — store the new session in the SAME family
-    const hashedNewRefreshToken = await bcrypt.hash(newRefreshToken, this.saltRounds);
+    const hashedNewRefreshToken = await bcrypt.hash(
+      newRefreshToken,
+      this.saltRounds,
+    );
     const newSession = this.sessionRepository.create({
       id: newSessionId,
       user,
@@ -540,8 +525,12 @@ export class AuthService {
    * Replace the logger stub with a real mailer (e.g. @nestjs-modules/mailer)
    * once an SMTP / SES transport is wired up.
    */
-  private async sendSecurityAlertEmail(user: User, familyId: string): Promise<void> {
-    const subject = 'Security Alert: Suspicious Activity Detected on Your Account';
+  private async sendSecurityAlertEmail(
+    user: User,
+    familyId: string,
+  ): Promise<void> {
+    const subject =
+      'Security Alert: Suspicious Activity Detected on Your Account';
     const body = [
       `Hello ${user.firstName ?? user.email},`,
       '',
@@ -637,57 +626,57 @@ export class AuthService {
   }
 
   /**
-    * Reset password
-    */
-   async resetPassword(
-     resetPasswordDto: ResetPasswordDto,
-   ): Promise<{ success: boolean; message: string }> {
-     const { token, new_password } = resetPasswordDto;
+   * Reset password
+   */
+  async resetPassword(
+    resetPasswordDto: ResetPasswordDto,
+  ): Promise<{ success: boolean; message: string }> {
+    const { token, new_password } = resetPasswordDto;
 
-     // Validate password strength before processing
-     await this.validatePasswordStrength(new_password);
+    // Validate password strength before processing
+    await this.validatePasswordStrength(new_password);
 
-     // Find users with active reset tokens
-     const activeUsers = await this.userRepository.find({
-       where: {
-         resetPasswordExpires: MoreThan(new Date()),
-       },
-       select: ['id', 'password', 'resetPasswordToken', 'resetPasswordExpires'],
-     });
+    // Find users with active reset tokens
+    const activeUsers = await this.userRepository.find({
+      where: {
+        resetPasswordExpires: MoreThan(new Date()),
+      },
+      select: ['id', 'password', 'resetPasswordToken', 'resetPasswordExpires'],
+    });
 
-     let user: User | null = null;
-     for (const u of activeUsers) {
-       if (
-         u.resetPasswordToken &&
-         (await bcrypt.compare(token, u.resetPasswordToken))
-       ) {
-         user = u;
-         break;
-       }
-     }
+    let user: User | null = null;
+    for (const u of activeUsers) {
+      if (
+        u.resetPasswordToken &&
+        (await bcrypt.compare(token, u.resetPasswordToken))
+      ) {
+        user = u;
+        break;
+      }
+    }
 
-     if (!user) {
-       throw new BadRequestException('Invalid or expired reset token');
-     }
+    if (!user) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
 
-     // Hash new password
-     const hashedPassword = await bcrypt.hash(new_password, this.saltRounds);
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(new_password, this.saltRounds);
 
-     // Update password and clear reset token
-     await this.userRepository.update(user.id, {
-       password: hashedPassword,
-       resetPasswordToken: null,
-       resetPasswordExpires: null,
-     });
+    // Update password and clear reset token
+    await this.userRepository.update(user.id, {
+      password: hashedPassword,
+      resetPasswordToken: null,
+      resetPasswordExpires: null,
+    });
 
-     // Invalidate all sessions by blacklisting current token
-     // (in production, you'd implement a more comprehensive session invalidation)
+    // Invalidate all sessions by blacklisting current token
+    // (in production, you'd implement a more comprehensive session invalidation)
 
-     return {
-       success: true,
-       message: 'Password reset successfully',
-     };
-   }
+    return {
+      success: true,
+      message: 'Password reset successfully',
+    };
+  }
 
   /**
    * Validate user (for JWT strategy)
@@ -729,21 +718,11 @@ export class AuthService {
     });
     await this.sessionRepository.save(session);
 
-   * Generate access and refresh tokens and persist a new session row.
-   * Each call starts a brand-new token family (used on login/register/OAuth).
-   */
-  private async generateTokens(
-    user: User,
-    context?: { userAgent?: string; ipAddress?: string },
-  ): Promise<{
-    accessToken: string;
-    refreshToken: string;
-  }> {
     const payload = {
       sub: user.id,
       email: user.email,
       role: user.role,
-      sessionId: session.id, // allows DELETE /auth/sessions to identify current session
+      sessionId: session.id,
     };
 
     const [accessToken, refreshToken] = await Promise.all([
@@ -761,16 +740,14 @@ export class AuthService {
       }),
     ]);
 
-    // Persist hashed refresh token onto the already-saved session row.
-    // Store hashed refresh token with a new family ID
     const hashedRefreshToken = await bcrypt.hash(refreshToken, this.saltRounds);
     await this.sessionRepository.update(session.id, {
       refreshToken: hashedRefreshToken,
-      familyId: uuidv4(),   // new family for every fresh login
+      familyId: uuidv4(),
       isRevoked: false,
       replacedBy: null,
-      userAgent: context?.userAgent ?? 'Unknown',
-      ipAddress: context?.ipAddress ?? 'Unknown',
+      userAgent: userAgent ?? 'Unknown',
+      ipAddress: ipAddress ?? 'Unknown',
       lastUsedAt: new Date(),
       expiresAt: new Date(Date.now() + this.refreshTokenExpiryMs),
     });
@@ -805,14 +782,16 @@ export class AuthService {
     lastName?: string,
   ): Promise<User> {
     // 1. Check if OAuth link already exists
-    let existingLink = await this.oauthLinkRepository.findOne({
+    const existingLink = await this.oauthLinkRepository.findOne({
       where: { oauthProvider, oauthId },
       relations: ['user'],
     });
 
     if (existingLink) {
       // Update last login
-      await this.userRepository.update(existingLink.user.id, { lastLogin: new Date() });
+      await this.userRepository.update(existingLink.user.id, {
+        lastLogin: new Date(),
+      });
       return existingLink.user;
     }
 
@@ -834,9 +813,15 @@ export class AuthService {
       });
 
       user = await this.userRepository.save(user);
-      this.logger.log(`Created new OAuth user: ${email} via ${oauthProvider}`, 'AuthService');
+      this.logger.log(
+        `Created new OAuth user: ${email} via ${oauthProvider}`,
+        'AuthService',
+      );
     } else {
-      this.logger.log(`Linking existing user: ${email} to OAuth provider ${oauthProvider}`, 'AuthService');
+      this.logger.log(
+        `Linking existing user: ${email} to OAuth provider ${oauthProvider}`,
+        'AuthService',
+      );
     }
 
     // 3. Link OAuth provider to the user
@@ -893,9 +878,7 @@ export class AuthService {
 
     // Check for at least one digit
     if (!/\d/.test(password)) {
-      throw new BadRequestException(
-        'Password must contain at least one digit',
-      );
+      throw new BadRequestException('Password must contain at least one digit');
     }
 
     // Check for at least one special character
@@ -907,7 +890,11 @@ export class AuthService {
 
     // Check HIBP (Have I Been Pwned) using k-anonymity model
     // SHA-1 hash the password
-    const hash = crypto.createHash('sha1').update(password).digest('hex').toUpperCase();
+    const hash = crypto
+      .createHash('sha1')
+      .update(password)
+      .digest('hex')
+      .toUpperCase();
     const prefix = hash.slice(0, 5);
     const suffix = hash.slice(5);
 
@@ -955,7 +942,9 @@ export class AuthService {
         throw new BadRequestException('Invalid token type');
       }
 
-      const user = await this.userRepository.findOne({ where: { id: payload.sub } });
+      const user = await this.userRepository.findOne({
+        where: { id: payload.sub },
+      });
       if (!user) {
         throw new BadRequestException('User not found');
       }
@@ -989,7 +978,8 @@ export class AuthService {
 
     // Rate limit: 3 requests per hour per user
     const rateLimitKey = `resend_verification:${userId}`;
-    const currentCount = await this.cacheManager.get<number>(rateLimitKey) || 0;
+    const currentCount =
+      (await this.cacheManager.get<number>(rateLimitKey)) || 0;
     if (currentCount >= 3) {
       throw new BadRequestException(
         'Too many verification requests. Please try again in 1 hour.',

@@ -2,7 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
-import { ConflictException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { CustodialWalletService } from './custodial-wallet.service';
 import { CustodialWallet } from './entities/custodial-wallet.entity';
 import { CustomLoggerService } from '../logger/custom-logger.service';
@@ -44,7 +48,10 @@ describe('CustodialWalletService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CustodialWalletService,
-        { provide: getRepositoryToken(CustodialWallet), useFactory: mockRepository },
+        {
+          provide: getRepositoryToken(CustodialWallet),
+          useFactory: mockRepository,
+        },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: CustomLoggerService, useValue: mockLogger },
       ],
@@ -76,9 +83,9 @@ describe('CustodialWalletService', () => {
     it('should throw ConflictException when a wallet already exists', async () => {
       repo.findOne.mockResolvedValue({ id: 'some-id' } as CustodialWallet);
 
-      await expect(service.createCustodialWallet(userId, password)).rejects.toThrow(
-        ConflictException,
-      );
+      await expect(
+        service.createCustodialWallet(userId, password),
+      ).rejects.toThrow(ConflictException);
       expect(repo.save).not.toHaveBeenCalled();
     });
 
@@ -181,7 +188,8 @@ describe('CustodialWalletService', () => {
 
   describe('getPublicKey', () => {
     it('should return the public key when a wallet exists', async () => {
-      const publicKey = 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+      const publicKey =
+        'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
       repo.findOne.mockResolvedValue({ publicKey } as CustodialWallet);
 
       const result = await service.getPublicKey('user-id');

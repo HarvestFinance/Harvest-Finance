@@ -25,7 +25,11 @@ export class HttpLoggerMiddleware implements NestMiddleware {
         return req.headers['x-request-id'] || uuidv4();
       },
       // Custom formatting to meet exact field requirements
-      customSuccessMessage: (req: Request, res: Response, responseTime: number) => {
+      customSuccessMessage: (
+        req: Request,
+        res: Response,
+        responseTime: number,
+      ) => {
         return `${req.method} ${req.url} - Status: ${res.statusCode} - Duration: ${responseTime}ms`;
       },
       customErrorMessage: (req: Request, res: Response, error: Error) => {

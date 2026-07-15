@@ -11,7 +11,7 @@ use soroban_sdk::{
 // generated contract client (e.g., via `soroban_sdk::contractimport!`).
 mod harvest_vault {
     soroban_sdk::contractimport!(
-        file = "../../target/wasm32-unknown-unknown/release/harvest_vault.wasm"
+        file = "../target/wasm32-unknown-unknown/release/harvest_vault.wasm"
     );
 }
 

@@ -106,7 +106,9 @@ export class MockFiatOnRampProvider implements FiatOnRampProvider {
   private resolveExchangeRate(cryptoAsset: string): number {
     const rate = MOCK_EXCHANGE_RATES[cryptoAsset.toUpperCase()];
     if (!rate) {
-      throw new Error(`Unsupported crypto asset for mock on-ramp: ${cryptoAsset}`);
+      throw new Error(
+        `Unsupported crypto asset for mock on-ramp: ${cryptoAsset}`,
+      );
     }
     return rate;
   }

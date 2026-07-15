@@ -31,8 +31,14 @@ export class HealthController {
       '(database, Redis, Stellar Horizon, Stellar payment stream). ' +
       'A degraded stream indicator does not return 5xx.',
   })
-  @ApiResponse({ status: 200, description: 'All indicators healthy or degraded' })
-  @ApiResponse({ status: 503, description: 'One or more indicators are unhealthy' })
+  @ApiResponse({
+    status: 200,
+    description: 'All indicators healthy or degraded',
+  })
+  @ApiResponse({
+    status: 503,
+    description: 'One or more indicators are unhealthy',
+  })
   check() {
     return this.health.check([
       () => this.db.pingCheck('database', { timeout: 3000 }),

@@ -13,7 +13,10 @@ export class TwilioSMSProvider implements SMSProvider {
     // );
   }
 
-  async send(phoneNumber: string, message: string): Promise<{ messageId: string }> {
+  async send(
+    phoneNumber: string,
+    message: string,
+  ): Promise<{ messageId: string }> {
     // Mock implementation for now
     // In production, use:
     // const result = await this.twilioClient.messages.create({
@@ -28,7 +31,9 @@ export class TwilioSMSProvider implements SMSProvider {
     };
   }
 
-  async sendOTP(phoneNumber: string): Promise<{ otpId: string; expiresIn: number }> {
+  async sendOTP(
+    phoneNumber: string,
+  ): Promise<{ otpId: string; expiresIn: number }> {
     // Mock implementation for now
     // In production, use Twilio Verify Service:
     // const verification = await this.twilioClient.verify.v2

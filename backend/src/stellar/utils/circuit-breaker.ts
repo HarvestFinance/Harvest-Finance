@@ -47,10 +47,7 @@ export class CircuitBreaker {
   private readonly now: () => number;
 
   constructor(private readonly options: CircuitBreakerOptions) {
-    this.failureThreshold = Math.max(
-      1,
-      Math.floor(options.failureThreshold),
-    );
+    this.failureThreshold = Math.max(1, Math.floor(options.failureThreshold));
     this.resetTimeoutMs = Math.max(1, Math.floor(options.resetTimeoutMs));
     this.now = options.now ?? Date.now;
   }

@@ -53,7 +53,9 @@ describe('VaultAccountMonitorService', () => {
       ],
     }).compile();
 
-    service = module.get<VaultAccountMonitorService>(VaultAccountMonitorService);
+    service = module.get<VaultAccountMonitorService>(
+      VaultAccountMonitorService,
+    );
   });
 
   describe('checkAllVaults', () => {
@@ -64,7 +66,13 @@ describe('VaultAccountMonitorService', () => {
 
       expect(mockVaultRepository.find).toHaveBeenCalledWith(
         expect.objectContaining({
-          select: expect.arrayContaining(['id', 'stellarAccountAddress', 'status', 'ownerId', 'vaultName']),
+          select: expect.arrayContaining([
+            'id',
+            'stellarAccountAddress',
+            'status',
+            'ownerId',
+            'vaultName',
+          ]),
           where: expect.objectContaining({
             stellarAccountAddress: Not(IsNull()),
             status: Not(Equal(VaultStatus.SUSPENDED)),
@@ -76,16 +84,22 @@ describe('VaultAccountMonitorService', () => {
     it('checks vaults returned by the repository', async () => {
       const vault = makeVault();
       mockVaultRepository.find.mockResolvedValue([vault]);
-      mockStellarService.getAccountInfo.mockResolvedValue({ publicKey: vault.stellarAccountAddress });
+      mockStellarService.getAccountInfo.mockResolvedValue({
+        publicKey: vault.stellarAccountAddress,
+      });
 
       await service.checkAllVaults();
 
-      expect(mockStellarService.getAccountInfo).toHaveBeenCalledWith(vault.stellarAccountAddress);
+      expect(mockStellarService.getAccountInfo).toHaveBeenCalledWith(
+        vault.stellarAccountAddress,
+      );
     });
 
     it('skips concurrent execution when already running', async () => {
       let resolvePending: () => void;
-      const pending = new Promise<void>((res) => { resolvePending = res; });
+      const pending = new Promise<void>((res) => {
+        resolvePending = res;
+      });
 
       mockVaultRepository.find.mockReturnValueOnce(pending.then(() => []));
 
@@ -104,7 +118,9 @@ describe('VaultAccountMonitorService', () => {
     it('suspends vault and creates owner + admin notifications when account returns 404', async () => {
       const vault = makeVault();
       mockStellarService.getAccountInfo.mockRejectedValue(
-        new BadRequestException('Stellar resource not found (context: getAccountInfo(GABC...))'),
+        new BadRequestException(
+          'Stellar resource not found (context: getAccountInfo(GABC...))',
+        ),
       );
       mockVaultRepository.update.mockResolvedValue({});
       mockNotificationsService.create.mockResolvedValue({});
@@ -138,7 +154,9 @@ describe('VaultAccountMonitorService', () => {
 
     it('does not suspend vault when getAccountInfo succeeds', async () => {
       const vault = makeVault();
-      mockStellarService.getAccountInfo.mockResolvedValue({ publicKey: vault.stellarAccountAddress });
+      mockStellarService.getAccountInfo.mockResolvedValue({
+        publicKey: vault.stellarAccountAddress,
+      });
 
       await service.checkSingleVault(vault);
 

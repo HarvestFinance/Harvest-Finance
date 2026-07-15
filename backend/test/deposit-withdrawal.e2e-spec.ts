@@ -204,31 +204,13 @@ describe('Deposit / Withdrawal Integration (e2e with mocks)', () => {
           useValue: mockNotificationsService,
         },
         {
-          provide: require('../src/notifications/notifications.service').NotificationsService,
-          useValue: mockNotificationsService,
+          provide: getRepositoryToken(EventEmitter2),
+          useValue: mockEventEmitter,
         },
         {
-          provide: require('../src/logger/custom-logger.service').CustomLoggerService,
-          useValue: mockLogger,
-        },
-        {
-          provide: require('../src/realtime/vault.gateway').VaultGateway,
-          useValue: mockVaultGateway,
-        },
-        { provide: EventEmitter2, useValue: mockEventEmitter },
-        {
-          provide: require('../src/common/cache/contract-cache.service').ContractCacheService,
+          provide: getRepositoryToken(ContractCacheService),
           useValue: mockContractCache,
         },
-        {
-          provide: require('../src/common/sanitization/input-sanitizer.service').InputSanitizerService,
-          useValue: mockSanitizer,
-        },
-        {
-          provide: require('../src/vaults/deposit-event.service').DepositEventService,
-          useValue: mockDepositEventService,
-        },
-      ],
     })
       .overrideGuard(JwtAuthGuard)
       .useClass(StubJwtAuthGuard)

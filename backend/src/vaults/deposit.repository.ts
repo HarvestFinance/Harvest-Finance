@@ -104,14 +104,17 @@ export class DepositRepository {
    * Mirrors Repository.create so callers do not need to hold a raw repo reference.
    */
   create(data: Partial<Deposit>): Deposit {
-    return this.repo.create(data as any);
+    return this.repo.create(data);
   }
 
   /**
    * Apply a partial update to a deposit row identified by depositId.
    * Typical usage: flip status to CONFIRMED/FAILED and record hashes/timestamps.
    */
-  async updateStatus(depositId: string, update: Partial<Deposit>): Promise<void> {
+  async updateStatus(
+    depositId: string,
+    update: Partial<Deposit>,
+  ): Promise<void> {
     await this.repo.update(depositId, update as any);
   }
 }

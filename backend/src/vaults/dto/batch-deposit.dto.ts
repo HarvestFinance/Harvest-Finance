@@ -53,4 +53,3 @@ export class BatchDepositDto {
   @Type(() => BatchDepositItemDto)
   deposits: BatchDepositItemDto[];
 }
-

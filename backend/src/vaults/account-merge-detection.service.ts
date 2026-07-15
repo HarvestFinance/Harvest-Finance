@@ -22,7 +22,10 @@ export class AccountMergeDetectionService {
     private readonly notificationsService: NotificationsService,
     private readonly configService: ConfigService,
   ) {
-    const network = this.configService.get<string>('STELLAR_NETWORK', 'testnet');
+    const network = this.configService.get<string>(
+      'STELLAR_NETWORK',
+      'testnet',
+    );
     const url =
       network === 'mainnet'
         ? 'https://horizon.stellar.org'

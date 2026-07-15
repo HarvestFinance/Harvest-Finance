@@ -1,3 +1,54 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { VaultType, VaultStatus } from '../../database/entities/vault.entity';
+
+export class VaultResponseDto {
+  @ApiProperty({ description: 'Vault unique identifier' })
+  id: string;
+
+  @ApiProperty({ description: 'Owner user ID' })
+  ownerId: string;
+
+  @ApiProperty({
+    description: 'Vault type',
+    enum: VaultType,
+  })
+  type: VaultType;
+
+  @ApiProperty({
+    description: 'Vault status',
+    enum: VaultStatus,
+  })
+  status: VaultStatus;
+
+  @ApiProperty({ description: 'Human-readable vault name' })
+  vaultName: string;
+
+  @ApiProperty({ description: 'Vault description', required: false })
+  description: string | null;
+
+  @ApiProperty({ description: 'Vault symbol/ticker' })
+  symbol: string;
+
+  @ApiProperty({ description: 'Asset pair (e.g. XLM/USDC)' })
+  assetPair: string;
+
+  @ApiProperty({ description: 'Current total deposits' })
+  totalDeposits: number;
+
+  @ApiProperty({ description: 'Maximum capacity' })
+  maxCapacity: number;
+
+  @ApiProperty({
+    description: 'Available capacity (maxCapacity - totalDeposits)',
+  })
+  availableCapacity: number;
+
+  @ApiProperty({ description: 'Utilization percentage' })
+  utilizationPercentage: number;
+
+  @ApiProperty({ description: 'Stated interest rate (percent)' })
+  interestRate: number;
+
   @ApiProperty({
     example: 5.65,
     description: 'Annual Percentage Rate (APR)',
@@ -79,10 +130,18 @@
   @ApiProperty({ example: 50, description: 'Exit fee in basis points' })
   exitFeeBps: number;
 
-  @ApiProperty({ example: 1000, description: 'Performance fee in basis points' })
+  @ApiProperty({
+    example: 1000,
+    description: 'Performance fee in basis points',
+  })
   performanceFeeBps: number;
 
-  @ApiProperty({ example: 'GXXX...', description: 'Fee recipient address', required: false, nullable: true })
+  @ApiProperty({
+    example: 'GXXX...',
+    description: 'Fee recipient address',
+    required: false,
+    nullable: true,
+  })
   feeAddress: string | null;
 }
 
@@ -153,7 +212,6 @@ export class DepositVaultResponseDto {
   deposit: DepositResponseDto;
 
   @ApiProperty({
-    example: 25000.75,
     description: "User's total deposits across all vaults",
   })
   userTotalDeposits: number;
@@ -161,7 +219,10 @@ export class DepositVaultResponseDto {
   @ApiProperty({ example: 5.0, description: 'Fee amount deducted' })
   feeAmount: number;
 
-  @ApiProperty({ example: 995.0, description: 'Net amount credited after fee deduction' })
+  @ApiProperty({
+    example: 995.0,
+    description: 'Net amount credited after fee deduction',
+  })
   netAmount: number;
 }
 

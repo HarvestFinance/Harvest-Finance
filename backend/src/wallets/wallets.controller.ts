@@ -40,7 +40,7 @@ export class WalletsController {
   @ApiOperation({
     summary: 'Get custodial wallet info',
     description:
-      'Returns the Stellar public key for the authenticated user\'s platform-managed custodial wallet, if one exists.',
+      "Returns the Stellar public key for the authenticated user's platform-managed custodial wallet, if one exists.",
   })
   @ApiResponse({
     status: 200,
@@ -76,8 +76,8 @@ export class WalletsController {
   @ApiOperation({
     summary: 'Export custodial private key',
     description:
-      'Decrypts and returns the Stellar secret key for the authenticated user\'s custodial wallet. ' +
-      'Requires the user\'s current plaintext password for decryption. ' +
+      "Decrypts and returns the Stellar secret key for the authenticated user's custodial wallet. " +
+      "Requires the user's current plaintext password for decryption. " +
       'The returned key can be imported into any Stellar wallet (e.g. Freighter, Albedo) for self-custody.',
   })
   @ApiBody({ type: ExportKeyDto })
@@ -89,7 +89,8 @@ export class WalletsController {
       properties: {
         secret_key: {
           type: 'string',
-          example: 'SXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+          example:
+            'SXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
           description: 'Stellar secret key (S-address). Keep this private!',
         },
         warning: {

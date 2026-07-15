@@ -26,7 +26,9 @@ export class StellarService {
   }): Promise<{ transactionHash: string }> {
     // Production: construct and submit a real payment transaction via this.client.submitTransaction()
     const fakeHash = `simulated-release-${Date.now()}`;
-    this.logger.log(`Simulated upfront payment released: ${fakeHash} for order ${params.orderId}`);
+    this.logger.log(
+      `Simulated upfront payment released: ${fakeHash} for order ${params.orderId}`,
+    );
     return { transactionHash: fakeHash };
   }
 }

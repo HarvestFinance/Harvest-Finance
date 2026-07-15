@@ -22,7 +22,9 @@ export class VaultReadRepository {
       return result?.total ? parseFloat(result.total) : 0;
     }
 
-    const vault = await this.dataSource.getRepository(Vault).findOne({ where: { id: vaultId } });
+    const vault = await this.dataSource
+      .getRepository(Vault)
+      .findOne({ where: { id: vaultId } });
     return vault ? Number(vault.totalDeposits) : 0;
   }
 
@@ -36,15 +38,21 @@ export class VaultReadRepository {
       .find({ where: { vaultId }, order: { createdAt: 'DESC' }, take: limit });
 
     const combined = [...deposits, ...withdrawals];
-    combined.sort((a: any, b: any) => b.createdAt.getTime() - a.createdAt.getTime());
+    combined.sort(
+      (a: any, b: any) => b.createdAt.getTime() - a.createdAt.getTime(),
+    );
     return combined.slice(0, limit);
   }
 
   async incrementBalance(vaultId: string, amount: number) {
-    await this.dataSource.getRepository(Vault).increment({ id: vaultId } as any, 'totalDeposits', amount);
+    await this.dataSource
+      .getRepository(Vault)
+      .increment({ id: vaultId } as any, 'totalDeposits', amount);
   }
 
   async decrementBalance(vaultId: string, amount: number) {
-    await this.dataSource.getRepository(Vault).decrement({ id: vaultId } as any, 'totalDeposits', amount);
+    await this.dataSource
+      .getRepository(Vault)
+      .decrement({ id: vaultId } as any, 'totalDeposits', amount);
   }
 }

@@ -14,17 +14,37 @@ describe('DepositFundsHandler', () => {
       save: jest.fn().mockResolvedValue({ id: 'd1' }),
     };
     const vaultRepo: any = {
-      findOne: jest.fn().mockResolvedValue({ id: 'v1', status: 'ACTIVE', vaultName: 'V' }),
+      findOne: jest
+        .fn()
+        .mockResolvedValue({ id: 'v1', status: 'ACTIVE', vaultName: 'V' }),
     };
-    const dataSource: any = { transaction: (cb: any) => cb({ save: depositRepo.save, increment: jest.fn(), findOne: vaultRepo.findOne, update: jest.fn() }) };
+    const dataSource: any = {
+      transaction: (cb: any) =>
+        cb({
+          save: depositRepo.save,
+          increment: jest.fn(),
+          findOne: vaultRepo.findOne,
+          update: jest.fn(),
+        }),
+    };
     const notifications: any = { create: jest.fn() };
     const eventBus: any = { publish: jest.fn() };
 
-    handler = new DepositFundsHandler(depositRepo as any, vaultRepo as any, dataSource as any, notifications as any, eventBus as any);
+    handler = new DepositFundsHandler(
+      depositRepo,
+      vaultRepo,
+      dataSource,
+      notifications,
+      eventBus,
+    );
   });
 
   it('creates a deposit and emits event', async () => {
-    const result = await handler.execute({ vaultId: 'v1', userId: 'u1', amount: 100 } as any);
+    const result = await handler.execute({
+      vaultId: 'v1',
+      userId: 'u1',
+      amount: 100,
+    } as any);
     expect(result).toBeDefined();
   });
 });

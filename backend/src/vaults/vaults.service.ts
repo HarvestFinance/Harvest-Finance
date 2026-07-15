@@ -9,14 +9,21 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Vault, VaultStatus } from '../database/entities/vault.entity';
 import { Deposit, DepositStatus } from '../database/entities/deposit.entity';
-import { DepositEvent, DepositEventType } from '../database/entities/deposit-event.entity';
+import {
+  DepositEvent,
+  DepositEventType,
+} from '../database/entities/deposit-event.entity';
 import { ExternalPaymentEventType } from './dto/external-payment-notification.dto';
 import {
   Withdrawal,
   WithdrawalStatus,
 } from '../database/entities/withdrawal.entity';
 
-import { Strategy, CompoundingFrequency, COMPOUNDING_FREQUENCY_N } from '../database/entities/strategy.entity';
+import {
+  Strategy,
+  CompoundingFrequency,
+  COMPOUNDING_FREQUENCY_N,
+} from '../database/entities/strategy.entity';
 import { VaultApyHistory } from '../database/entities/vault-apy-history.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { AuthService } from '../auth/auth.service';
@@ -39,12 +46,18 @@ import { VaultGateway } from '../realtime/vault.gateway';
 import { ContractCacheService } from '../common/cache/contract-cache.service';
 import { InputSanitizerService } from '../common/sanitization/input-sanitizer.service';
 import { VaultApproval } from '../database/entities/vault-approval.entity';
-import { User } from '../database/entities/user.entity';
+import { User, UserRole } from '../database/entities/user.entity';
 import { NotificationType } from '../database/entities/notification.entity';
 import { DepositEventService } from './deposit-event.service';
 import { FeesService } from './fees.service';
 import { UpdateVaultFeesDto } from './dto/update-vault-fees.dto';
 import { WithdrawalQueueService } from './withdrawal-queue.service';
+import { DepositEventResponseDto } from './dto/deposit-event-response.dto';
+import {
+  DomainEventNames,
+  DepositCompletedEvent,
+  WithdrawalConfirmedEvent,
+} from '../domain-events';
 
 const MAX_SAFE_DEPOSIT = 1e30;
 const LARGE_DEPOSIT_THRESHOLD = 10000;
@@ -76,6 +89,7 @@ export class VaultsService {
     private depositEventService: DepositEventService,
     private readonly feesService: FeesService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly withdrawalQueueService: WithdrawalQueueService,
     private authService: AuthService,
   ) {}
 
@@ -89,7 +103,11 @@ export class VaultsService {
    */
   calculateApy(
     apr: number,
-    frequency: CompoundingFrequency | string | null | undefined = CompoundingFrequency.DAILY,
+    frequency:
+      | CompoundingFrequency
+      | string
+      | null
+      | undefined = CompoundingFrequency.DAILY,
   ): number {
     if (apr === 0) return 0;
 
@@ -106,7 +124,9 @@ export class VaultsService {
    * Falls back to DAILY if no strategy is assigned or the stored value is invalid.
    */
   private getVaultCompoundingFrequency(vault: Vault): CompoundingFrequency {
-    return this.normalizeCompoundingFrequency(vault.strategy?.compoundingFrequency);
+    return this.normalizeCompoundingFrequency(
+      vault.strategy?.compoundingFrequency,
+    );
   }
 
   private normalizeCompoundingFrequency(
@@ -216,7 +236,10 @@ export class VaultsService {
       idempotencyKey: idempotencyKey || null,
     });
 
-    const entryFee = this.feesService.calculateFee(amount, vault.entryFeeBps ?? 0);
+    const entryFee = this.feesService.calculateFee(
+      amount,
+      vault.entryFeeBps ?? 0,
+    );
 
     const result = await this.dataSource.transaction(async (manager) => {
       const savedDeposit = await manager.save(deposit);
@@ -256,7 +279,12 @@ export class VaultsService {
       }
 
       // Only the net amount (after entry fee) counts toward vault deposits
-      await manager.increment(Vault, { id: vaultId }, 'totalDeposits', entryFee.netAmount);
+      await manager.increment(
+        Vault,
+        { id: vaultId },
+        'totalDeposits',
+        entryFee.netAmount,
+      );
 
       const updatedVault = await manager.findOne(Vault, {
         where: { id: vaultId },
@@ -324,7 +352,10 @@ export class VaultsService {
   async batchDepositToVaults(
     userId: string,
     dto: BatchDepositDto,
-  ): Promise<{ results: DepositVaultResponseDto[]; userTotalDeposits: number }> {
+  ): Promise<{
+    results: DepositVaultResponseDto[];
+    userTotalDeposits: number;
+  }> {
     // Check email verification
     const isVerified = await this.authService.isEmailVerified(userId);
     if (!isVerified) {
@@ -344,12 +375,16 @@ export class VaultsService {
       .filter((k): k is string => typeof k === 'string' && k.length > 0);
     const uniqueKeys = new Set(keys);
     if (uniqueKeys.size !== keys.length) {
-      throw new BadRequestException('Duplicate idempotencyKey in batch request');
+      throw new BadRequestException(
+        'Duplicate idempotencyKey in batch request',
+      );
     }
 
     const results = await this.dataSource.transaction(async (manager) => {
       // Load and validate all vaults up front.
-      const uniqueVaultIds = Array.from(new Set(deposits.map((d) => d.vaultId)));
+      const uniqueVaultIds = Array.from(
+        new Set(deposits.map((d) => d.vaultId)),
+      );
       const vaults = await manager.find(Vault, {
         where: uniqueVaultIds.map((id) => ({ id })),
       });
@@ -366,14 +401,19 @@ export class VaultsService {
       for (const item of deposits) {
         const amount = item.amount;
         if (amount <= 0) {
-          throw new BadRequestException('Deposit amount must be greater than 0');
+          throw new BadRequestException(
+            'Deposit amount must be greater than 0',
+          );
         }
         if (amount > MAX_SAFE_DEPOSIT) {
           throw new BadRequestException(
             'Deposit amount exceeds maximum allowed value',
           );
         }
-        totalByVault.set(item.vaultId, (totalByVault.get(item.vaultId) ?? 0) + amount);
+        totalByVault.set(
+          item.vaultId,
+          (totalByVault.get(item.vaultId) ?? 0) + amount,
+        );
       }
 
       for (const [vaultId, totalAmount] of totalByVault.entries()) {
@@ -398,7 +438,10 @@ export class VaultsService {
       // Idempotency: if any requested idempotencyKey already exists, fail the whole batch.
       if (uniqueKeys.size > 0) {
         const existing = await manager.find(Deposit, {
-          where: Array.from(uniqueKeys).map((key) => ({ userId, idempotencyKey: key })),
+          where: Array.from(uniqueKeys).map((key) => ({
+            userId,
+            idempotencyKey: key,
+          })),
           relations: ['vault'],
         });
         if (existing.length > 0) {
@@ -446,7 +489,8 @@ export class VaultsService {
           item.amount,
         );
 
-        const stellarTransactionId: string | null = `mock_stellar_${Date.now()}`;
+        const stellarTransactionId: string | null =
+          `mock_stellar_${Date.now()}`;
         const transactionHash = `mock_tx_${Date.now()}`;
         const confirmedAt = new Date();
 
@@ -501,10 +545,15 @@ export class VaultsService {
           .createQueryBuilder('deposit')
           .select('SUM(deposit.amount)', 'total')
           .where('deposit.userId = :userId', { userId })
-          .andWhere('deposit.status = :status', { status: DepositStatus.CONFIRMED })
+          .andWhere('deposit.status = :status', {
+            status: DepositStatus.CONFIRMED,
+          })
           .getRawOne();
 
-        const batchEntryFee = this.feesService.calculateFee(item.amount, vaultById.get(item.vaultId)?.entryFeeBps ?? 0);
+        const batchEntryFee = this.feesService.calculateFee(
+          item.amount,
+          vaultById.get(item.vaultId)?.entryFeeBps ?? 0,
+        );
 
         perDepositResponses.push({
           vault: updatedVault ? this.mapVaultToResponse(updatedVault) : null,
@@ -715,7 +764,7 @@ export class VaultsService {
       maxCapacity: Number(vault.maxCapacity),
       availableCapacity: vault.availableCapacity,
       utilizationPercentage: vault.utilizationPercentage,
-        interestRate: apr,
+      interestRate: apr,
       apr,
       apy,
       compoundingFrequency,
@@ -746,7 +795,10 @@ export class VaultsService {
     }
 
     const apr = Number(vault.interestRate);
-    const apy = this.calculateApy(apr, this.getVaultCompoundingFrequency(vault));
+    const apy = this.calculateApy(
+      apr,
+      this.getVaultCompoundingFrequency(vault),
+    );
     const today = new Date();
     const snapshotDate = new Date(
       Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()),
@@ -770,7 +822,12 @@ export class VaultsService {
     vaultId: string,
     userId: string,
     amount: number,
-  ): Promise<{ withdrawal: Withdrawal; vault: VaultResponseDto; feeAmount: number; netAmount: number }> {
+  ): Promise<{
+    withdrawal: Withdrawal;
+    vault: VaultResponseDto;
+    feeAmount: number;
+    netAmount: number;
+  }> {
     if (amount <= 0) {
       throw new BadRequestException('Withdrawal amount must be greater than 0');
     }
@@ -790,7 +847,10 @@ export class VaultsService {
 
     // Check if vault has sufficient liquidity for immediate withdrawal
     if (Number(vault.totalDeposits) >= amount) {
-      const exitFee = this.feesService.calculateFee(amount, vault.exitFeeBps ?? 0);
+      const exitFee = this.feesService.calculateFee(
+        amount,
+        vault.exitFeeBps ?? 0,
+      );
 
       // Process withdrawal immediately
       const withdrawal = this.withdrawalRepository.create({
@@ -800,8 +860,8 @@ export class VaultsService {
         status: WithdrawalStatus.PENDING,
       });
 
-    const result = await this.dataSource.transaction(async (manager) => {
-      const savedWithdrawal = await manager.save(withdrawal);
+      const result = await this.dataSource.transaction(async (manager) => {
+        const savedWithdrawal = await manager.save(withdrawal);
 
         // Log exit fee collection in the deposit_events audit log
         if (exitFee.feeAmount > 0) {
@@ -824,48 +884,59 @@ export class VaultsService {
           );
         }
 
-        await manager.decrement(Vault, { id: vaultId }, 'totalDeposits', amount);
-
-      const updatedVault = await manager.findOne(Vault, {
-        where: { id: vaultId },
-      });
-
-      if (updatedVault && updatedVault.status === VaultStatus.FULL_CAPACITY) {
-        await manager.update(
+        await manager.decrement(
           Vault,
           { id: vaultId },
-          { status: VaultStatus.ACTIVE },
+          'totalDeposits',
+          amount,
         );
-        updatedVault.status = VaultStatus.ACTIVE;
+
+        const updatedVault = await manager.findOne(Vault, {
+          where: { id: vaultId },
+        });
+
+        if (updatedVault && updatedVault.status === VaultStatus.FULL_CAPACITY) {
+          await manager.update(
+            Vault,
+            { id: vaultId },
+            { status: VaultStatus.ACTIVE },
+          );
+          updatedVault.status = VaultStatus.ACTIVE;
+        }
+
+        return { withdrawal: savedWithdrawal, vault: updatedVault };
+      });
+
+      await this.withdrawalRepository.update(result.withdrawal.id, {
+        status: WithdrawalStatus.CONFIRMED,
+        confirmedAt: new Date(),
+        transactionHash: `mock_withdraw_tx_${Date.now()}`,
+      });
+
+      const confirmedWithdrawal = await this.withdrawalRepository.findOne({
+        where: { id: result.withdrawal.id },
+      });
+
+      if (!confirmedWithdrawal) {
+        throw new NotFoundException('Withdrawal not found after confirmation');
       }
 
-      return { withdrawal: savedWithdrawal, vault: updatedVault };
-    });
-
-    await this.withdrawalRepository.update(result.withdrawal.id, {
-      status: WithdrawalStatus.CONFIRMED,
-      confirmedAt: new Date(),
-      transactionHash: `mock_withdraw_tx_${Date.now()}`,
-    });
-
-    const confirmedWithdrawal = await this.withdrawalRepository.findOne({
-      where: { id: result.withdrawal.id },
-    });
-
-    if (!confirmedWithdrawal) {
-      throw new NotFoundException('Withdrawal not found after confirmation');
-    }
-
-    // Emit an async event for post-confirmation work (notifications, realtime, downstream domain events).
-    this.eventEmitter.emit(
-      DomainEventNames.WITHDRAWAL_CONFIRMED,
-      new WithdrawalConfirmedEvent(
-        confirmedWithdrawal.id,
-        userId,
-        title: 'Withdrawal Confirmed',
-        message: `Your withdrawal of ${amount} from vault ${vault.vaultName} has been confirmed.`,
-        type: NotificationType.WITHDRAWAL,
-      });
+      // Emit an async event for post-confirmation work (notifications, realtime, downstream domain events).
+      this.eventEmitter.emit(
+        DomainEventNames.WITHDRAWAL_CONFIRMED,
+        new WithdrawalConfirmedEvent(
+          confirmedWithdrawal.id,
+          userId,
+          vault.id,
+          amount,
+          vault.vaultName,
+          result.vault
+            ? Number(result.vault.totalDeposits)
+            : Number(vault.totalDeposits) - amount,
+          confirmedWithdrawal.transactionHash,
+          confirmedWithdrawal.confirmedAt || new Date(),
+        ),
+      );
 
       return {
         withdrawal: result.withdrawal,
@@ -885,8 +956,11 @@ export class VaultsService {
       status: WithdrawalStatus.PENDING,
     });
 
-    const savedQueuedWithdrawal = await this.withdrawalRepository.save(queuedWithdrawal);
-    await this.withdrawalQueueService.enqueueWithdrawal(savedQueuedWithdrawal.id);
+    const savedQueuedWithdrawal =
+      await this.withdrawalRepository.save(queuedWithdrawal);
+    await this.withdrawalQueueService.enqueueWithdrawal(
+      savedQueuedWithdrawal.id,
+    );
 
     const queuedWithdrawalResult = await this.withdrawalRepository.findOne({
       where: { id: savedQueuedWithdrawal.id },
@@ -902,6 +976,123 @@ export class VaultsService {
       feeAmount: 0,
       netAmount: amount,
     };
+  }
+
+  async applyExternalPaymentNotification(params: {
+    depositId: string;
+    eventType: ExternalPaymentEventType;
+    transactionHash: string;
+    stellarTransactionId?: string | null;
+    externalEventId: string;
+    occurredAt?: Date;
+  }): Promise<{ status: DepositStatus; duplicate: boolean }> {
+    const deposit = await this.depositRepository.findOne({
+      where: { id: params.depositId },
+    });
+
+    if (!deposit) {
+      throw new NotFoundException('Deposit not found');
+    }
+
+    if (
+      deposit.status === DepositStatus.CONFIRMED ||
+      deposit.status === DepositStatus.FAILED
+    ) {
+      return { status: deposit.status, duplicate: true };
+    }
+
+    const newStatus =
+      params.eventType === ExternalPaymentEventType.PAYMENT_FAILED
+        ? DepositStatus.FAILED
+        : DepositStatus.CONFIRMED;
+
+    await this.depositRepository.update(deposit.id, {
+      status: newStatus,
+      transactionHash: params.transactionHash,
+    });
+
+    if (newStatus === DepositStatus.CONFIRMED) {
+      const confirmed = await this.depositRepository.findOne({
+        where: { id: deposit.id },
+        relations: ['vault'],
+      });
+      if (confirmed) {
+        this.eventEmitter.emit(
+          DomainEventNames.DEPOSIT_COMPLETED,
+          new DepositCompletedEvent(
+            confirmed.id,
+            confirmed.userId,
+            confirmed.vaultId,
+            confirmed.amount,
+            confirmed.vault?.vaultName ?? '',
+            confirmed.vault ? Number(confirmed.vault.totalDeposits) : 0,
+          ),
+        );
+      }
+    }
+
+    return { status: newStatus, duplicate: false };
+  }
+
+  async applyExternalWithdrawalNotification(params: {
+    withdrawalId: string;
+    eventType: ExternalPaymentEventType;
+    transactionHash: string;
+    stellarTransactionId?: string | null;
+    externalEventId: string;
+    occurredAt?: Date;
+  }): Promise<{ status: WithdrawalStatus; duplicate: boolean }> {
+    const withdrawal = await this.withdrawalRepository.findOne({
+      where: { id: params.withdrawalId },
+    });
+
+    if (!withdrawal) {
+      throw new NotFoundException('Withdrawal not found');
+    }
+
+    if (
+      withdrawal.status === WithdrawalStatus.CONFIRMED ||
+      withdrawal.status === WithdrawalStatus.FAILED
+    ) {
+      return { status: withdrawal.status, duplicate: true };
+    }
+
+    const newStatus =
+      params.eventType === ExternalPaymentEventType.PAYMENT_FAILED
+        ? WithdrawalStatus.FAILED
+        : WithdrawalStatus.CONFIRMED;
+
+    const update: Partial<Withdrawal> = { status: newStatus };
+    if (newStatus === WithdrawalStatus.CONFIRMED) {
+      update.transactionHash = params.transactionHash;
+      update.confirmedAt = new Date();
+    }
+
+    await this.withdrawalRepository.update(withdrawal.id, update);
+
+    if (newStatus === WithdrawalStatus.CONFIRMED) {
+      const confirmed = await this.withdrawalRepository.findOne({
+        where: { id: withdrawal.id },
+        relations: ['vault'],
+      });
+      if (confirmed) {
+        this.eventEmitter.emit(
+          DomainEventNames.WITHDRAWAL_CONFIRMED,
+          new WithdrawalConfirmedEvent(
+            confirmed.id,
+            confirmed.userId,
+            confirmed.vaultId,
+            confirmed.amount,
+            confirmed.vault?.vaultName ?? '',
+            confirmed.vault ? Number(confirmed.vault.totalDeposits) : 0,
+            confirmed.transactionHash,
+            confirmed.confirmedAt ?? new Date(),
+          ),
+        );
+      }
+    }
+
+    return { status: newStatus, duplicate: false };
   }
 
   private mapDepositToResponse(deposit: Deposit): DepositResponseDto {
@@ -988,12 +1179,16 @@ export class VaultsService {
 
     // Only vault owner or admin can update multi-signature config
     if (vault.ownerId !== userId && !this.isCurrentUserAdmin(userId)) {
-      throw new UnauthorizedException('Only vault owner or admin can update multi-signature configuration');
+      throw new UnauthorizedException(
+        'Only vault owner or admin can update multi-signature configuration',
+      );
     }
 
     // Validate threshold
     if (approvalThreshold < 1 || approvalThreshold > 10) {
-      throw new BadRequestException('Approval threshold must be between 1 and 10');
+      throw new BadRequestException(
+        'Approval threshold must be between 1 and 10',
+      );
     }
 
     await this.vaultRepository.update(vaultId, {
@@ -1006,14 +1201,24 @@ export class VaultsService {
     return this.mapVaultToResponse(updatedVault);
   }
 
-  async updateVaultFees(vaultId: string, userId: string, dto: UpdateVaultFeesDto): Promise<VaultResponseDto> {
+  async updateVaultFees(
+    vaultId: string,
+    userId: string,
+    dto: UpdateVaultFeesDto,
+  ): Promise<VaultResponseDto> {
     const vault = await this.getVaultById(vaultId);
 
     if (vault.ownerId !== userId) {
-      throw new UnauthorizedException('Only the vault owner can configure fees');
+      throw new UnauthorizedException(
+        'Only the vault owner can configure fees',
+      );
     }
 
-    this.feesService.validateFees(dto.entryFeeBps, dto.exitFeeBps, dto.performanceFeeBps);
+    this.feesService.validateFees(
+      dto.entryFeeBps,
+      dto.exitFeeBps,
+      dto.performanceFeeBps,
+    );
 
     await this.vaultRepository.update(vaultId, {
       entryFeeBps: dto.entryFeeBps,
@@ -1035,7 +1240,9 @@ export class VaultsService {
 
     // Only vault owner or admin can request approvals
     if (vault.ownerId !== userId && !this.isCurrentUserAdmin(userId)) {
-      throw new UnauthorizedException('Only vault owner or admin can request approvals');
+      throw new UnauthorizedException(
+        'Only vault owner or admin can request approvals',
+      );
     }
 
     // Check if approver exists
@@ -1047,11 +1254,15 @@ export class VaultsService {
     }
 
     // Check if approval already exists
-    const existingApproval = await this.dataSource.getRepository(VaultApproval).findOne({
-      where: { vaultId, userId: approverUserId },
-    });
+    const existingApproval = await this.dataSource
+      .getRepository(VaultApproval)
+      .findOne({
+        where: { vaultId, userId: approverUserId },
+      });
     if (existingApproval) {
-      throw new BadRequestException('Approval request already exists for this user');
+      throw new BadRequestException(
+        'Approval request already exists for this user',
+      );
     }
 
     // Create new approval request
@@ -1079,13 +1290,17 @@ export class VaultsService {
     const vault = await this.getVaultById(vaultId);
 
     // Only approved approvers can approve
-    const approval = await this.dataSource.getRepository(VaultApproval).findOne({
-      where: { vaultId, userId },
-      relations: ['vault'],
-    });
+    const approval = await this.dataSource
+      .getRepository(VaultApproval)
+      .findOne({
+        where: { vaultId, userId },
+        relations: ['vault'],
+      });
 
     if (!approval) {
-      throw new BadRequestException('No pending approval request found for this user');
+      throw new BadRequestException(
+        'No pending approval request found for this user',
+      );
     }
 
     if (approval.status !== 'PENDING') {
@@ -1132,7 +1347,9 @@ export class VaultsService {
 
     // Only vault owner or admin can pause vault
     if (vault.ownerId !== userId && !this.isCurrentUserAdmin(userId)) {
-      throw new UnauthorizedException('Only vault owner or admin can pause vault');
+      throw new UnauthorizedException(
+        'Only vault owner or admin can pause vault',
+      );
     }
 
     // Check if vault is already paused
@@ -1149,12 +1366,17 @@ export class VaultsService {
     return this.mapVaultToResponse(updatedVault);
   }
 
-  async resumeVault(vaultId: string, userId: string): Promise<VaultResponseDto> {
+  async resumeVault(
+    vaultId: string,
+    userId: string,
+  ): Promise<VaultResponseDto> {
     const vault = await this.getVaultById(vaultId);
 
     // Only vault owner or admin can resume vault
     if (vault.ownerId !== userId && !this.isCurrentUserAdmin(userId)) {
-      throw new UnauthorizedException('Only vault owner or admin can resume vault');
+      throw new UnauthorizedException(
+        'Only vault owner or admin can resume vault',
+      );
     }
 
     // Check if vault is paused
@@ -1178,6 +1400,6 @@ export class VaultsService {
       where: { id: userId },
       select: ['role'],
     });
-    return user?.role === 'ADMIN';
+    return user?.role === UserRole.ADMIN;
   }
 }

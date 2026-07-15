@@ -14,11 +14,18 @@ export class RiskAssessmentDto {
   @IsString()
   cropType: string;
 
-  @ApiProperty({ example: 'WET', description: "Season: 'DRY' | 'WET' | 'SPRING' | 'SUMMER' | 'AUTUMN' | 'WINTER'" })
+  @ApiProperty({
+    example: 'WET',
+    description:
+      "Season: 'DRY' | 'WET' | 'SPRING' | 'SUMMER' | 'AUTUMN' | 'WINTER'",
+  })
   @IsString()
   season: string;
 
-  @ApiProperty({ example: 800, description: 'Historical average yield in kg/acre (0 if unknown)' })
+  @ApiProperty({
+    example: 800,
+    description: 'Historical average yield in kg/acre (0 if unknown)',
+  })
   @IsNumber()
   @Min(0)
   historicalYieldKgAcre: number;
@@ -28,7 +35,10 @@ export class RiskAssessmentDto {
   @IsPositive()
   farmAreaAcres: number;
 
-  @ApiProperty({ example: 0.5, description: 'Estimated market price per kg in USD' })
+  @ApiProperty({
+    example: 0.5,
+    description: 'Estimated market price per kg in USD',
+  })
   @IsNumber()
   @IsPositive()
   marketPricePerKg: number;
@@ -39,7 +49,10 @@ export class RiskAssessmentDto {
   @Max(100)
   soilQualityIndex: number;
 
-  @ApiProperty({ example: 30, description: 'Drought risk index 0–100 (higher = riskier)' })
+  @ApiProperty({
+    example: 30,
+    description: 'Drought risk index 0–100 (higher = riskier)',
+  })
   @IsNumber()
   @Min(0)
   @Max(100)
@@ -59,7 +72,10 @@ export class RiskAssessmentDto {
 }
 
 export class SubscribeInsuranceDto {
-  @ApiProperty({ example: 'plan-uuid', description: 'ID of the insurance plan to subscribe to' })
+  @ApiProperty({
+    example: 'plan-uuid',
+    description: 'ID of the insurance plan to subscribe to',
+  })
   @IsUUID()
   planId: string;
 
@@ -72,7 +88,11 @@ export class SubscribeInsuranceDto {
   @IsPositive()
   insuredValue: number;
 
-  @ApiPropertyOptional({ example: 'vault-uuid', description: 'Optional Farm Vault ID to link for automatic premium tracking' })
+  @ApiPropertyOptional({
+    example: 'vault-uuid',
+    description:
+      'Optional Farm Vault ID to link for automatic premium tracking',
+  })
   @IsOptional()
   @IsUUID()
   farmVaultId?: string;

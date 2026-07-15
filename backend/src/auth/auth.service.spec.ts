@@ -107,7 +107,12 @@ describe('AuthService', () => {
         },
         {
           provide: getRepositoryToken(Session),
-          useValue: { find: jest.fn(), create: jest.fn(), save: jest.fn(), update: jest.fn() },
+          useValue: {
+            find: jest.fn(),
+            create: jest.fn(),
+            save: jest.fn(),
+            update: jest.fn(),
+          },
         },
         {
           provide: getRepositoryToken(SecurityEvent),
@@ -376,7 +381,7 @@ describe('AuthService', () => {
   });
 
   describe('account lockout', () => {
-     const loginDto = { email: 'test@example.com', password: 'WrongPass123!' };
+    const loginDto = { email: 'test@example.com', password: 'WrongPass123!' };
 
     it('should throw UnauthorizedException when account is locked', async () => {
       const lockedUser = {
@@ -385,7 +390,9 @@ describe('AuthService', () => {
       };
       mockUserRepository.findOne.mockResolvedValue(lockedUser);
 
-      await expect(service.login(loginDto)).rejects.toThrow(UnauthorizedException);
+      await expect(service.login(loginDto)).rejects.toThrow(
+        UnauthorizedException,
+      );
       const err = await service.login(loginDto).catch((e) => e);
       expect(err.message).toMatch(/locked/i);
     });
@@ -414,7 +421,9 @@ describe('AuthService', () => {
       mockCacheManager.get.mockResolvedValue(1); // existing count = 1
       mockCacheManager.set.mockResolvedValue(undefined);
 
-      await expect(service.login(loginDto)).rejects.toThrow(UnauthorizedException);
+      await expect(service.login(loginDto)).rejects.toThrow(
+        UnauthorizedException,
+      );
       expect(mockCacheManager.set).toHaveBeenCalledWith(
         `lockout:attempts:${mockUser.id}`,
         2,
@@ -430,7 +439,9 @@ describe('AuthService', () => {
       mockCacheManager.del.mockResolvedValue(undefined);
       mockUserRepository.update.mockResolvedValue({ affected: 1 });
 
-      await expect(service.login(loginDto)).rejects.toThrow(UnauthorizedException);
+      await expect(service.login(loginDto)).rejects.toThrow(
+        UnauthorizedException,
+      );
 
       expect(mockUserRepository.update).toHaveBeenCalledWith(
         mockUser.id,
@@ -442,7 +453,10 @@ describe('AuthService', () => {
     });
 
     it('should reset counter and clear lockedUntil on successful login', async () => {
-      mockUserRepository.findOne.mockResolvedValue({ ...mockUser, password: 'hashed' });
+      mockUserRepository.findOne.mockResolvedValue({
+        ...mockUser,
+        password: 'hashed',
+      });
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       mockCacheManager.del.mockResolvedValue(undefined);
       mockUserRepository.update.mockResolvedValue({ affected: 1 });
@@ -515,10 +529,7 @@ describe('AuthService', () => {
         const result = await service.verifyEmail(verificationToken);
 
         expect(result).toHaveProperty('success', true);
-        expect(result).toHaveProperty(
-          'message',
-          'Email is already verified',
-        );
+        expect(result).toHaveProperty('message', 'Email is already verified');
         expect(mockUserRepository.save).not.toHaveBeenCalled();
       });
 
@@ -548,7 +559,9 @@ describe('AuthService', () => {
       });
 
       it('should throw BadRequestException for expired/invalid JWT', async () => {
-        mockJwtService.verifyAsync.mockRejectedValue(new Error('Token expired'));
+        mockJwtService.verifyAsync.mockRejectedValue(
+          new Error('Token expired'),
+        );
 
         await expect(service.verifyEmail(verificationToken)).rejects.toThrow(
           BadRequestException,
@@ -592,9 +605,9 @@ describe('AuthService', () => {
           emailVerifiedAt: new Date('2024-01-01'),
         });
 
-        await expect(
-          service.resendVerification(mockUser.id),
-        ).rejects.toThrow(BadRequestException);
+        await expect(service.resendVerification(mockUser.id)).rejects.toThrow(
+          BadRequestException,
+        );
         expect(mockJwtService.signAsync).not.toHaveBeenCalled();
       });
 
@@ -613,9 +626,9 @@ describe('AuthService', () => {
         });
         mockCacheManager.get.mockResolvedValue(3); // Already at limit
 
-        await expect(
-          service.resendVerification(mockUser.id),
-        ).rejects.toThrow(BadRequestException);
+        await expect(service.resendVerification(mockUser.id)).rejects.toThrow(
+          BadRequestException,
+        );
         expect(mockJwtService.signAsync).not.toHaveBeenCalled();
       });
 
@@ -663,16 +676,16 @@ describe('AuthService', () => {
       });
 
       it('should return false for non-existent user', async () => {
-       mockUserRepository.findOne.mockResolvedValue(null);
+        mockUserRepository.findOne.mockResolvedValue(null);
 
-       const result = await service.isEmailVerified('non-existent-id');
+        const result = await service.isEmailVerified('non-existent-id');
 
-       expect(result).toBe(false);
-     });
-   });
- });
+        expect(result).toBe(false);
+      });
+    });
+  });
 
- describe('validatePasswordStrength', () => {
+  describe('validatePasswordStrength', () => {
     beforeEach(() => {
       (global as any).fetch = jest.fn();
       mockLogger.warn.mockReset();
@@ -691,12 +704,12 @@ describe('AuthService', () => {
     });
 
     it('should reject passwords shorter than 12 characters', async () => {
-      await expect(
-        service.validatePasswordStrength('Short1!'),
-      ).rejects.toThrow(BadRequestException);
-      await expect(
-        service.validatePasswordStrength('Short1!'),
-      ).rejects.toThrow('Password must be at least 12 characters long');
+      await expect(service.validatePasswordStrength('Short1!')).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.validatePasswordStrength('Short1!')).rejects.toThrow(
+        'Password must be at least 12 characters long',
+      );
     });
 
     it('should reject passwords missing uppercase letter', async () => {

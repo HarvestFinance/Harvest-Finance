@@ -5,7 +5,9 @@ import * as promClient from 'prom-client';
 export class MetricsService {
   static readonly contentType = promClient.register.contentType;
 
-  readonly httpRequestsTotal: promClient.Counter<'method' | 'route' | 'status_code'>;
+  readonly httpRequestsTotal: promClient.Counter<
+    'method' | 'route' | 'status_code'
+  >;
   readonly httpRequestDurationSeconds: promClient.Histogram<
     'method' | 'route' | 'status_code'
   >;
@@ -37,4 +39,3 @@ export class MetricsService {
     return promClient.register.metrics();
   }
 }
-

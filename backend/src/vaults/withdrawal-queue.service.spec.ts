@@ -1,7 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { WithdrawalQueueService } from './withdrawal-queue.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Withdrawal, WithdrawalStatus } from '../database/entities/withdrawal.entity';
+import {
+  Withdrawal,
+  WithdrawalStatus,
+} from '../database/entities/withdrawal.entity';
 import { DataSource } from 'typeorm';
 import { EventBus } from '@nestjs/cqrs';
 import { Vault } from '../database/entities/vault.entity';
@@ -87,11 +90,14 @@ describe('WithdrawalQueueService', () => {
 
       await service.processQueue('v1', 250);
 
-      expect(mockEntityManager.find).toHaveBeenCalledWith(Withdrawal, expect.objectContaining({
-        where: { vaultId: 'v1', status: WithdrawalStatus.QUEUED },
-        order: { queuedAt: 'ASC' },
-        lock: { mode: 'pessimistic_write' },
-      }));
+      expect(mockEntityManager.find).toHaveBeenCalledWith(
+        Withdrawal,
+        expect.objectContaining({
+          where: { vaultId: 'v1', status: WithdrawalStatus.QUEUED },
+          order: { queuedAt: 'ASC' },
+          lock: { mode: 'pessimistic_write' },
+        }),
+      );
 
       // Only w1 (100) and w2 (200) can't both be processed because total is 300, liquidity is 250.
       // Wait, w1 (100) will be processed, remaining liquidity 150.
@@ -99,14 +105,21 @@ describe('WithdrawalQueueService', () => {
       expect(mockEntityManager.save).toHaveBeenCalledTimes(1);
       expect(w1.status).toBe(WithdrawalStatus.CONFIRMED);
       expect(w1.confirmedAt).toBeInstanceOf(Date);
-      
+
       expect(w2.status).toBe(WithdrawalStatus.QUEUED); // unchanged
       expect(w3.status).toBe(WithdrawalStatus.QUEUED); // unchanged
 
-      expect(mockEntityManager.decrement).toHaveBeenCalledWith(Vault, { id: 'v1' }, 'totalDeposits', 100);
+      expect(mockEntityManager.decrement).toHaveBeenCalledWith(
+        Vault,
+        { id: 'v1' },
+        'totalDeposits',
+        100,
+      );
 
       expect(mockEventBus.publish).toHaveBeenCalledTimes(1);
-      expect(mockEventBus.publish).toHaveBeenCalledWith(new VaultDebitedEvent('v1', 'u1', 100));
+      expect(mockEventBus.publish).toHaveBeenCalledWith(
+        new VaultDebitedEvent('v1', 'u1', 100),
+      );
     });
 
     it('should partially processing an item is disallowed; it must either clear fully or wait', async () => {
@@ -128,7 +141,9 @@ describe('WithdrawalQueueService', () => {
 
   describe('getQueueMetrics', () => {
     it('should return metrics for user in queue', async () => {
-      mockWithdrawalRepository.findOne.mockResolvedValueOnce({ queuedAt: new Date('2023-01-01') });
+      mockWithdrawalRepository.findOne.mockResolvedValueOnce({
+        queuedAt: new Date('2023-01-01'),
+      });
       mockWithdrawalRepository.count.mockResolvedValueOnce(3);
 
       const metrics = await service.getQueueMetrics('u1', 'v1');

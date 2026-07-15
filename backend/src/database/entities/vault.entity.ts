@@ -9,7 +9,11 @@ import {
   UpdateDateColumn,
   Index,
 } from 'typeorm';
-import { Strategy, CompoundingFrequency, COMPOUNDING_FREQUENCY_N } from './strategy.entity';
+import {
+  Strategy,
+  CompoundingFrequency,
+  COMPOUNDING_FREQUENCY_N,
+} from './strategy.entity';
 import { User } from './user.entity';
 import { Deposit } from './deposit.entity';
 import { VaultApproval } from './vault-approval.entity';
@@ -167,8 +171,7 @@ export class Vault {
     if (apr === 0) return 0;
 
     const frequency =
-      this.strategy?.compoundingFrequency ??
-      CompoundingFrequency.DAILY;
+      this.strategy?.compoundingFrequency ?? CompoundingFrequency.DAILY;
 
     const n = COMPOUNDING_FREQUENCY_N[frequency];
     const decimalApr = apr / 100;
@@ -183,9 +186,7 @@ export class Vault {
   get utilizationPercentage(): number {
     if (Number(this.maxCapacity) === 0) return 0;
 
-    return (
-      (Number(this.totalDeposits) / Number(this.maxCapacity)) * 100
-    );
+    return (Number(this.totalDeposits) / Number(this.maxCapacity)) * 100;
   }
 
   get isFullCapacity(): boolean {

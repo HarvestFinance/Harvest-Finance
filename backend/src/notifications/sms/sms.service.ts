@@ -29,7 +29,9 @@ export class SMSService {
   /**
    * Send SMS notification to user's verified phone number
    */
-  async sendSMS(dto: SendSMSDto): Promise<{ success: boolean; messageId?: string }> {
+  async sendSMS(
+    dto: SendSMSDto,
+  ): Promise<{ success: boolean; messageId?: string }> {
     const user = await this.userRepository.findOne({
       where: { id: dto.userId },
     });
@@ -39,31 +41,22 @@ export class SMSService {
     }
 
     if (!user.phoneNumber) {
-      throw new BadRequestException(
-        'User has not provided a phone number',
-      );
+      throw new BadRequestException('User has not provided a phone number');
     }
 
     if (!user.phoneVerifiedAt) {
-      throw new BadRequestException(
-        'User phone number is not verified',
-      );
+      throw new BadRequestException('User phone number is not verified');
     }
 
     try {
-      const result = await this.smsProvider.send(
-        user.phoneNumber,
-        dto.message,
-      );
+      const result = await this.smsProvider.send(user.phoneNumber, dto.message);
 
       return {
         success: true,
         messageId: result.messageId,
       };
     } catch (error) {
-      throw new BadRequestException(
-        `Failed to send SMS: ${error.message}`,
-      );
+      throw new BadRequestException(`Failed to send SMS: ${error.message}`);
     }
   }
 
@@ -82,18 +75,14 @@ export class SMSService {
     }
 
     if (!user.phoneNumber) {
-      throw new BadRequestException(
-        'Phone number not set on user account',
-      );
+      throw new BadRequestException('Phone number not set on user account');
     }
 
     try {
       const result = await this.smsProvider.sendOTP(user.phoneNumber);
       return { expiresIn: result.expiresIn };
     } catch (error) {
-      throw new BadRequestException(
-        `Failed to send OTP: ${error.message}`,
-      );
+      throw new BadRequestException(`Failed to send OTP: ${error.message}`);
     }
   }
 
@@ -113,9 +102,7 @@ export class SMSService {
     }
 
     if (!user.phoneNumber) {
-      throw new BadRequestException(
-        'Phone number not set on user account',
-      );
+      throw new BadRequestException('Phone number not set on user account');
     }
 
     try {
@@ -132,9 +119,7 @@ export class SMSService {
 
       return { verified };
     } catch (error) {
-      throw new BadRequestException(
-        `Failed to verify OTP: ${error.message}`,
-      );
+      throw new BadRequestException(`Failed to verify OTP: ${error.message}`);
     }
   }
 

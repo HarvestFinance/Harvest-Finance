@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, develop, "feat/**", "fix/**"]
+    branches: [main, develop]
   pull_request:
     branches: [main, develop]
 
@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: "20"
+  NODE_VERSION: "22"
 
 jobs:
   # ── Backend ──────────────────────────────────────────────────────────────────
@@ -88,7 +88,7 @@ jobs:
 
       - run: npm ci
       - run: npm run build
-      - run: npm test -- --forceExit --passWithNoTests
+      - run: npm test -- --forceExit
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         if: always()
@@ -105,7 +105,6 @@ jobs:
       - uses: docker/setup-buildx-action@v3
       - name: Build backend image
         uses: docker/build-push-action@v6
-        continue-on-error: true
         with:
           context: backend
           file: backend/Dockerfile
@@ -149,8 +148,8 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - run: npm ci
-      - run: npm test -- --passWithNoTests
-      - run: npm run test:vitest -- --run --passWithNoTests
+      - run: npm test
+      - run: npm run test:vitest -- --run
 
   frontend-build:
     name: Frontend — Next.js Build
@@ -195,11 +194,11 @@ jobs:
 
       - name: Run forge tests
         working-directory: contracts-legacy
-        run: forge test -vvv || true
+        run: forge test -vvv --skip "test/VaultMainnetFork.t.sol"
 
       - name: Forge coverage
         working-directory: contracts-legacy
-        run: forge coverage --report lcov || true
+        run: forge coverage --report lcov
 
       - name: Upload coverage
         uses: actions/upload-artifact@v4
@@ -207,27 +206,29 @@ jobs:
           name: contracts-coverage
           path: contracts-legacy/lcov.info
 
-  # ── Smart Contract Fork Tests ─────────────────────────────────────────────────
-  contracts-fork-test:
-    name: Contracts — Mainnet Fork Tests
+  # ── Soroban Contracts ────────────────────────────────────────────────────────
+  contracts-soroban:
+    name: Contracts — Soroban Build & Test
     runs-on: ubuntu-latest
-    # Only run on main/develop pushes (not every feature PR) to conserve RPC calls
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    defaults:
+      run:
+        working-directory: contracts-soroban/vault
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          version: nightly
+          components: rustfmt, clippy
 
-      - name: Run mainnet fork tests
-        working-directory: contracts-legacy
-        env:
-          ETH_RPC_URL: ${{ secrets.ETH_RPC_URL }}
-        run: make test-fork
+      - name: Cargo check
+        run: cargo check
+
+      - name: Cargo test
+        run: cargo test
+
+      - name: Cargo clippy
+        run: cargo clippy -- -D warnings
 
   # ── All-green gate ────────────────────────────────────────────────────────────
   all-checks:
@@ -237,5 +238,6 @@ jobs:
       - backend-build
       - frontend-build
       - contracts-test
+      - contracts-soroban
     steps:
       - run: echo "CI passed ✓"

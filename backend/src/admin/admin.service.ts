@@ -18,6 +18,7 @@ import { DashboardStatsDto } from './dto/dashboard-stats.dto';
 import { CreateVaultDto, UpdateVaultDto } from './dto/vault-crud.dto';
 import { PlatformAnalyticsDto } from './dto/analytics.dto';
 import { PlatformCircuitBreakerService } from '../common/circuit-breaker/platform-circuit-breaker.service';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class AdminService {
@@ -34,6 +35,7 @@ export class AdminService {
     private withdrawalRepository: Repository<Withdrawal>,
     private dataSource: DataSource,
     private circuitBreakerService: PlatformCircuitBreakerService,
+    private readonly authService: AuthService,
   ) {}
 
   /**

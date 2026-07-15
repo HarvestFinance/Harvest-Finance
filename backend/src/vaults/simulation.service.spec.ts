@@ -40,7 +40,9 @@ describe('SimulationService', () => {
 
   describe('simulateDeposit', () => {
     it('should simulate a deposit successfully', async () => {
-      jest.spyOn(vaultRepository, 'findOne').mockResolvedValue(mockVault as any);
+      jest
+        .spyOn(vaultRepository, 'findOne')
+        .mockResolvedValue(mockVault as any);
 
       const result = await service.simulateDeposit('test-vault-id', {
         amount: 1000,
@@ -65,7 +67,9 @@ describe('SimulationService', () => {
     });
 
     it('should throw BadRequestException for negative amount', async () => {
-      jest.spyOn(vaultRepository, 'findOne').mockResolvedValue(mockVault as any);
+      jest
+        .spyOn(vaultRepository, 'findOne')
+        .mockResolvedValue(mockVault as any);
 
       await expect(
         service.simulateDeposit('test-vault-id', { amount: -100 }),
@@ -73,7 +77,9 @@ describe('SimulationService', () => {
     });
 
     it('should throw BadRequestException for zero amount', async () => {
-      jest.spyOn(vaultRepository, 'findOne').mockResolvedValue(mockVault as any);
+      jest
+        .spyOn(vaultRepository, 'findOne')
+        .mockResolvedValue(mockVault as any);
 
       await expect(
         service.simulateDeposit('test-vault-id', { amount: 0 }),
@@ -83,7 +89,9 @@ describe('SimulationService', () => {
 
   describe('simulateStrategyChange', () => {
     it('should simulate a strategy change successfully', async () => {
-      jest.spyOn(vaultRepository, 'findOne').mockResolvedValue(mockVault as any);
+      jest
+        .spyOn(vaultRepository, 'findOne')
+        .mockResolvedValue(mockVault as any);
 
       const result = await service.simulateStrategyChange('test-vault-id', {
         newAPY: 15.5,
@@ -107,7 +115,9 @@ describe('SimulationService', () => {
     });
 
     it('should use current APY if newAPY not provided', async () => {
-      jest.spyOn(vaultRepository, 'findOne').mockResolvedValue(mockVault as any);
+      jest
+        .spyOn(vaultRepository, 'findOne')
+        .mockResolvedValue(mockVault as any);
 
       const result = await service.simulateStrategyChange('test-vault-id', {});
 

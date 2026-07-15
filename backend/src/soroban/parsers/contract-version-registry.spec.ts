@@ -11,8 +11,8 @@ function makeRegistry(envOverrides: Record<string, string> = {}) {
 const CONTRACT_A = 'CONTRACT_A';
 const versions = JSON.stringify({
   [CONTRACT_A]: [
-    { version: 'v1', fromLedger: 0,      toLedger: 499999 },
-    { version: 'v2', fromLedger: 500000, toLedger: null   },
+    { version: 'v1', fromLedger: 0, toLedger: 499999 },
+    { version: 'v2', fromLedger: 500000, toLedger: null },
   ],
 });
 
@@ -46,9 +46,7 @@ describe('ContractVersionRegistry', () => {
 
   it('returns fallback when ledger is outside all ranges', () => {
     const noGap = JSON.stringify({
-      [CONTRACT_A]: [
-        { version: 'v1', fromLedger: 1000, toLedger: 1999 },
-      ],
+      [CONTRACT_A]: [{ version: 'v1', fromLedger: 1000, toLedger: 1999 }],
     });
     const registry = makeRegistry({ SOROBAN_CONTRACT_VERSIONS: noGap });
     expect(registry.resolveVersion(CONTRACT_A, 500)).toBe('v1');

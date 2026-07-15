@@ -88,19 +88,34 @@ describe('AuthService OAuth', () => {
       const mockLink = { id: 'link-id', user: mockUser };
       mockOAuthLinkRepository.findOne.mockResolvedValue(mockLink);
 
-      const result = await service.validateOrCreateOAuthUser('google', 'google-id', 'test@example.com');
+      const result = await service.validateOrCreateOAuthUser(
+        'google',
+        'google-id',
+        'test@example.com',
+      );
       expect(result).toBe(mockUser);
-      expect(mockUserRepository.update).toHaveBeenCalledWith('user-id', expect.any(Object));
+      expect(mockUserRepository.update).toHaveBeenCalledWith(
+        'user-id',
+        expect.any(Object),
+      );
     });
 
     it('should link to existing user if email matches but link does not exist', async () => {
       const mockUser = { id: 'user-id', email: 'test@example.com' };
       mockOAuthLinkRepository.findOne.mockResolvedValue(null);
       mockUserRepository.findOne.mockResolvedValue(mockUser);
-      mockOAuthLinkRepository.create.mockReturnValue({ userId: 'user-id', oauthProvider: 'google', oauthId: 'google-id' });
+      mockOAuthLinkRepository.create.mockReturnValue({
+        userId: 'user-id',
+        oauthProvider: 'google',
+        oauthId: 'google-id',
+      });
       mockOAuthLinkRepository.save.mockResolvedValue({});
 
-      const result = await service.validateOrCreateOAuthUser('google', 'google-id', 'test@example.com');
+      const result = await service.validateOrCreateOAuthUser(
+        'google',
+        'google-id',
+        'test@example.com',
+      );
       expect(result).toBe(mockUser);
       expect(mockOAuthLinkRepository.create).toHaveBeenCalledWith({
         userId: 'user-id',
@@ -113,21 +128,33 @@ describe('AuthService OAuth', () => {
     it('should create a new user and link if email and link do not exist', async () => {
       mockOAuthLinkRepository.findOne.mockResolvedValue(null);
       mockUserRepository.findOne.mockResolvedValue(null);
-      
+
       const newMockUser = { id: 'new-user-id', email: 'new@example.com' };
       mockUserRepository.create.mockReturnValue(newMockUser);
       mockUserRepository.save.mockResolvedValue(newMockUser);
-      
-      mockOAuthLinkRepository.create.mockReturnValue({ userId: 'new-user-id', oauthProvider: 'google', oauthId: 'google-id' });
+
+      mockOAuthLinkRepository.create.mockReturnValue({
+        userId: 'new-user-id',
+        oauthProvider: 'google',
+        oauthId: 'google-id',
+      });
       mockOAuthLinkRepository.save.mockResolvedValue({});
 
-      const result = await service.validateOrCreateOAuthUser('google', 'google-id', 'new@example.com', 'Alice', 'Smith');
+      const result = await service.validateOrCreateOAuthUser(
+        'google',
+        'google-id',
+        'new@example.com',
+        'Alice',
+        'Smith',
+      );
       expect(result).toBe(newMockUser);
-      expect(mockUserRepository.create).toHaveBeenCalledWith(expect.objectContaining({
-        email: 'new@example.com',
-        firstName: 'Alice',
-        lastName: 'Smith',
-      }));
+      expect(mockUserRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: 'new@example.com',
+          firstName: 'Alice',
+          lastName: 'Smith',
+        }),
+      );
       expect(mockUserRepository.save).toHaveBeenCalled();
       expect(mockOAuthLinkRepository.create).toHaveBeenCalledWith({
         userId: 'new-user-id',
@@ -139,8 +166,16 @@ describe('AuthService OAuth', () => {
 
   describe('loginWithOAuth', () => {
     it('should return token payload', async () => {
-      const mockUser = { id: 'user-id', email: 'test@example.com', role: UserRole.BUYER, firstName: 'Alice', lastName: 'Smith' } as any;
-      mockJwtService.signAsync.mockResolvedValueOnce('access_token').mockResolvedValueOnce('refresh_token');
+      const mockUser = {
+        id: 'user-id',
+        email: 'test@example.com',
+        role: UserRole.BUYER,
+        firstName: 'Alice',
+        lastName: 'Smith',
+      } as any;
+      mockJwtService.signAsync
+        .mockResolvedValueOnce('access_token')
+        .mockResolvedValueOnce('refresh_token');
       mockUserRepository.update.mockResolvedValue({});
 
       const result = await service.loginWithOAuth(mockUser);

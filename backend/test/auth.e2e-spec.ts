@@ -558,7 +558,10 @@ describe('AuthController (e2e)', () => {
 
       expect(response.body).toHaveProperty('access_token');
       expect(response.body).toHaveProperty('refresh_token');
-      expect(response.body.user).toHaveProperty('email', verificationUser.email);
+      expect(response.body.user).toHaveProperty(
+        'email',
+        verificationUser.email,
+      );
     });
 
     it('should verify email with valid token', async () => {

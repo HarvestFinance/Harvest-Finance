@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
 
-export class AddPhoneAndNotificationPreferencesToUsers1700000000022
-  implements MigrationInterface
-{
+export class AddPhoneAndNotificationPreferencesToUsers1700000000022 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.addColumn(
       'users',

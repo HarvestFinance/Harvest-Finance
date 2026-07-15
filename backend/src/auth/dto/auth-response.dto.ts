@@ -102,6 +102,13 @@ export class TokenResponseDto {
   })
   access_token: string;
 
+  /** Long-lived JWT used to obtain a new access token without re-login. */
+  @ApiProperty({
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    description: 'Refresh token (JWT)',
+  })
+  refresh_token: string;
+
   /** OAuth 2.0 token type. Always "Bearer" for this API. */
   @ApiProperty({
     example: 'Bearer',

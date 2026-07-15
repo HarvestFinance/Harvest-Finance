@@ -9,7 +9,10 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { InsuranceFundService, InsuranceFundStats } from './insurance-fund.service';
+import {
+  InsuranceFundService,
+  InsuranceFundStats,
+} from './insurance-fund.service';
 import { JwtAuthGuard as AuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -49,7 +52,9 @@ export class InsuranceFundController {
 
   @Get('coverage')
   async getCoverage() {
-    return { coverageRatio: await this.insuranceFundService.getCoverageRatio() };
+    return {
+      coverageRatio: await this.insuranceFundService.getCoverageRatio(),
+    };
   }
 
   @Get('stats')
@@ -114,7 +119,12 @@ export class InsuranceFundController {
     @Body('adminId') adminId: string,
     @Body('adminRole') adminRole: UserRole,
   ) {
-    return this.insuranceFundService.processIncident(adminId, adminRole, body.losses, body.reason);
+    return this.insuranceFundService.processIncident(
+      adminId,
+      adminRole,
+      body.losses,
+      body.reason,
+    );
   }
 
   @Post('claims/:claimId/finalize')

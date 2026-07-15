@@ -90,10 +90,20 @@ describe('SorobanIndexerService - Filter handling', () => {
       providers: [
         SorobanIndexerService,
         { provide: getRepositoryToken(SorobanEvent), useValue: mockRepo },
-        { provide: getRepositoryToken(IndexerState), useValue: { findOne: jest.fn(), find: jest.fn() } },
+        {
+          provide: getRepositoryToken(IndexerState),
+          useValue: { findOne: jest.fn(), find: jest.fn() },
+        },
         { provide: ConfigService, useValue: mockConfig },
         { provide: 'CACHE_MANAGER', useValue: mockCache },
-        { provide: DataSource, useValue: { transaction: jest.fn().mockImplementation(async (cb: any) => cb({})) } },
+        {
+          provide: DataSource,
+          useValue: {
+            transaction: jest
+              .fn()
+              .mockImplementation(async (cb: any) => cb({})),
+          },
+        },
       ],
     }).compile();
 

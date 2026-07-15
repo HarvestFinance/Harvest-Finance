@@ -1,12 +1,4 @@
-import {
-  bool,
-  cleanEnv,
-  num,
-  port,
-  str,
-  testOnly,
-  url,
-} from 'envalid';
+import { bool, cleanEnv, num, port, str, testOnly, url } from 'envalid';
 
 const logLevels = ['trace', 'debug', 'info', 'warn', 'error', 'fatal'] as const;
 const nodeEnvironments = [

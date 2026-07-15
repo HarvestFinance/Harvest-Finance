@@ -1,11 +1,25 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InsuranceFundController } from './insurance-fund.controller';
-import { InsuranceFundService, InsuranceFundStats } from './insurance-fund.service';
-import { Vault, VaultType, VaultStatus } from '../database/entities/vault.entity';
-import { InsuranceClaim, InsuranceClaimStatus } from '../database/entities/insurance-claim.entity';
+import {
+  InsuranceFundService,
+  InsuranceFundStats,
+} from './insurance-fund.service';
+import {
+  Vault,
+  VaultType,
+  VaultStatus,
+} from '../database/entities/vault.entity';
+import {
+  InsuranceClaim,
+  InsuranceClaimStatus,
+} from '../database/entities/insurance-claim.entity';
 import { User, UserRole } from '../database/entities/user.entity';
 
 const USER_ID = 'user-11111111-1111-1111-1111-111111111111';
@@ -52,20 +66,28 @@ describe('InsuranceFundController', () => {
       const vault = { id: INSURANCE_VAULT_ID, totalDeposits: 1000 } as Vault;
       mockInsuranceFundService.depositToFund.mockResolvedValue(vault);
 
-      const result = await controller.depositToFund({ userId: USER_ID, amount: 100 });
+      const result = await controller.depositToFund({
+        userId: USER_ID,
+        amount: 100,
+      });
 
-      expect(mockInsuranceFundService.depositToFund).toHaveBeenCalledWith(USER_ID, 100);
+      expect(mockInsuranceFundService.depositToFund).toHaveBeenCalledWith(
+        USER_ID,
+        100,
+      );
       expect(result).toBe(vault);
     });
 
     it('should throw BadRequestException for missing parameters', async () => {
-      await expect(controller.depositToFund({}) as any).rejects.toThrow(BadRequestException);
+      await expect(controller.depositToFund({}) as any).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException for invalid amount type', async () => {
-      await expect(controller.depositToFund({ userId: USER_ID, amount: 'invalid' } as any)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        controller.depositToFund({ userId: USER_ID, amount: 'invalid' } as any),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -144,7 +166,9 @@ describe('InsuranceFundController', () => {
 
       const result = await controller.getUserClaims(USER_ID);
 
-      expect(mockInsuranceFundService.getUserClaims).toHaveBeenCalledWith(USER_ID);
+      expect(mockInsuranceFundService.getUserClaims).toHaveBeenCalledWith(
+        USER_ID,
+      );
       expect(result).toHaveLength(1);
     });
   });
@@ -158,7 +182,9 @@ describe('InsuranceFundController', () => {
 
       const result = await controller.getClaimsByStatus('COMPLETED');
 
-      expect(mockInsuranceFundService.getClaimsByStatus).toHaveBeenCalledWith(InsuranceClaimStatus.COMPLETED);
+      expect(mockInsuranceFundService.getClaimsByStatus).toHaveBeenCalledWith(
+        InsuranceClaimStatus.COMPLETED,
+      );
       expect(result).toHaveLength(1);
     });
   });
@@ -170,7 +196,9 @@ describe('InsuranceFundController', () => {
 
       const result = await controller.getClaim(CLAIM_ID);
 
-      expect(mockInsuranceFundService.getClaimById).toHaveBeenCalledWith(CLAIM_ID);
+      expect(mockInsuranceFundService.getClaimById).toHaveBeenCalledWith(
+        CLAIM_ID,
+      );
       expect(result.id).toBe(CLAIM_ID);
     });
   });
@@ -180,15 +208,13 @@ describe('InsuranceFundController', () => {
       const claims = [{ id: CLAIM_ID }] as InsuranceClaim[];
       mockInsuranceFundService.declareIncident.mockResolvedValue(claims);
 
-      const result = await controller.declareIncident(
-        {
-          vaultId: INSURANCE_VAULT_ID,
-          lossAmount: 5000,
-          description: 'Smart contract exploit',
-          adminId: ADMIN_ID,
-          adminRole: UserRole.ADMIN,
-        },
-      );
+      const result = await controller.declareIncident({
+        vaultId: INSURANCE_VAULT_ID,
+        lossAmount: 5000,
+        description: 'Smart contract exploit',
+        adminId: ADMIN_ID,
+        adminRole: UserRole.ADMIN,
+      });
 
       expect(mockInsuranceFundService.declareIncident).toHaveBeenCalled();
       expect(result).toHaveLength(1);
@@ -200,14 +226,12 @@ describe('InsuranceFundController', () => {
       const claims = [{ id: CLAIM_ID }] as InsuranceClaim[];
       mockInsuranceFundService.processIncident.mockResolvedValue(claims);
 
-      const result = await controller.processPayout(
-        {
-          losses: { [USER_ID]: 1000 },
-          reason: 'Strategy failure',
-          adminId: ADMIN_ID,
-          adminRole: UserRole.ADMIN,
-        },
-      );
+      const result = await controller.processPayout({
+        losses: { [USER_ID]: 1000 },
+        reason: 'Strategy failure',
+        adminId: ADMIN_ID,
+        adminRole: UserRole.ADMIN,
+      });
 
       expect(mockInsuranceFundService.processIncident).toHaveBeenCalled();
       expect(result).toHaveLength(1);
@@ -216,12 +240,23 @@ describe('InsuranceFundController', () => {
 
   describe('finalizeClaim', () => {
     it('should finalize a claim', async () => {
-      const claim = { id: CLAIM_ID, status: InsuranceClaimStatus.COMPLETED } as InsuranceClaim;
+      const claim = {
+        id: CLAIM_ID,
+        status: InsuranceClaimStatus.COMPLETED,
+      } as InsuranceClaim;
       mockInsuranceFundService.finalizeClaim.mockResolvedValue(claim);
 
-      const result = await controller.finalizeClaim(CLAIM_ID, ADMIN_ID, UserRole.ADMIN);
+      const result = await controller.finalizeClaim(
+        CLAIM_ID,
+        ADMIN_ID,
+        UserRole.ADMIN,
+      );
 
-      expect(mockInsuranceFundService.finalizeClaim).toHaveBeenCalledWith(CLAIM_ID, ADMIN_ID, UserRole.ADMIN);
+      expect(mockInsuranceFundService.finalizeClaim).toHaveBeenCalledWith(
+        CLAIM_ID,
+        ADMIN_ID,
+        UserRole.ADMIN,
+      );
       expect(result.status).toBe(InsuranceClaimStatus.COMPLETED);
     });
   });

@@ -33,7 +33,9 @@ export class VaultAccountMonitorService implements OnModuleInit {
 
   async checkAllVaults(): Promise<void> {
     if (this.running) {
-      this.logger.warn('Vault account check already in progress, skipping this cycle');
+      this.logger.warn(
+        'Vault account check already in progress, skipping this cycle',
+      );
       return;
     }
     this.running = true;
@@ -60,7 +62,6 @@ export class VaultAccountMonitorService implements OnModuleInit {
     }
   }
 
-
   async checkSingleVault(vault: Vault): Promise<void> {
     try {
       await this.stellarService.getAccountInfo(vault.stellarAccountAddress!);
@@ -68,7 +69,7 @@ export class VaultAccountMonitorService implements OnModuleInit {
       if (
         (err instanceof BadRequestException &&
           err.message.toLowerCase().includes('not found')) ||
-        (err as any)?.status === 404
+        err?.status === 404
       ) {
         await this.suspendVault(vault);
       } else {

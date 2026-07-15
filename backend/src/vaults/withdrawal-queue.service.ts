@@ -2,7 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, LessThan } from 'typeorm';
 import { EventBus } from '@nestjs/cqrs';
-import { Withdrawal, WithdrawalStatus } from '../database/entities/withdrawal.entity';
+import {
+  Withdrawal,
+  WithdrawalStatus,
+} from '../database/entities/withdrawal.entity';
 import { Vault } from '../database/entities/vault.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../database/entities/notification.entity';
@@ -30,18 +33,25 @@ export class WithdrawalQueueService {
       { id: withdrawalId },
       { status: WithdrawalStatus.QUEUED, queuedAt: new Date() },
     );
-    this.logger.log(`Withdrawal ${withdrawalId} queued due to insufficient liquidity`);
+    this.logger.log(
+      `Withdrawal ${withdrawalId} queued due to insufficient liquidity`,
+    );
   }
 
   /**
    * Process the withdrawal queue for a given vault in strict atomic FIFO order.
    * Leverages pessimistic database locks to prevent multi-node concurrency race conditions.
    */
-  async processQueue(vaultId: string, availableLiquidity: number): Promise<void> {
+  async processQueue(
+    vaultId: string,
+    availableLiquidity: number,
+  ): Promise<void> {
     const processedWithdrawals: Withdrawal[] = [];
 
     // Fetch the vault structure inside a transaction block to ensure entity synchronicity
-    const vault = await this.vaultRepository.findOne({ where: { id: vaultId } });
+    const vault = await this.vaultRepository.findOne({
+      where: { id: vaultId },
+    });
     if (!vault) {
       this.logger.error(`Vault ${vaultId} not found`);
       return;
@@ -64,19 +74,28 @@ export class WithdrawalQueueService {
           // Fulfill the withdrawal
           withdrawal.status = WithdrawalStatus.CONFIRMED;
           withdrawal.confirmedAt = new Date();
-          
+
           await manager.save(withdrawal);
-          
+
           // Deduct from the vault's available pool safely inside the write lock
-          await manager.decrement(Vault, { id: vaultId }, 'totalDeposits', amount);
-          
+          await manager.decrement(
+            Vault,
+            { id: vaultId },
+            'totalDeposits',
+            amount,
+          );
+
           currentLiquidity -= amount;
           processedWithdrawals.push(withdrawal);
-          
-          this.logger.log(`Processed queued withdrawal ${withdrawal.id} for vault ${vaultId}`);
+
+          this.logger.log(
+            `Processed queued withdrawal ${withdrawal.id} for vault ${vaultId}`,
+          );
         } else {
           // FIFO constraint: break early if we cannot fulfill the oldest remaining item.
-          this.logger.debug(`Insufficient liquidity to process withdrawal ${withdrawal.id}. Stopping queue processing.`);
+          this.logger.debug(
+            `Insufficient liquidity to process withdrawal ${withdrawal.id}. Stopping queue processing.`,
+          );
           break;
         }
       }
@@ -84,8 +103,14 @@ export class WithdrawalQueueService {
 
     // Publish event logs and trigger user notifications safely OUTSIDE the db lock matrix
     for (const withdrawal of processedWithdrawals) {
-      this.eventBus.publish(new VaultDebitedEvent(vaultId, withdrawal.userId, Number(withdrawal.amount)));
-      
+      this.eventBus.publish(
+        new VaultDebitedEvent(
+          vaultId,
+          withdrawal.userId,
+          Number(withdrawal.amount),
+        ),
+      );
+
       await this.notificationService.create({
         userId: withdrawal.userId,
         title: 'Withdrawal Confirmed',
@@ -100,16 +125,21 @@ export class WithdrawalQueueService {
    */
   async processWithdrawalQueue(vaultId: string): Promise<void> {
     this.logger.debug(`Processing withdrawal queue for vault ${vaultId}`);
-    const vault = await this.vaultRepository.findOne({ where: { id: vaultId } });
+    const vault = await this.vaultRepository.findOne({
+      where: { id: vaultId },
+    });
     if (!vault) return;
-    
+
     await this.processQueue(vaultId, Number(vault.totalDeposits));
   }
 
   /**
    * Evaluates exact position tracking relative to the user's oldest unfulfilled request
    */
-  async getQueueMetrics(userId: string, vaultId: string): Promise<{ positionInQueue: number; estimatedWaitTime: string }> {
+  async getQueueMetrics(
+    userId: string,
+    vaultId: string,
+  ): Promise<{ positionInQueue: number; estimatedWaitTime: string }> {
     const userOldestQueued = await this.withdrawalRepository.findOne({
       where: { userId, vaultId, status: WithdrawalStatus.QUEUED },
       order: { queuedAt: 'ASC' },
@@ -137,12 +167,21 @@ export class WithdrawalQueueService {
    * Compatibility wrapper method to support scalar position tracking indices
    */
   async getQueuePosition(withdrawalId: string): Promise<number | null> {
-    const withdrawal = await this.withdrawalRepository.findOne({ where: { id: withdrawalId } });
-    if (!withdrawal || withdrawal.status !== WithdrawalStatus.QUEUED || !withdrawal.queuedAt) {
+    const withdrawal = await this.withdrawalRepository.findOne({
+      where: { id: withdrawalId },
+    });
+    if (
+      !withdrawal ||
+      withdrawal.status !== WithdrawalStatus.QUEUED ||
+      !withdrawal.queuedAt
+    ) {
       return null;
     }
 
-    const metrics = await this.getQueueMetrics(withdrawal.userId, withdrawal.vaultId);
+    const metrics = await this.getQueueMetrics(
+      withdrawal.userId,
+      withdrawal.vaultId,
+    );
     return metrics.positionInQueue > 0 ? metrics.positionInQueue : null;
   }
 
@@ -150,8 +189,11 @@ export class WithdrawalQueueService {
    * Compatibility hook mapping for time estimates
    */
   async getEstimatedWaitTime(withdrawalId: string): Promise<string | null> {
-    const withdrawal = await this.withdrawalRepository.findOne({ where: { id: withdrawalId } });
-    if (!withdrawal || withdrawal.status !== WithdrawalStatus.QUEUED) return null;
+    const withdrawal = await this.withdrawalRepository.findOne({
+      where: { id: withdrawalId },
+    });
+    if (!withdrawal || withdrawal.status !== WithdrawalStatus.QUEUED)
+      return null;
     return 'Pending liquidity';
   }
 }

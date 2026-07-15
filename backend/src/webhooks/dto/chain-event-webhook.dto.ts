@@ -13,7 +13,9 @@ import {
 import { SorobanEventType } from '../../database/entities/soroban-event.entity';
 
 export class ChainEventWebhookDto {
-  @ApiProperty({ description: 'Unique event identifier from the chain indexer' })
+  @ApiProperty({
+    description: 'Unique event identifier from the chain indexer',
+  })
   @IsString()
   @IsNotEmpty()
   eventId: string;

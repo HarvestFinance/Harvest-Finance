@@ -21,7 +21,9 @@ export class RiskService {
    * Calculate depositor concentration for a given vault.
    * Returns an array of objects containing userId and their concentration percentage.
    */
-  async calculateDepositorConcentration(vaultId: string): Promise<Array<{ userId: string; concentration: number }>> {
+  async calculateDepositorConcentration(
+    vaultId: string,
+  ): Promise<Array<{ userId: string; concentration: number }>> {
     const query = this.depositRepo
       .createQueryBuilder('deposit')
       .select('deposit.userId', 'userId')
@@ -30,7 +32,10 @@ export class RiskService {
       .andWhere('deposit.status = :status', { status: 'CONFIRMED' })
       .groupBy('deposit.userId');
 
-    const results = await query.getRawMany<{ userId: string; totalAmount: string }>();
+    const results = await query.getRawMany<{
+      userId: string;
+      totalAmount: string;
+    }>();
 
     // Get total vault TVL (sum of all confirmed deposits)
     const totalResult = await this.depositRepo
@@ -46,7 +51,7 @@ export class RiskService {
       return [];
     }
 
-    return results.map(result => ({
+    return results.map((result) => ({
       userId: result.userId,
       concentration: parseFloat(result.totalAmount) / vaultTvl,
     }));
@@ -63,13 +68,20 @@ export class RiskService {
 
     for (const vault of vaults) {
       try {
-        const concentrations = await this.calculateDepositorConcentration(vault.id);
-        const maxConcentration = Math.max(...concentrations.map(c => c.concentration), 0);
+        const concentrations = await this.calculateDepositorConcentration(
+          vault.id,
+        );
+        const maxConcentration = Math.max(
+          ...concentrations.map((c) => c.concentration),
+          0,
+        );
 
         // If any depositor exceeds the threshold, send an alert
         if (maxConcentration > vault.depositorConcentrationThreshold) {
           // Find the depositor(s) exceeding the threshold
-          const offendingDepositors = concentrations.filter(c => c.concentration > vault.depositorConcentrationThreshold);
+          const offendingDepositors = concentrations.filter(
+            (c) => c.concentration > vault.depositorConcentrationThreshold,
+          );
 
           for (const depositor of offendingDepositors) {
             await this.notificationService.create({
@@ -81,10 +93,15 @@ export class RiskService {
             });
           }
 
-          this.logger.warn(`Vault ${vault.id} (${vault.vaultName}) has depositor concentration risk: max concentration ${(maxConcentration * 100).toFixed(2)}% exceeds threshold ${(vault.depositorConcentrationThreshold * 100).toFixed(2)}%`);
+          this.logger.warn(
+            `Vault ${vault.id} (${vault.vaultName}) has depositor concentration risk: max concentration ${(maxConcentration * 100).toFixed(2)}% exceeds threshold ${(vault.depositorConcentrationThreshold * 100).toFixed(2)}%`,
+          );
         }
       } catch (error) {
-        this.logger.error(`Error checking concentration risk for vault ${vault.id}:`, error);
+        this.logger.error(
+          `Error checking concentration risk for vault ${vault.id}:`,
+          error,
+        );
       }
     }
 
@@ -98,7 +115,11 @@ export class RiskService {
   async getVaultDepositorConcentration(vaultId: string): Promise<{
     vaultId: string;
     totalVaultTvl: number;
-    depositorConcentrations: Array<{ userId: string; concentration: number; percentage: string }>;
+    depositorConcentrations: Array<{
+      userId: string;
+      concentration: number;
+      percentage: string;
+    }>;
     maxConcentration: number;
     threshold: number;
   }> {
@@ -122,12 +143,15 @@ export class RiskService {
     return {
       vaultId,
       totalVaultTvl,
-      depositorConcentrations: concentrations.map(c => ({
+      depositorConcentrations: concentrations.map((c) => ({
         userId: c.userId,
         concentration: c.concentration,
         percentage: `${(c.concentration * 100).toFixed(2)}%`,
       })),
-      maxConcentration: Math.max(...concentrations.map(c => c.concentration), 0),
+      maxConcentration: Math.max(
+        ...concentrations.map((c) => c.concentration),
+        0,
+      ),
       threshold: vault.depositorConcentrationThreshold,
     };
   }

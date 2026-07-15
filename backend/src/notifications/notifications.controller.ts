@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Param,
   Body,
   UseGuards,
@@ -23,8 +24,15 @@ import { NotificationPreferencesService } from './notification-preferences.servi
 import { SMSService } from './sms/sms.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { NotificationResponseDto } from './dto/notification-response.dto';
-import { NotificationPreferencesDto, UpdateNotificationPreferencesDto } from './dto/notification-preferences.dto';
-import { SetPhoneNumberDto, VerifyPhoneNumberDto, SendSMSDto } from './dto/sms.dto';
+import {
+  NotificationPreferencesDto,
+  UpdateNotificationPreferencesDto,
+} from './dto/notification-preferences.dto';
+import {
+  SetPhoneNumberDto,
+  VerifyPhoneNumberDto,
+  SendSMSDto,
+} from './dto/sms.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('Notifications')
@@ -105,19 +113,25 @@ export class NotificationsController {
 
   @Get('preferences')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get notification preferences for authenticated user' })
+  @ApiOperation({
+    summary: 'Get notification preferences for authenticated user',
+  })
   @ApiResponse({
     status: 200,
     description: 'User notification preferences',
     type: NotificationPreferencesDto,
   })
-  async getPreferences(@Request() req: any): Promise<NotificationPreferencesDto> {
+  async getPreferences(
+    @Request() req: any,
+  ): Promise<NotificationPreferencesDto> {
     return this.preferencesService.getPreferences(req.user.id);
   }
 
   @Patch('preferences')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Update notification preferences for authenticated user' })
+  @ApiOperation({
+    summary: 'Update notification preferences for authenticated user',
+  })
   @ApiResponse({
     status: 200,
     description: 'Notification preferences updated',

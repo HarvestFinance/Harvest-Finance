@@ -14,9 +14,7 @@ import {
  *
  * `user_oauth_links` stores per-provider OAuth identity links for a user.
  */
-export class CreateSessionsAndOAuthLinks1700000000022
-  implements MigrationInterface
-{
+export class CreateSessionsAndOAuthLinks1700000000022 implements MigrationInterface {
   name = 'CreateSessionsAndOAuthLinks1700000000022';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -140,7 +138,10 @@ export class CreateSessionsAndOAuthLinks1700000000022
 
     const oauthExists = await queryRunner.hasTable('user_oauth_links');
     if (oauthExists) {
-      await queryRunner.dropForeignKey('user_oauth_links', 'fk_oauth_links_user');
+      await queryRunner.dropForeignKey(
+        'user_oauth_links',
+        'fk_oauth_links_user',
+      );
       await queryRunner.dropTable('user_oauth_links');
     }
   }

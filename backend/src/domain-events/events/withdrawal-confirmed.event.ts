@@ -11,4 +11,3 @@ export class WithdrawalConfirmedEvent {
     public readonly occurredAt: Date = new Date(),
   ) {}
 }
-

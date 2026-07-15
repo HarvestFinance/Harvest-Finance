@@ -36,9 +36,7 @@ export class HttpMetricsInterceptor implements NestInterceptor {
         const statusCode = String(res?.statusCode ?? 0);
         const route = this.buildRouteLabel(req, rawPath);
 
-        this.metrics.httpRequestsTotal
-          .labels(method, route, statusCode)
-          .inc(1);
+        this.metrics.httpRequestsTotal.labels(method, route, statusCode).inc(1);
 
         this.metrics.httpRequestDurationSeconds
           .labels(method, route, statusCode)
@@ -49,12 +47,13 @@ export class HttpMetricsInterceptor implements NestInterceptor {
 
   private buildRouteLabel(req: any, fallbackPath: string | undefined): string {
     const baseUrl = typeof req?.baseUrl === 'string' ? req.baseUrl : '';
-    const routePath = typeof req?.route?.path === 'string' ? req.route.path : '';
+    const routePath =
+      typeof req?.route?.path === 'string' ? req.route.path : '';
     const composed = `${baseUrl}${routePath}`.trim();
     if (composed) return composed;
 
-    const pathOnly = typeof fallbackPath === 'string' ? fallbackPath : 'unknown';
+    const pathOnly =
+      typeof fallbackPath === 'string' ? fallbackPath : 'unknown';
     return pathOnly.split('?')[0] || 'unknown';
   }
 }
-

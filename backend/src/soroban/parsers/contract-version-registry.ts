@@ -43,10 +43,7 @@ export class ContractVersionRegistry {
 
     const raw = config.get<string>('SOROBAN_CONTRACT_VERSIONS', '{}');
     try {
-      const parsed = JSON.parse(raw) as Record<
-        string,
-        ContractVersionRange[]
-      >;
+      const parsed = JSON.parse(raw) as Record<string, ContractVersionRange[]>;
       for (const [contractId, ranges] of Object.entries(parsed)) {
         // Sort ascending so resolveVersion can do a simple linear scan.
         const sorted = [...ranges].sort((a, b) => a.fromLedger - b.fromLedger);

@@ -57,8 +57,7 @@ export class SessionResponseDto {
 
   @ApiPropertyOptional({
     description: 'Raw User-Agent string',
-    example:
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ...',
+    example: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ...',
     nullable: true,
   })
   userAgent: string | null;
@@ -82,7 +81,7 @@ export class SessionResponseDto {
   expiresAt: Date;
 
   @ApiProperty({
-    description: 'Whether this is the caller\'s own current session',
+    description: "Whether this is the caller's own current session",
     example: true,
   })
   isCurrent: boolean;

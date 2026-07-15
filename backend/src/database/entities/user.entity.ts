@@ -129,17 +129,40 @@ export class User {
   @Column({ name: 'phone_verified_at', type: 'timestamp', nullable: true })
   phoneVerifiedAt: Date | null;
 
+  @Column({ name: 'telegram_chat_id', type: 'varchar', nullable: true })
+  telegramChatId: string | null;
+
+  @Column({ name: 'telegram_link_token', type: 'varchar', nullable: true })
+  telegramLinkToken: string | null;
+
+  @Column({
+    name: 'telegram_link_token_expires',
+    type: 'timestamp',
+    nullable: true,
+  })
+  telegramLinkTokenExpires: Date | null;
+
   @OneToMany(() => Session, (session) => session.user)
   sessions: Session[];
 
-  @Column({ name: 'reset_password_token', type: 'varchar', select: false, nullable: true })
+  @Column({
+    name: 'reset_password_token',
+    type: 'varchar',
+    select: false,
+    nullable: true,
+  })
   @Exclude()
   resetPasswordToken: string | null;
 
   @Column({ name: 'reset_password_expires', type: 'timestamp', nullable: true })
   resetPasswordExpires: Date | null;
 
-  @Column({ name: 'locked_until', type: 'timestamp', nullable: true, default: null })
+  @Column({
+    name: 'locked_until',
+    type: 'timestamp',
+    nullable: true,
+    default: null,
+  })
   lockedUntil: Date | null;
 
   @Column({

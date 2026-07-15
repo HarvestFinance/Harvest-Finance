@@ -41,7 +41,12 @@ describe('StellarService - Escrow Creation', () => {
         StellarService,
         {
           provide: StellarClientService,
-          useValue: { server: mockServer, submitTransaction: mockServer.submitTransaction, loadAccount: mockServer.loadAccount, call: jest.fn().mockImplementation((ctx, op) => op()) },
+          useValue: {
+            server: mockServer,
+            submitTransaction: mockServer.submitTransaction,
+            loadAccount: mockServer.loadAccount,
+            call: jest.fn().mockImplementation((ctx, op) => op()),
+          },
         },
         {
           provide: ConfigService,
@@ -53,9 +58,7 @@ describe('StellarService - Escrow Creation', () => {
               };
               return config[key] ?? defaultValue;
             }),
-            getOrThrow: jest
-              .fn()
-              .mockReturnValue(platformKeypair.publicKey()),
+            getOrThrow: jest.fn().mockReturnValue(platformKeypair.publicKey()),
           },
         },
         {
@@ -220,9 +223,6 @@ describe('StellarService - Escrow Creation', () => {
       await expect(service.createEscrow(validParams)).rejects.toThrow();
     });
   });
-
-
-
 
   describe('Fee Bump Transactions', () => {
     it('should submit fee bump with priority fee', async () => {
@@ -415,13 +415,15 @@ describe('StellarService - getBaseFee', () => {
   const platformKeypair = StellarSdk.Keypair.random();
 
   beforeEach(async () => {
-    mockConfigGet = jest.fn().mockImplementation((key: string, defaultValue?: any) => {
-      const config: Record<string, any> = {
-        STELLAR_NETWORK: 'testnet',
-        STELLAR_PLATFORM_PUBLIC_KEY: platformKeypair.publicKey(),
-      };
-      return config[key] ?? defaultValue;
-    });
+    mockConfigGet = jest
+      .fn()
+      .mockImplementation((key: string, defaultValue?: any) => {
+        const config: Record<string, any> = {
+          STELLAR_NETWORK: 'testnet',
+          STELLAR_PLATFORM_PUBLIC_KEY: platformKeypair.publicKey(),
+        };
+        return config[key] ?? defaultValue;
+      });
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -450,11 +452,18 @@ describe('StellarService - getBaseFee', () => {
         },
         {
           provide: SecretsService,
-          useValue: { getSecret: jest.fn().mockResolvedValue(platformKeypair.secret()) },
+          useValue: {
+            getSecret: jest.fn().mockResolvedValue(platformKeypair.secret()),
+          },
         },
         {
           provide: CustomLoggerService,
-          useValue: { log: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() },
+          useValue: {
+            log: jest.fn(),
+            warn: jest.fn(),
+            error: jest.fn(),
+            debug: jest.fn(),
+          },
         },
         { provide: EventEmitter2, useValue: { emit: jest.fn() } },
       ],
@@ -469,7 +478,9 @@ describe('StellarService - getBaseFee', () => {
     await service.onModuleInit();
 
     logSpy = jest.spyOn(service['logger'], 'log').mockImplementation(() => {});
-    warnSpy = jest.spyOn(service['logger'], 'warn').mockImplementation(() => {});
+    warnSpy = jest
+      .spyOn(service['logger'], 'warn')
+      .mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -500,19 +511,25 @@ describe('StellarService - getBaseFee', () => {
   it('throws FeeCapExceededException when buffered fee exceeds cap', async () => {
     // p90=10000, buffered=11000, default cap=10000
     mockFeeStats(10000);
-    await expect((service as any).getBaseFee()).rejects.toThrow(FeeCapExceededException);
+    await expect((service as any).getBaseFee()).rejects.toThrow(
+      FeeCapExceededException,
+    );
   });
 
   it('does not log before throwing when fee exceeds cap (exception carries the message)', async () => {
     mockFeeStats(10000);
     await expect((service as any).getBaseFee()).rejects.toThrow(
       expect.objectContaining({
-        message: expect.stringContaining('Operation queued for retry when fee cap is exceeded'),
+        message: expect.stringContaining(
+          'Operation queued for retry when fee cap is exceeded',
+        ),
       }),
     );
     // No misleading warn should fire before the throw
     expect(warnSpy).not.toHaveBeenCalledWith(
-      expect.stringContaining('Operation queued for retry when fee cap is exceeded'),
+      expect.stringContaining(
+        'Operation queued for retry when fee cap is exceeded',
+      ),
     );
   });
 
@@ -542,11 +559,15 @@ describe('StellarService - getBaseFee', () => {
       return config[key] ?? defaultValue;
     });
     mockFeeStats(5000);
-    await expect((service as any).getBaseFee()).rejects.toThrow(FeeCapExceededException);
+    await expect((service as any).getBaseFee()).rejects.toThrow(
+      FeeCapExceededException,
+    );
   });
 
   it('falls back to 100 stroops when fee stats are unavailable', async () => {
-    jest.spyOn(service as any, 'getHorizonFeeStats').mockRejectedValue(new Error('Horizon down'));
+    jest
+      .spyOn(service as any, 'getHorizonFeeStats')
+      .mockRejectedValue(new Error('Horizon down'));
     const fee = await (service as any).getBaseFee();
     expect(fee).toBe('100');
     expect(warnSpy).toHaveBeenCalledWith(

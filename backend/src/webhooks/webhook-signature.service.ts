@@ -7,7 +7,11 @@ export class WebhookSignatureService {
    * Verifies an HMAC-SHA256 signature over the raw request body.
    * Accepts `sha256=<hex>` or a bare hex digest in the signature header.
    */
-  verify(secret: string, rawBody: Buffer | string, signatureHeader?: string): boolean {
+  verify(
+    secret: string,
+    rawBody: Buffer | string,
+    signatureHeader?: string,
+  ): boolean {
     if (!secret || !signatureHeader) {
       return false;
     }
@@ -17,9 +21,7 @@ export class WebhookSignatureService {
       return false;
     }
 
-    const expected = createHmac('sha256', secret)
-      .update(rawBody)
-      .digest('hex');
+    const expected = createHmac('sha256', secret).update(rawBody).digest('hex');
 
     try {
       return timingSafeEqual(

@@ -85,9 +85,9 @@ describe('PaymentService (fiat on-ramp)', () => {
   });
 
   it('propagates unknown session errors from the provider', async () => {
-    await expect(service.getOnRampSessionStatus('missing-session')).rejects.toThrow(
-      'On-ramp session not found',
-    );
+    await expect(
+      service.getOnRampSessionStatus('missing-session'),
+    ).rejects.toThrow('On-ramp session not found');
   });
 
   it('allows the mock provider to advance session status', async () => {

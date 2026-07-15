@@ -11,9 +11,15 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
     private readonly authService: AuthService,
   ) {
     super({
-      clientID: configService.get<string>('GITHUB_CLIENT_ID') || 'github-client-id-placeholder',
-      clientSecret: configService.get<string>('GITHUB_CLIENT_SECRET') || 'github-client-secret-placeholder',
-      callbackURL: configService.get<string>('GITHUB_CALLBACK_URL') || 'http://localhost:3000/auth/github/callback',
+      clientID:
+        configService.get<string>('GITHUB_CLIENT_ID') ||
+        'github-client-id-placeholder',
+      clientSecret:
+        configService.get<string>('GITHUB_CLIENT_SECRET') ||
+        'github-client-secret-placeholder',
+      callbackURL:
+        configService.get<string>('GITHUB_CALLBACK_URL') ||
+        'http://localhost:3000/auth/github/callback',
       scope: ['user:email'],
     });
   }
@@ -28,7 +34,12 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
     const email = emails && emails[0] ? emails[0].value : null;
 
     if (!email) {
-      return done(new Error('No email found from Github profile. Ensure your email is public on Github.'), false);
+      return done(
+        new Error(
+          'No email found from Github profile. Ensure your email is public on Github.',
+        ),
+        false,
+      );
     }
 
     let firstName: string | undefined = undefined;
@@ -36,7 +47,8 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
     if (displayName) {
       const nameParts = displayName.trim().split(' ');
       firstName = nameParts[0];
-      lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : undefined;
+      lastName =
+        nameParts.length > 1 ? nameParts.slice(1).join(' ') : undefined;
     } else if (username) {
       firstName = username;
     }

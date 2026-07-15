@@ -33,7 +33,9 @@ describe('SorobanIndexerService - Error Handling', () => {
           into: jest.fn().mockReturnThis(),
           values: jest.fn().mockReturnThis(),
           orIgnore: jest.fn().mockReturnThis(),
-          execute: jest.fn().mockResolvedValue({ identifiers: [{ id: 'uuid-1' }] }),
+          execute: jest
+            .fn()
+            .mockResolvedValue({ identifiers: [{ id: 'uuid-1' }] }),
         }),
       },
     };
@@ -83,7 +85,9 @@ describe('SorobanIndexerService - Error Handling', () => {
     };
 
     mockDataSource = {
-      transaction: jest.fn().mockImplementation(async (cb: any) => cb(mockManager)),
+      transaction: jest
+        .fn()
+        .mockImplementation(async (cb: any) => cb(mockManager)),
     };
 
     mockAxios = {
@@ -168,7 +172,9 @@ describe('SorobanIndexerService - Error Handling', () => {
 
       mockAxios.post.mockResolvedValue(malformedResponse);
 
-      await expect(service['rpcCall']('getEvents', {})).rejects.toThrow('Invalid RPC response: missing result field');
+      await expect(service['rpcCall']('getEvents', {})).rejects.toThrow(
+        'Invalid RPC response: missing result field',
+      );
     });
 
     it('should retry on network failures during runOnce', async () => {
@@ -189,7 +195,9 @@ describe('SorobanIndexerService - Error Handling', () => {
 
       mockAxios.post.mockResolvedValue(invalidResponse);
 
-      await expect(service['rpcCall']('getLatestLedger', {})).rejects.toThrow('Invalid RPC response: missing result field');
+      await expect(service['rpcCall']('getLatestLedger', {})).rejects.toThrow(
+        'Invalid RPC response: missing result field',
+      );
     });
   });
 
@@ -521,12 +529,15 @@ describe('SorobanIndexerService - Error Handling', () => {
       mockIndexerStateRepository.find.mockResolvedValueOnce([
         { contractId: '__global__', lastCursor: 'cursor-abc-123' },
       ]);
-      mockIndexerStateRepository.findOne.mockResolvedValueOnce(
-        { contractId: '*', lastCursor: 'cursor-abc-123' }
-      );
+      mockIndexerStateRepository.findOne.mockResolvedValueOnce({
+        contractId: '*',
+        lastCursor: 'cursor-abc-123',
+      });
       await service.onModuleInit();
 
-      expect(service['persistedCursors'].get('__global__')).toBe('cursor-abc-123');
+      expect(service['persistedCursors'].get('__global__')).toBe(
+        'cursor-abc-123',
+      );
 
       mockAxios.post.mockResolvedValue(makeRpcResponse([]));
 
@@ -543,16 +554,26 @@ describe('SorobanIndexerService - Error Handling', () => {
     });
 
     it('runOnce persists cursor to indexer_state after batch', async () => {
-      mockAxios.post.mockResolvedValueOnce({ data: { result: { sequence: 300 } } });
+      mockAxios.post.mockResolvedValueOnce({
+        data: { result: { sequence: 300 } },
+      });
       mockAxios.post.mockResolvedValue(
         makeRpcResponse([
-          { id: 'evt-1', type: 'contract', ledger: 100, pagingToken: 'ptoken-xyz' },
+          {
+            id: 'evt-1',
+            type: 'contract',
+            ledger: 100,
+            pagingToken: 'ptoken-xyz',
+          },
         ]),
       );
 
       await service.runOnce();
 
-      expect(mockEventRepository.manager.connection.createQueryRunner().commitTransaction).toHaveBeenCalledTimes(1);
+      expect(
+        mockEventRepository.manager.connection.createQueryRunner()
+          .commitTransaction,
+      ).toHaveBeenCalledTimes(1);
       expect(service['lastCursor']).toBe('ptoken-xyz');
     });
 
@@ -561,7 +582,9 @@ describe('SorobanIndexerService - Error Handling', () => {
         { id: 'evt-1', type: 'contract', ledger: 100, pagingToken: 'ptoken-1' },
       ];
 
-      mockAxios.post.mockResolvedValueOnce({ data: { result: { sequence: 300 } } });
+      mockAxios.post.mockResolvedValueOnce({
+        data: { result: { sequence: 300 } },
+      });
       mockAxios.post.mockResolvedValue(makeRpcResponse(events));
 
       // First run
@@ -574,17 +597,29 @@ describe('SorobanIndexerService - Error Handling', () => {
 
       expect(service['lastCursor']).toBe(firstCursor);
       // transaction called twice (once per runOnce)
-      expect(mockEventRepository.manager.connection.createQueryRunner().commitTransaction).toHaveBeenCalledTimes(2);
+      expect(
+        mockEventRepository.manager.connection.createQueryRunner()
+          .commitTransaction,
+      ).toHaveBeenCalledTimes(2);
     });
 
     it('transaction rollback → cursor NOT updated if transaction fails', async () => {
-      mockAxios.post.mockResolvedValueOnce({ data: { result: { sequence: 300 } } });
+      mockAxios.post.mockResolvedValueOnce({
+        data: { result: { sequence: 300 } },
+      });
       mockAxios.post.mockResolvedValue(
         makeRpcResponse([
-          { id: 'evt-1', type: 'contract', ledger: 100, pagingToken: 'ptoken-fail' },
+          {
+            id: 'evt-1',
+            type: 'contract',
+            ledger: 100,
+            pagingToken: 'ptoken-fail',
+          },
         ]),
       );
-      mockEventRepository.manager.connection.createQueryRunner().commitTransaction.mockRejectedValueOnce(new Error('TX rollback'));
+      mockEventRepository.manager.connection
+        .createQueryRunner()
+        .commitTransaction.mockRejectedValueOnce(new Error('TX rollback'));
 
       await expect(service.runOnce()).rejects.toThrow('TX rollback');
 

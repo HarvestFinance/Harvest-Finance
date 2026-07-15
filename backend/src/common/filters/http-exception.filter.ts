@@ -33,7 +33,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const request = ctx.getRequest();
     const response = ctx.getResponse();
-    
+
     const path = httpAdapter.getRequestUrl(request) || '/';
     const method = httpAdapter.getRequestMethod(request) || 'UNKNOWN';
 
@@ -41,15 +41,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const headers = request.headers || {};
     const requestId = headers['x-request-id'] || randomUUID();
 
-    const status =
+    const status: HttpStatus =
       exception instanceof HttpException
-        ? exception.getStatus()
+        ? (exception.getStatus() as HttpStatus)
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
     const exceptionResponse =
-      exception instanceof HttpException
-        ? exception.getResponse()
-        : null;
+      exception instanceof HttpException ? exception.getResponse() : null;
 
     let message: any = 'Internal server error';
     let errorCode = 'INTERNAL_SERVER_ERROR';
@@ -68,21 +66,22 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message = exception.message;
     }
 
-    if (errorCode === 'INTERNAL_SERVER_ERROR' && status !== HttpStatus.INTERNAL_SERVER_ERROR) {
+    if (
+      errorCode === 'INTERNAL_SERVER_ERROR' &&
+      status !== HttpStatus.INTERNAL_SERVER_ERROR
+    ) {
       errorCode = this.getErrorCodeFromStatus(status);
     }
 
     // Determine error code: prefer existing errorCode on exception, fallback to status code
-    const errorCode =
+    errorCode =
       (exception as any).errorCode ||
       (exception instanceof HttpException ? status.toString() : '500');
 
     const errorResponse = {
       statusCode: status,
       message:
-        typeof message === 'string'
-          ? message
-          : (message as any).message || message,
+        typeof message === 'string' ? message : message.message || message,
       errorCode: errorCode,
       timestamp: new Date().toISOString(),
       path: httpAdapter.getRequestUrl(request),
@@ -105,6 +104,27 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     httpAdapter.reply(response, errorResponse, status);
   }
-}
 
-    
+  private getErrorCodeFromStatus(status: HttpStatus): string {
+    switch (status) {
+      case HttpStatus.BAD_REQUEST:
+        return 'BAD_REQUEST';
+      case HttpStatus.UNAUTHORIZED:
+        return 'UNAUTHORIZED';
+      case HttpStatus.FORBIDDEN:
+        return 'FORBIDDEN';
+      case HttpStatus.NOT_FOUND:
+        return 'NOT_FOUND';
+      case HttpStatus.CONFLICT:
+        return 'CONFLICT';
+      case HttpStatus.UNPROCESSABLE_ENTITY:
+        return 'UNPROCESSABLE_ENTITY';
+      case HttpStatus.TOO_MANY_REQUESTS:
+        return 'TOO_MANY_REQUESTS';
+      case HttpStatus.INTERNAL_SERVER_ERROR:
+        return 'INTERNAL_SERVER_ERROR';
+      default:
+        return `HTTP_${status}`;
+    }
+  }
+}

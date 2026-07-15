@@ -169,7 +169,7 @@ export class VaultGateway
       return;
     }
 
-    client.join(`vault:${vaultId}`);
+    void client.join(`vault:${vaultId}`);
     this.logger.log(
       `Client ${client.id} (user:${client.userId}) subscribed to vault:${vaultId}`,
     );
@@ -182,7 +182,7 @@ export class VaultGateway
     @MessageBody() vaultId: string,
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
-    client.leave(`vault:${vaultId}`);
+    void client.leave(`vault:${vaultId}`);
     this.logger.log(
       `Client ${client.id} (user:${client.userId}) unsubscribed from vault:${vaultId}`,
     );

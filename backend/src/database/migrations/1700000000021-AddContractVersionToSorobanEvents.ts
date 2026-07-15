@@ -5,9 +5,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * the schema version that was active when the contract emitted it.
  * Existing rows are back-filled with 'v1' (the historical default).
  */
-export class AddContractVersionToSorobanEvents1700000000021
-  implements MigrationInterface
-{
+export class AddContractVersionToSorobanEvents1700000000021 implements MigrationInterface {
   name = 'AddContractVersionToSorobanEvents1700000000021';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

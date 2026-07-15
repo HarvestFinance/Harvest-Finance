@@ -1,4 +1,9 @@
-import { MigrationInterface, QueryRunner, TableColumn, TableIndex } from 'typeorm';
+import {
+  MigrationInterface,
+  QueryRunner,
+  TableColumn,
+  TableIndex,
+} from 'typeorm';
 
 export class AddEmailVerificationToUsers1700000000023 implements MigrationInterface {
   name = 'AddEmailVerificationToUsers1700000000023';
@@ -25,7 +30,7 @@ export class AddEmailVerificationToUsers1700000000023 implements MigrationInterf
 
     // Drop email_verification_token column if it exists (we use JWT instead)
     const table = await queryRunner.getTable('users');
-    if (table?.columns.find(c => c.name === 'email_verification_token')) {
+    if (table?.columns.find((c) => c.name === 'email_verification_token')) {
       await queryRunner.dropColumn('users', 'email_verification_token');
     }
   }

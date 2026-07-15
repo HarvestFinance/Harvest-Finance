@@ -1,9 +1,12 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 
 // Platform-wide maximums (configurable via env; hard-coded fallbacks)
-const MAX_ENTRY_FEE_BPS = parseInt(process.env.MAX_ENTRY_FEE_BPS ?? '500', 10);   // 5%
-const MAX_EXIT_FEE_BPS = parseInt(process.env.MAX_EXIT_FEE_BPS ?? '500', 10);      // 5%
-const MAX_PERFORMANCE_FEE_BPS = parseInt(process.env.MAX_PERFORMANCE_FEE_BPS ?? '3000', 10); // 30%
+const MAX_ENTRY_FEE_BPS = parseInt(process.env.MAX_ENTRY_FEE_BPS ?? '500', 10); // 5%
+const MAX_EXIT_FEE_BPS = parseInt(process.env.MAX_EXIT_FEE_BPS ?? '500', 10); // 5%
+const MAX_PERFORMANCE_FEE_BPS = parseInt(
+  process.env.MAX_PERFORMANCE_FEE_BPS ?? '3000',
+  10,
+); // 30%
 
 export interface FeeBreakdown {
   grossAmount: number;
@@ -14,7 +17,11 @@ export interface FeeBreakdown {
 
 @Injectable()
 export class FeesService {
-  validateFees(entryFeeBps: number, exitFeeBps: number, performanceFeeBps: number): void {
+  validateFees(
+    entryFeeBps: number,
+    exitFeeBps: number,
+    performanceFeeBps: number,
+  ): void {
     if (entryFeeBps < 0 || entryFeeBps > MAX_ENTRY_FEE_BPS) {
       throw new BadRequestException(
         `Entry fee must be between 0 and ${MAX_ENTRY_FEE_BPS} bps (${MAX_ENTRY_FEE_BPS / 100}%)`,

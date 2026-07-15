@@ -13,7 +13,8 @@ export class ExportKeyDto {
    */
   @ApiProperty({
     example: 'SecurePass123!',
-    description: 'Current account password — used to decrypt the custodial private key.',
+    description:
+      'Current account password — used to decrypt the custodial private key.',
   })
   @IsString({ message: 'Password must be a string' })
   @IsNotEmpty({ message: 'Password is required' })

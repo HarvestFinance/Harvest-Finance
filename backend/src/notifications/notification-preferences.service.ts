@@ -52,7 +52,8 @@ export class NotificationPreferencesService {
       throw new NotFoundException('User not found');
     }
 
-    const currentPreferences = user.notificationPreferences || DEFAULT_PREFERENCES;
+    const currentPreferences =
+      user.notificationPreferences || DEFAULT_PREFERENCES;
     const mergedPreferences = {
       ...currentPreferences,
       ...updateDto.preferences,
@@ -60,7 +61,7 @@ export class NotificationPreferencesService {
 
     await this.userRepository.update(
       { id: userId },
-      { notificationPreferences: mergedPreferences },
+      { notificationPreferences: mergedPreferences as any },
     );
 
     return mergedPreferences;

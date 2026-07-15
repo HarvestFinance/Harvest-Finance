@@ -103,17 +103,19 @@ describe('SorobanIndexerService - Cursor Persistence', () => {
         {
           provide: ConfigService,
           useValue: {
-            get: jest.fn().mockImplementation((key: string, defaultValue: any) => {
-              const cfg: Record<string, any> = {
-                SOROBAN_INDEXER_ENABLED: 'true',
-                STELLAR_NETWORK: 'testnet',
-                SOROBAN_RPC_URL: 'https://soroban-testnet.stellar.org',
-                SOROBAN_INDEXER_PAGE_SIZE: '100',
-                SOROBAN_INDEXER_CONTRACT_IDS: '',
-                SOROBAN_INDEXER_BOOTSTRAP_LEDGERS: '120',
-              };
-              return cfg[key] ?? defaultValue;
-            }),
+            get: jest
+              .fn()
+              .mockImplementation((key: string, defaultValue: any) => {
+                const cfg: Record<string, any> = {
+                  SOROBAN_INDEXER_ENABLED: 'true',
+                  STELLAR_NETWORK: 'testnet',
+                  SOROBAN_RPC_URL: 'https://soroban-testnet.stellar.org',
+                  SOROBAN_INDEXER_PAGE_SIZE: '100',
+                  SOROBAN_INDEXER_CONTRACT_IDS: '',
+                  SOROBAN_INDEXER_BOOTSTRAP_LEDGERS: '120',
+                };
+                return cfg[key] ?? defaultValue;
+              }),
           },
         },
         {
@@ -131,7 +133,11 @@ describe('SorobanIndexerService - Cursor Persistence', () => {
         {
           provide: DataSource,
           useValue: {
-            transaction: jest.fn().mockImplementation(async (cb: any) => cb(mockQueryRunner.manager)),
+            transaction: jest
+              .fn()
+              .mockImplementation(async (cb: any) =>
+                cb(mockQueryRunner.manager),
+              ),
           },
         },
       ],
@@ -182,7 +188,11 @@ describe('SorobanIndexerService - Cursor Persistence', () => {
 
     it('does not throw when indexer_state table does not yet exist', async () => {
       mockIndexerStateRepository = {
-        findOne: jest.fn().mockRejectedValue(new Error('relation "indexer_state" does not exist')),
+        findOne: jest
+          .fn()
+          .mockRejectedValue(
+            new Error('relation "indexer_state" does not exist'),
+          ),
       };
 
       // Rebuild the module with the error-throwing repository.
@@ -226,7 +236,16 @@ describe('SorobanIndexerService - Cursor Persistence', () => {
             useValue: mockIndexerStateRepository,
           },
           { provide: CACHE_MANAGER, useValue: mockCacheManager },
-          { provide: DataSource, useValue: { transaction: jest.fn().mockImplementation(async (cb: any) => cb(mockQueryRunner.manager)) } },
+          {
+            provide: DataSource,
+            useValue: {
+              transaction: jest
+                .fn()
+                .mockImplementation(async (cb: any) =>
+                  cb(mockQueryRunner.manager),
+                ),
+            },
+          },
         ],
       }).compile();
 

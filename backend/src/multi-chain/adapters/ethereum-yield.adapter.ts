@@ -92,9 +92,7 @@ export class EthereumYieldAdapter implements ChainAdapter {
     return address && address.length > 0 ? address : null;
   }
 
-  private parseVaultConfigs(
-    configStr: string | undefined,
-  ): Array<{
+  private parseVaultConfigs(configStr: string | undefined): Array<{
     vaultAddress: string;
     name: string;
     assetCode: string;

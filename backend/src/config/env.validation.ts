@@ -12,11 +12,12 @@ export const envValidationSchema = Joi.object({
   LOG_PRETTY: Joi.boolean().default(false),
 
   // Database
-  DB_HOST: Joi.string().required(),
+  DATABASE_URL: Joi.string().uri().optional(),
+  DB_HOST: Joi.string().optional(),
   DB_PORT: Joi.number().default(5432),
-  DB_USER: Joi.string().required(),
-  DB_PASSWORD: Joi.string().required(),
-  DB_NAME: Joi.string().required(),
+  DB_USER: Joi.string().optional(),
+  DB_PASSWORD: Joi.string().optional(),
+  DB_NAME: Joi.string().optional(),
 
   // JWT
   JWT_SECRET: Joi.string().required(),
@@ -53,9 +54,7 @@ export const envValidationSchema = Joi.object({
   GITHUB_CALLBACK_URL: Joi.string().uri().optional(),
 
   // Secrets provider
-  SECRETS_PROVIDER: Joi.string()
-    .valid('env', 'aws', 'vault')
-    .default('env'),
+  SECRETS_PROVIDER: Joi.string().valid('env', 'aws', 'vault').default('env'),
   AWS_REGION: Joi.string().when('SECRETS_PROVIDER', {
     is: 'aws',
     then: Joi.string().required(),
@@ -89,4 +88,20 @@ export const envValidationSchema = Joi.object({
   IPFS_HOST: Joi.string().optional(),
   IPFS_PORT: Joi.number().optional(),
   IPFS_PROTOCOL: Joi.string().valid('http', 'https').optional(),
+}).custom((value, helpers) => {
+  const hasUrl = !!value.DATABASE_URL;
+  const hasIndividual =
+    !!value.DB_HOST &&
+    !!value.DB_USER &&
+    !!value.DB_PASSWORD &&
+    !!value.DB_NAME;
+
+  if (!hasUrl && !hasIndividual) {
+    return helpers.error('any.invalid', {
+      message:
+        'Provide either DATABASE_URL or all of DB_HOST, DB_USER, DB_PASSWORD, DB_NAME',
+    });
+  }
+
+  return value;
 });

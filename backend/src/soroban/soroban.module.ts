@@ -30,7 +30,11 @@ import { EventParserFactory } from './parsers/event-parser.factory';
     }),
   ],
   controllers: [SorobanController],
-  providers: [ContractVersionRegistry, EventParserFactory, SorobanIndexerService],
+  providers: [
+    ContractVersionRegistry,
+    EventParserFactory,
+    SorobanIndexerService,
+  ],
   exports: [SorobanIndexerService],
 })
 export class SorobanModule {}

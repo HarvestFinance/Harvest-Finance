@@ -40,10 +40,12 @@ import {
   VaultResponseDto,
 } from './dto/vault-response.dto';
 import { DepositEventResponseDto } from './dto/deposit-event-response.dto';
+import { ScoreBreakdownDto } from './dto/score-breakdown.dto';
 import { SimulateDepositDto } from './dto/simulate-deposit.dto';
 import { SimulateStrategyChangeDto } from './dto/simulate-strategy-change.dto';
 import { SimulationResultDto } from './dto/simulation-result.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PlatformCircuitBreakerGuard } from '../common/guards/platform-circuit-breaker.guard';
 import { ScoringService } from '../analytics/scoring.service';
 
 @ApiTags('Vaults')
@@ -112,7 +114,12 @@ export class VaultsController {
   ): Promise<DepositVaultResponseDto> {
     const secureDepositDto = { ...depositDto, userId: req.user.id };
     return this.commandBus.execute(
-      new DepositFundsCommand(vaultId, secureDepositDto.userId, secureDepositDto.amount, secureDepositDto.idempotencyKey),
+      new DepositFundsCommand(
+        vaultId,
+        secureDepositDto.userId,
+        secureDepositDto.amount,
+        secureDepositDto.idempotencyKey,
+      ),
     );
   }
 
@@ -146,7 +153,9 @@ export class VaultsController {
   @Post(':vaultId/simulate-strategy-change')
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Simulate a strategy change without committing state' })
+  @ApiOperation({
+    summary: 'Simulate a strategy change without committing state',
+  })
   @ApiParam({
     name: 'vaultId',
     description: 'Vault ID (UUID)',
@@ -197,7 +206,9 @@ export class VaultsController {
     @Body('amount') amount: number,
     @Request() req: any,
   ): Promise<any> {
-    return this.commandBus.execute(new WithdrawFundsCommand(vaultId, req.user.id, amount));
+    return this.commandBus.execute(
+      new WithdrawFundsCommand(vaultId, req.user.id, amount),
+    );
   }
 
   @Get(':vaultId/balance')
@@ -258,7 +269,9 @@ export class VaultsController {
 
   @Get(':vaultId/deposit-history')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get append-only deposit event history for a vault' })
+  @ApiOperation({
+    summary: 'Get append-only deposit event history for a vault',
+  })
   @ApiParam({
     name: 'vaultId',
     description: 'Vault ID (UUID)',
@@ -403,7 +416,8 @@ export class VaultsController {
   })
   @ApiResponse({
     status: 401,
-    description: 'Unauthorized - Only vault owner or admin can update configuration',
+    description:
+      'Unauthorized - Only vault owner or admin can update configuration',
   })
   @ApiResponse({ status: 404, description: 'Vault not found' })
   async updateVaultMultiSignatureConfig(
@@ -423,12 +437,24 @@ export class VaultsController {
   @Patch(':vaultId/fees')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Configure entry, exit, and performance fees for a vault' })
+  @ApiOperation({
+    summary: 'Configure entry, exit, and performance fees for a vault',
+  })
   @ApiParam({ name: 'vaultId', description: 'Vault ID (UUID)' })
   @ApiBody({ type: UpdateVaultFeesDto })
-  @ApiResponse({ status: 200, description: 'Fee configuration updated', type: VaultResponseDto })
-  @ApiResponse({ status: 400, description: 'Fee values exceed platform maximums' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Only vault owner can configure fees' })
+  @ApiResponse({
+    status: 200,
+    description: 'Fee configuration updated',
+    type: VaultResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Fee values exceed platform maximums',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Only vault owner can configure fees',
+  })
   @ApiResponse({ status: 404, description: 'Vault not found' })
   async updateVaultFees(
     @Param('vaultId') vaultId: string,
@@ -438,9 +464,12 @@ export class VaultsController {
     return this.vaultsService.updateVaultFees(vaultId, req.user.id, dto);
   }
 
-  @Post(':vaultId/request-approval')  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Post(':vaultId/request-approval')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Request approval from another user for vault operations' })
+  @ApiOperation({
+    summary: 'Request approval from another user for vault operations',
+  })
   @ApiParam({
     name: 'vaultId',
     description: 'Vault ID (UUID)',
@@ -450,7 +479,10 @@ export class VaultsController {
     schema: {
       type: 'object',
       properties: {
-        approverUserId: { type: 'string', example: '456e7890-e89b-12d3-a456-426614174111' },
+        approverUserId: {
+          type: 'string',
+          example: '456e7890-e89b-12d3-a456-426614174111',
+        },
       },
       required: ['approverUserId'],
     },
@@ -465,7 +497,8 @@ export class VaultsController {
   })
   @ApiResponse({
     status: 401,
-    description: 'Unauthorized - Only vault owner or admin can request approvals',
+    description:
+      'Unauthorized - Only vault owner or admin can request approvals',
   })
   @ApiResponse({ status: 404, description: 'Vault not found' })
   async requestVaultApproval(

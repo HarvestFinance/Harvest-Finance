@@ -15,9 +15,7 @@ const STELLAR_KEY_A =
 const STELLAR_KEY_B =
   'GB26SVHUCWUATM5KXLYXD4TSLY7HP62RJYUMV5A7UZYY3QIRWY62XVEB';
 
-const buildVaultQB = (
-  rows: { vaultId: string; balance: string }[],
-) => ({
+const buildVaultQB = (rows: { vaultId: string; balance: string }[]) => ({
   select: jest.fn().mockReturnThis(),
   addSelect: jest.fn().mockReturnThis(),
   where: jest.fn().mockReturnThis(),
@@ -214,7 +212,9 @@ describe('PortfolioService — Balance Aggregation Integration', () => {
   describe('buildPortfolio — Stellar balance aggregation', () => {
     beforeEach(() => {
       mockUserRepository.findOne.mockResolvedValue({ id: USER_ID });
-      mockDepositRepository.createQueryBuilder.mockReturnValue(buildVaultQB([]));
+      mockDepositRepository.createQueryBuilder.mockReturnValue(
+        buildVaultQB([]),
+      );
     });
 
     it('should aggregate the same asset across multiple Stellar accounts', async () => {
@@ -277,7 +277,9 @@ describe('PortfolioService — Balance Aggregation Integration', () => {
     });
 
     it('should record invalid Stellar keys without failing the portfolio build', async () => {
-      const portfolio = await service.buildPortfolio(USER_ID, ['not-a-valid-key']);
+      const portfolio = await service.buildPortfolio(USER_ID, [
+        'not-a-valid-key',
+      ]);
 
       expect(portfolio.accounts[0]).toMatchObject({
         publicKey: 'not-a-valid-key',
@@ -314,7 +316,9 @@ describe('PortfolioService — Balance Aggregation Integration', () => {
   describe('buildPortfolio — response shape', () => {
     it('should include userId and generatedAt timestamp', async () => {
       mockUserRepository.findOne.mockResolvedValue({ id: USER_ID });
-      mockDepositRepository.createQueryBuilder.mockReturnValue(buildVaultQB([]));
+      mockDepositRepository.createQueryBuilder.mockReturnValue(
+        buildVaultQB([]),
+      );
       mockStellarService.getAccountBalances.mockResolvedValue([]);
 
       const portfolio = await service.buildPortfolio(USER_ID, []);

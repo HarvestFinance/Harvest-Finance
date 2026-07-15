@@ -397,9 +397,7 @@ describe('AuthService - Logout TTL Calculation', () => {
     it('should return success even if token verification fails', async () => {
       jest.useFakeTimers();
 
-      mockJwtService.verifyAsync.mockRejectedValue(
-        new Error('Invalid token'),
-      );
+      mockJwtService.verifyAsync.mockRejectedValue(new Error('Invalid token'));
 
       const result = await service.logout('invalid_token');
 

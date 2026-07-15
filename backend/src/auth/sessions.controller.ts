@@ -51,7 +51,7 @@ export class SessionsController {
     description:
       'Returns all active refresh-token sessions for the current user, ' +
       'paginated. Each entry includes device name, IP address, and last-used ' +
-      'timestamp. The caller\'s current session is marked with `isCurrent: true`.',
+      "timestamp. The caller's current session is marked with `isCurrent: true`.",
   })
   @ApiQuery({ name: 'page', required: false, example: 1, type: Number })
   @ApiQuery({ name: 'limit', required: false, example: 10, type: Number })

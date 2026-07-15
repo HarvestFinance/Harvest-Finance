@@ -35,14 +35,16 @@ export class WebhooksService {
   async handleWithdrawalWebhook(
     dto: WithdrawalWebhookDto,
   ): Promise<WebhookAcceptedResponseDto> {
-    const result = await this.vaultsService.applyExternalWithdrawalNotification({
-      withdrawalId: dto.withdrawalId,
-      eventType: dto.eventType,
-      transactionHash: dto.transactionHash,
-      stellarTransactionId: dto.stellarTransactionId ?? null,
-      externalEventId: dto.eventId,
-      occurredAt: dto.occurredAt ? new Date(dto.occurredAt) : undefined,
-    });
+    const result = await this.vaultsService.applyExternalWithdrawalNotification(
+      {
+        withdrawalId: dto.withdrawalId,
+        eventType: dto.eventType,
+        transactionHash: dto.transactionHash,
+        stellarTransactionId: dto.stellarTransactionId ?? null,
+        externalEventId: dto.eventId,
+        occurredAt: dto.occurredAt ? new Date(dto.occurredAt) : undefined,
+      },
+    );
 
     return {
       accepted: true,

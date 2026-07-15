@@ -1,13 +1,12 @@
 name: CD
 
 on:
-  push:
-    branches:
-      - main       # → production
-      - develop    # → staging
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
 
 concurrency:
-  group: cd-${{ github.ref }}
+  group: cd-${{ github.event.workflow_run.head_branch }}
   cancel-in-progress: false
 
 env:
@@ -19,13 +18,16 @@ jobs:
   detect-environment:
     name: Detect Target Environment
     runs-on: ubuntu-latest
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      (github.event.workflow_run.head_branch == 'main' || github.event.workflow_run.head_branch == 'develop')
     outputs:
       environment: ${{ steps.env.outputs.environment }}
       image_tag: ${{ steps.env.outputs.image_tag }}
     steps:
       - id: env
         run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          if [[ "${{ github.event.workflow_run.head_branch }}" == "main" ]]; then
             echo "environment=production" >> "$GITHUB_OUTPUT"
             echo "image_tag=latest" >> "$GITHUB_OUTPUT"
           else
@@ -95,6 +97,9 @@ jobs:
 
       - name: Deploy to staging via SSH
         uses: appleboy/ssh-action@v1
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
         with:
           host: ${{ secrets.STAGING_HOST }}
           username: ${{ secrets.STAGING_USER }}
@@ -103,9 +108,11 @@ jobs:
             cd /opt/harvest-finance
             export IMAGE_TAG=${{ github.sha }}
             export REGISTRY=${{ env.REGISTRY }}
+            export DATABASE_URL="$DATABASE_URL"
+            export DIRECT_URL="$DIRECT_URL"
             docker compose -f docker-compose.staging.yml pull
             docker compose -f docker-compose.staging.yml up -d --remove-orphans
-            docker system prune -f
+            docker compose -f docker-compose.staging.yml exec backend npm run migration:run
 
   deploy-production:
     name: Deploy → Production
@@ -120,6 +127,9 @@ jobs:
 
       - name: Deploy to production via SSH
         uses: appleboy/ssh-action@v1
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
@@ -128,12 +138,12 @@ jobs:
             cd /opt/harvest-finance
             export IMAGE_TAG=${{ github.sha }}
             export REGISTRY=${{ env.REGISTRY }}
+            export DATABASE_URL="$DATABASE_URL"
+            export DIRECT_URL="$DIRECT_URL"
             # Rolling update — zero downtime
             docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d --remove-orphans --scale backend=2
-            sleep 10
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
-            docker system prune -f
+            docker compose -f docker-compose.prod.yml exec backend npm run migration:run
 
       - name: Notify Slack on success
         if: success()

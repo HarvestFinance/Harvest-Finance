@@ -27,9 +27,11 @@ export function parseSolanaVaultStrategies(
           entry != null && typeof entry === 'object',
       )
       .map((entry) => ({
-        mint: String(entry.mint ?? '').trim(),
-        name: String(entry.name ?? 'Solana Vault').trim(),
-        assetCode: String(entry.assetCode ?? 'SPL').trim(),
+        mint: typeof entry.mint === 'string' ? entry.mint.trim() : '',
+        name:
+          typeof entry.name === 'string' ? entry.name.trim() : 'Solana Vault',
+        assetCode:
+          typeof entry.assetCode === 'string' ? entry.assetCode.trim() : 'SPL',
         apr:
           entry.apr != null && !Number.isNaN(Number(entry.apr))
             ? Number(entry.apr)

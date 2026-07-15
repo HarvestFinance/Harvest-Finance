@@ -27,8 +27,19 @@ export interface EmailRenderResult {
 
 @Injectable()
 export class EmailTemplatingService {
-  private templates = {
-    welcome: { html: WelcomeEmail, text: WelcomeEmailText, subject: 'Welcome to Harvest Finance' },
+  private templates: Record<
+    EmailTemplate,
+    {
+      html: (data: any) => string;
+      text: (data: any) => string;
+      subject: string;
+    }
+  > = {
+    welcome: {
+      html: WelcomeEmail,
+      text: WelcomeEmailText,
+      subject: 'Welcome to Harvest Finance',
+    },
     'deposit-confirmed': {
       html: DepositConfirmedEmail,
       text: DepositConfirmedEmailText,
@@ -79,7 +90,10 @@ export class EmailTemplatingService {
   /**
    * Render preview (for admin endpoint)
    */
-  renderPreview(templateName: EmailTemplate): { html: string; subject: string } {
+  renderPreview(templateName: EmailTemplate): {
+    html: string;
+    subject: string;
+  } {
     const mockData = this.getMockDataForTemplate(templateName);
     const rendered = this.renderTemplate(templateName, mockData);
 
@@ -89,7 +103,9 @@ export class EmailTemplatingService {
     };
   }
 
-  private getMockDataForTemplate(templateName: EmailTemplate): Record<string, any> {
+  private getMockDataForTemplate(
+    templateName: EmailTemplate,
+  ): Record<string, any> {
     switch (templateName) {
       case 'welcome':
         return {

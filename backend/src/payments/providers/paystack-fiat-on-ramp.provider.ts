@@ -55,7 +55,9 @@ export class PaystackFiatOnRampProvider implements FiatOnRampProvider {
     };
 
     this.sessions.set(sessionId, session);
-    this.logger.log(`Paystack session ${sessionId} created for user ${request.userId}`);
+    this.logger.log(
+      `Paystack session ${sessionId} created for user ${request.userId}`,
+    );
     return session;
   }
 

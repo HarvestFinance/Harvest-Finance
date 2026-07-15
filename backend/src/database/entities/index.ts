@@ -27,7 +27,11 @@ export { User, UserRole } from './user.entity';
 export { UserOAuthLink } from './user-oauth-link.entity';
 export { Session } from './session.entity';
 export { Vault, VaultStatus, VaultType } from './vault.entity';
-export { Strategy, CompoundingFrequency, COMPOUNDING_FREQUENCY_N } from './strategy.entity';
+export {
+  Strategy,
+  CompoundingFrequency,
+  COMPOUNDING_FREQUENCY_N,
+} from './strategy.entity';
 export { VaultApyHistory } from './vault-apy-history.entity';
 export { VaultScoreHistory } from './vault-score-history.entity';
 export { VaultDeposit } from './vault-deposit.entity';
@@ -35,4 +39,3 @@ export { VaultApproval } from './vault-approval.entity';
 export { Verification, VerificationStatus } from './verification.entity';
 export { Withdrawal, WithdrawalStatus } from './withdrawal.entity';
 export { YieldAnalytics } from './yield-analytics.entity';
-

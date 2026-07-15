@@ -69,10 +69,16 @@ export class CreateCustodialWallets1700000000021 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE "users" DROP COLUMN IF EXISTS "wallet_type"`);
+    await queryRunner.query(
+      `ALTER TABLE "users" DROP COLUMN IF EXISTS "wallet_type"`,
+    );
     await queryRunner.query(`DROP TYPE IF EXISTS "user_wallet_type_enum"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_custodial_wallets_public_key"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_custodial_wallets_user_id"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_custodial_wallets_public_key"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_custodial_wallets_user_id"`,
+    );
     await queryRunner.query(`DROP TABLE IF EXISTS "custodial_wallets"`);
   }
 }

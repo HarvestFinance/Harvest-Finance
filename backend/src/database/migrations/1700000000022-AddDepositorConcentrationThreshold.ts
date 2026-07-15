@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
 
-export class AddDepositorConcentrationThreshold1700000000022
-  implements MigrationInterface
-{
+export class AddDepositorConcentrationThreshold1700000000022 implements MigrationInterface {
   name = 'AddDepositorConcentrationThreshold1700000000022';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

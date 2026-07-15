@@ -11,7 +11,9 @@ import {
 import { User } from './user.entity';
 
 @Entity('user_oauth_links')
-@Index('idx_user_oauth_links_provider_id', ['oauthProvider', 'oauthId'], { unique: true })
+@Index('idx_user_oauth_links_provider_id', ['oauthProvider', 'oauthId'], {
+  unique: true,
+})
 @Index('idx_user_oauth_links_user_id', ['userId'])
 export class UserOAuthLink {
   @PrimaryGeneratedColumn('uuid')

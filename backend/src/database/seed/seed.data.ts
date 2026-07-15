@@ -3,11 +3,7 @@ import * as bcrypt from 'bcrypt';
 import { DataSource, Repository } from 'typeorm';
 import { Deposit, DepositStatus } from '../entities/deposit.entity';
 import { User, UserRole } from '../entities/user.entity';
-import {
-  Vault,
-  VaultStatus,
-  VaultType,
-} from '../entities/vault.entity';
+import { Vault, VaultStatus, VaultType } from '../entities/vault.entity';
 import { VaultDeposit } from '../entities/vault-deposit.entity';
 import { Withdrawal, WithdrawalStatus } from '../entities/withdrawal.entity';
 
@@ -70,7 +66,9 @@ export async function generateSeedData(
   console.log('Seed data created successfully.');
   console.log(`   - Users: ${users.length}`);
   console.log(`   - Vaults: ${vaults.length} (covers all VaultStatus values)`);
-  console.log(`   - Deposits: ${deposits.length} (covers all DepositStatus values)`);
+  console.log(
+    `   - Deposits: ${deposits.length} (covers all DepositStatus values)`,
+  );
   console.log(`   - Vault balances: ${vaultDeposits.length}`);
   console.log(`   - Withdrawals: ${withdrawals.length}`);
   console.log(`   - Default password: ${DEFAULT_PASSWORD}`);
@@ -152,7 +150,10 @@ function createVaults(farmers: User[]): Partial<Vault>[] {
     { length: remainingCount },
     () => VaultStatus.ACTIVE,
   );
-  const statuses = faker.helpers.shuffle([...guaranteedStatuses, ...randomStatuses]);
+  const statuses = faker.helpers.shuffle([
+    ...guaranteedStatuses,
+    ...randomStatuses,
+  ]);
 
   return statuses.map((status) => {
     const owner = faker.helpers.arrayElement(farmers);
@@ -177,7 +178,11 @@ function createVaults(farmers: User[]): Partial<Vault>[] {
       vaultName: `${crop} ${vaultTypeLabels[type]} Vault`,
       description: faker.lorem.sentence({ min: 10, max: 18 }),
       symbol: `HV${crop.slice(0, 3).toUpperCase()}`,
-      assetPair: faker.helpers.arrayElement(['XLM/USDC', 'XLM/HVF', 'USDC/HVF']),
+      assetPair: faker.helpers.arrayElement([
+        'XLM/USDC',
+        'XLM/HVF',
+        'USDC/HVF',
+      ]),
       totalDeposits,
       maxCapacity,
       interestRate: faker.number.float({
@@ -275,7 +280,9 @@ function createVaultDepositBalances(
 
       const key = `${deposit.userId}:${deposit.vaultId}`;
       const user = users.find((candidate) => candidate.id === deposit.userId);
-      const vault = vaults.find((candidate) => candidate.id === deposit.vaultId);
+      const vault = vaults.find(
+        (candidate) => candidate.id === deposit.vaultId,
+      );
       if (!user || !vault) return accumulator;
 
       accumulator[key] = {
@@ -295,7 +302,10 @@ function createVaultDepositBalances(
   }));
 }
 
-function createWithdrawals(users: User[], vaults: Vault[]): Partial<Withdrawal>[] {
+function createWithdrawals(
+  users: User[],
+  vaults: Vault[],
+): Partial<Withdrawal>[] {
   const SEED_WITHDRAWAL_COUNT = 16;
   // Guarantee at least one withdrawal per WithdrawalStatus.
   const guaranteedStatuses: WithdrawalStatus[] = [
@@ -313,7 +323,10 @@ function createWithdrawals(users: User[], vaults: Vault[]): Partial<Withdrawal>[
       ]),
     { count: remainingCount },
   );
-  const statuses = faker.helpers.shuffle([...guaranteedStatuses, ...fillerStatuses]);
+  const statuses = faker.helpers.shuffle([
+    ...guaranteedStatuses,
+    ...fillerStatuses,
+  ]);
 
   return statuses.map((status) => {
     const createdAt = faker.date.recent({ days: 90 });

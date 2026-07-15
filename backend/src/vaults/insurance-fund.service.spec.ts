@@ -1,11 +1,23 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { BadRequestException, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
+import {
+  BadRequestException,
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
+} from '@nestjs/common';
 import { InsuranceFundService } from './insurance-fund.service';
-import { Vault, VaultType, VaultStatus } from '../database/entities/vault.entity';
+import {
+  Vault,
+  VaultType,
+  VaultStatus,
+} from '../database/entities/vault.entity';
 import { Deposit, DepositStatus } from '../database/entities/deposit.entity';
-import { InsuranceClaim, InsuranceClaimStatus } from '../database/entities/insurance-claim.entity';
+import {
+  InsuranceClaim,
+  InsuranceClaimStatus,
+} from '../database/entities/insurance-claim.entity';
 import { User, UserRole } from '../database/entities/user.entity';
 import { CustomLoggerService } from '../logger/custom-logger.service';
 
@@ -63,7 +75,9 @@ const createMockDeposit = (overrides: Partial<Deposit> = {}): Deposit =>
     ...overrides,
   }) as Deposit;
 
-const createMockClaim = (overrides: Partial<InsuranceClaim> = {}): InsuranceClaim =>
+const createMockClaim = (
+  overrides: Partial<InsuranceClaim> = {},
+): InsuranceClaim =>
   ({
     id: CLAIM_ID,
     vaultId: INSURANCE_VAULT_ID,
@@ -93,7 +107,10 @@ describe('InsuranceFundService', () => {
   };
 
   const mockDataSource = {
-    transaction: jest.fn((cb: (em: typeof mockEntityManager) => Promise<unknown>) => cb(mockEntityManager)),
+    transaction: jest.fn(
+      (cb: (em: typeof mockEntityManager) => Promise<unknown>) =>
+        cb(mockEntityManager),
+    ),
   };
 
   const mockVaultRepository = {
@@ -132,8 +149,14 @@ describe('InsuranceFundService', () => {
       providers: [
         InsuranceFundService,
         { provide: getRepositoryToken(Vault), useValue: mockVaultRepository },
-        { provide: getRepositoryToken(Deposit), useValue: mockDepositRepository },
-        { provide: getRepositoryToken(InsuranceClaim), useValue: mockClaimRepository },
+        {
+          provide: getRepositoryToken(Deposit),
+          useValue: mockDepositRepository,
+        },
+        {
+          provide: getRepositoryToken(InsuranceClaim),
+          useValue: mockClaimRepository,
+        },
         { provide: getRepositoryToken(User), useValue: mockUserRepository },
         { provide: DataSource, useValue: mockDataSource },
         { provide: CustomLoggerService, useValue: mockLogger },
@@ -200,14 +223,20 @@ describe('InsuranceFundService', () => {
     });
 
     it('should throw BadRequestException for non-positive amount', async () => {
-      await expect(service.depositToFund(USER_ID, 0)).rejects.toThrow(BadRequestException);
-      await expect(service.depositToFund(USER_ID, -100)).rejects.toThrow(BadRequestException);
+      await expect(service.depositToFund(USER_ID, 0)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.depositToFund(USER_ID, -100)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw NotFoundException for inactive user', async () => {
       mockUserRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.depositToFund(USER_ID, 1000)).rejects.toThrow(NotFoundException);
+      await expect(service.depositToFund(USER_ID, 1000)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -241,7 +270,9 @@ describe('InsuranceFundService', () => {
   describe('getStats', () => {
     it('should return comprehensive insurance fund statistics', async () => {
       const insuranceVault = createMockVault({ totalDeposits: 10000 });
-      const activeVaults = [{ ...createMockVault({ id: VAULT_ID, totalDeposits: 20000 }) }];
+      const activeVaults = [
+        { ...createMockVault({ id: VAULT_ID, totalDeposits: 20000 }) },
+      ];
       const completedClaims = [
         createMockClaim({ payoutAmount: 500 }),
         createMockClaim({ payoutAmount: 300 }),
@@ -275,7 +306,11 @@ describe('InsuranceFundService', () => {
       mockClaimRepository.update.mockResolvedValue(undefined);
 
       const losses = { [USER_ID]: 5000 };
-      const claims = await service.processIncident(ADMIN_ID, UserRole.ADMIN, losses);
+      const claims = await service.processIncident(
+        ADMIN_ID,
+        UserRole.ADMIN,
+        losses,
+      );
 
       expect(claims.length).toBe(1);
       expect(mockEntityManager.decrement).toHaveBeenCalled();
@@ -285,31 +320,43 @@ describe('InsuranceFundService', () => {
       const insuranceVault = createMockVault();
       mockVaultRepository.findOne.mockResolvedValue(insuranceVault);
 
-      await expect(service.processIncident(USER_ID, UserRole.FARMER, {})).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.processIncident(USER_ID, UserRole.FARMER, {}),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('should throw BadRequestException for empty losses', async () => {
       const insuranceVault = createMockVault();
       mockVaultRepository.findOne.mockResolvedValue(insuranceVault);
 
-      await expect(service.processIncident(ADMIN_ID, UserRole.ADMIN, {})).rejects.toThrow(BadRequestException);
+      await expect(
+        service.processIncident(ADMIN_ID, UserRole.ADMIN, {}),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should calculate pro-rata payouts when insufficient funds', async () => {
       const insuranceVault = createMockVault({ totalDeposits: 5000 });
       const user1 = createMockUser();
-      const user2 = createMockUser({ id: 'user-77777777-7777-7777-7777-777777777777' });
+      const user2 = createMockUser({
+        id: 'user-77777777-7777-7777-7777-777777777777',
+      });
 
       mockVaultRepository.findOne.mockResolvedValue(insuranceVault);
       mockUserRepository.find.mockResolvedValue([user1, user2]);
       mockEntityManager.findOne.mockResolvedValue(null);
       mockEntityManager.create.mockReturnValue(createMockClaim());
-      mockEntityManager.save.mockImplementation((entity) => Promise.resolve(entity));
+      mockEntityManager.save.mockImplementation((entity) =>
+        Promise.resolve(entity),
+      );
       mockEntityManager.decrement.mockResolvedValue(undefined);
       mockClaimRepository.update.mockResolvedValue(undefined);
 
       const losses = { [user1.id]: 3000, [user2.id]: 5000 };
-      const claims = await service.processIncident(ADMIN_ID, UserRole.ADMIN, losses);
+      const claims = await service.processIncident(
+        ADMIN_ID,
+        UserRole.ADMIN,
+        losses,
+      );
 
       expect(claims.length).toBe(2);
     });
@@ -335,7 +382,11 @@ describe('InsuranceFundService', () => {
       const targetVault = { id: VAULT_ID, totalDeposits: 10000 };
       const deposits = [
         { userId: USER_ID, amount: 6000, status: DepositStatus.CONFIRMED },
-        { userId: 'user-77777777-7777-7777-7777-777777777777', amount: 4000, status: DepositStatus.CONFIRMED },
+        {
+          userId: 'user-77777777-7777-7777-7777-777777777777',
+          amount: 4000,
+          status: DepositStatus.CONFIRMED,
+        },
       ];
       const user = createMockUser();
       const claim = createMockClaim();
@@ -347,7 +398,9 @@ describe('InsuranceFundService', () => {
       mockUserRepository.find.mockResolvedValue([user]);
       mockEntityManager.findOne.mockResolvedValue(null);
       mockEntityManager.create.mockReturnValue(claim);
-      mockEntityManager.save.mockImplementation((entity) => Promise.resolve(entity));
+      mockEntityManager.save.mockImplementation((entity) =>
+        Promise.resolve(entity),
+      );
       mockEntityManager.decrement.mockResolvedValue(undefined);
       mockClaimRepository.update.mockResolvedValue(undefined);
 
@@ -418,10 +471,14 @@ describe('InsuranceFundService', () => {
 
   describe('getClaimsByStatus', () => {
     it('should return claims filtered by status', async () => {
-      const claims = [createMockClaim({ status: InsuranceClaimStatus.COMPLETED })];
+      const claims = [
+        createMockClaim({ status: InsuranceClaimStatus.COMPLETED }),
+      ];
       mockClaimRepository.find.mockResolvedValue(claims);
 
-      const result = await service.getClaimsByStatus(InsuranceClaimStatus.COMPLETED);
+      const result = await service.getClaimsByStatus(
+        InsuranceClaimStatus.COMPLETED,
+      );
 
       expect(result).toHaveLength(1);
     });
@@ -454,19 +511,30 @@ describe('InsuranceFundService', () => {
     it('should throw NotFoundException for unknown claim', async () => {
       mockClaimRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.getClaimById('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.getClaimById('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   describe('finalizeClaim', () => {
     it('should finalize a pending claim', async () => {
-      const pendingClaim = createMockClaim({ status: InsuranceClaimStatus.PENDING });
-      const finalizedClaim = createMockClaim({ status: InsuranceClaimStatus.COMPLETED, transactionHash: 'final-tx' });
+      const pendingClaim = createMockClaim({
+        status: InsuranceClaimStatus.PENDING,
+      });
+      const finalizedClaim = createMockClaim({
+        status: InsuranceClaimStatus.COMPLETED,
+        transactionHash: 'final-tx',
+      });
 
       mockClaimRepository.findOne.mockResolvedValue(pendingClaim);
       mockEntityManager.save.mockResolvedValue(finalizedClaim);
 
-      const result = await service.finalizeClaim(CLAIM_ID, ADMIN_ID, UserRole.ADMIN);
+      const result = await service.finalizeClaim(
+        CLAIM_ID,
+        ADMIN_ID,
+        UserRole.ADMIN,
+      );
 
       expect(result.status).toBe(InsuranceClaimStatus.COMPLETED);
     });
@@ -474,16 +542,22 @@ describe('InsuranceFundService', () => {
     it('should throw ForbiddenException for non-admin', async () => {
       mockClaimRepository.findOne.mockResolvedValue(createMockClaim());
 
-      await expect(service.finalizeClaim(CLAIM_ID, USER_ID, UserRole.FARMER)).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(
+        service.finalizeClaim(CLAIM_ID, USER_ID, UserRole.FARMER),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('should return already completed claim without changes', async () => {
-      const completedClaim = createMockClaim({ status: InsuranceClaimStatus.COMPLETED });
+      const completedClaim = createMockClaim({
+        status: InsuranceClaimStatus.COMPLETED,
+      });
       mockClaimRepository.findOne.mockResolvedValue(completedClaim);
 
-      const result = await service.finalizeClaim(CLAIM_ID, ADMIN_ID, UserRole.ADMIN);
+      const result = await service.finalizeClaim(
+        CLAIM_ID,
+        ADMIN_ID,
+        UserRole.ADMIN,
+      );
 
       expect(result.status).toBe(InsuranceClaimStatus.COMPLETED);
     });

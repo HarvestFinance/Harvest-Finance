@@ -56,7 +56,10 @@ export class StellarService implements OnModuleInit {
   ) {
     this.structuredLogger = customLogger;
 
-    const network = this.configService.get<string>('STELLAR_NETWORK', 'testnet');
+    const network = this.configService.get<string>(
+      'STELLAR_NETWORK',
+      'testnet',
+    );
     if (network === 'mainnet') {
       this.logger.warn('⚠️  Running on Stellar MAINNET');
     } else {
@@ -146,7 +149,9 @@ export class StellarService implements OnModuleInit {
     if (!val) return fallback;
     const parsed = parseInt(val, 10);
     if (isNaN(parsed) || parsed <= 0) {
-      this.logger.warn(`Invalid config for ${key}: ${val}. Using fallback ${fallback}`);
+      this.logger.warn(
+        `Invalid config for ${key}: ${val}. Using fallback ${fallback}`,
+      );
       return fallback;
     }
     return parsed;
@@ -296,7 +301,8 @@ export class StellarService implements OnModuleInit {
         try {
           const fullTx = await this.callHorizon(
             `getDecodedAccountTransactions(${txMeta.hash})`,
-            () => this.client.server.transactions().transaction(txMeta.hash).call(),
+            () =>
+              this.client.server.transactions().transaction(txMeta.hash).call(),
           );
           const envelope = StellarSdk.TransactionBuilder.fromXDR(
             fullTx.envelope_xdr,
@@ -343,7 +349,7 @@ export class StellarService implements OnModuleInit {
       } else if (typeof details[key] === 'bigint') {
         details[key] = details[key].toString();
       } else if (details[key] instanceof StellarSdk.Asset) {
-        details[key] = details[key].toString();
+        details[key] = String(details[key]);
       }
     }
     return details;
@@ -841,11 +847,16 @@ export class StellarService implements OnModuleInit {
     try {
       const tx = await this.callHorizon(
         `getTransactionStatus(${transactionHash})`,
-        () => this.client.server.transactions().transaction(transactionHash).call(),
+        () =>
+          this.client.server.transactions().transaction(transactionHash).call(),
       );
       const ops = await this.callHorizon(
         `getTransactionStatus.operations(${transactionHash})`,
-        () => this.client.server.operations().forTransaction(transactionHash).call(),
+        () =>
+          this.client.server
+            .operations()
+            .forTransaction(transactionHash)
+            .call(),
       );
 
       const operations = ops.records.map((op: any) => ({
@@ -922,7 +933,7 @@ export class StellarService implements OnModuleInit {
     const safeOperationCount = Math.max(1, operationCount);
     try {
       const feeStats = await this.getHorizonFeeStats('estimateFee');
-      const chargedStats = feeStats.fee_charged as any;
+      const chargedStats = feeStats.fee_charged;
       const baseFeeStroops = parseInt(chargedStats.mode, 10);
       const totalStroops = baseFeeStroops * safeOperationCount;
 
@@ -974,7 +985,7 @@ export class StellarService implements OnModuleInit {
   ): Promise<PriorityFeeInfo> {
     try {
       const stats = await this.getHorizonFeeStats('getRecommendedPriorityFee');
-      const pStats = stats.fee_charged as any;
+      const pStats = stats.fee_charged;
 
       let recommendedStroops = parseInt(pStats.mode, 10);
       if (percentile <= 10) recommendedStroops = parseInt(pStats.p10, 10);
@@ -1271,4 +1282,3 @@ export class StellarService implements OnModuleInit {
     return this.client.submitTransaction(transaction, context);
   }
 }
-

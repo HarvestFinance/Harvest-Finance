@@ -8,7 +8,11 @@ import { RealtimeModule } from '../realtime/realtime.module';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([FarmVault, CropCycle]), RealtimeModule, AuthModule],
+  imports: [
+    TypeOrmModule.forFeature([FarmVault, CropCycle]),
+    RealtimeModule,
+    AuthModule,
+  ],
   controllers: [FarmVaultsController],
   providers: [FarmVaultsService],
   exports: [FarmVaultsService],

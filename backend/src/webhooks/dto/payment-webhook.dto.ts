@@ -12,7 +12,9 @@ import { ExternalPaymentEventType } from '../../vaults/dto/external-payment-noti
 export { ExternalPaymentEventType as PaymentWebhookEventType };
 
 export class PaymentWebhookDto {
-  @ApiProperty({ description: 'Unique idempotency key from the payment provider' })
+  @ApiProperty({
+    description: 'Unique idempotency key from the payment provider',
+  })
   @IsString()
   @IsNotEmpty()
   eventId: string;
@@ -30,7 +32,9 @@ export class PaymentWebhookDto {
   @IsNotEmpty()
   transactionHash: string;
 
-  @ApiPropertyOptional({ description: 'Stellar network transaction identifier' })
+  @ApiPropertyOptional({
+    description: 'Stellar network transaction identifier',
+  })
   @IsOptional()
   @IsString()
   stellarTransactionId?: string;

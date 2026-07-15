@@ -42,9 +42,27 @@ describe('ScoringService', () => {
   };
 
   const mockApyHistory: VaultApyHistory[] = [
-    { id: '1', vaultId: 'test-vault-id', apy: 0.08, snapshotDate: new Date('2024-01-01'), createdAt: new Date() } as VaultApyHistory,
-    { id: '2', vaultId: 'test-vault-id', apy: 0.09, snapshotDate: new Date('2024-01-02'), createdAt: new Date() } as VaultApyHistory,
-    { id: '3', vaultId: 'test-vault-id', apy: 0.10, snapshotDate: new Date('2024-01-03'), createdAt: new Date() } as VaultApyHistory,
+    {
+      id: '1',
+      vaultId: 'test-vault-id',
+      apy: 0.08,
+      snapshotDate: new Date('2024-01-01'),
+      createdAt: new Date(),
+    } as VaultApyHistory,
+    {
+      id: '2',
+      vaultId: 'test-vault-id',
+      apy: 0.09,
+      snapshotDate: new Date('2024-01-02'),
+      createdAt: new Date(),
+    } as VaultApyHistory,
+    {
+      id: '3',
+      vaultId: 'test-vault-id',
+      apy: 0.1,
+      snapshotDate: new Date('2024-01-03'),
+      createdAt: new Date(),
+    } as VaultApyHistory,
   ];
 
   beforeEach(async () => {
@@ -81,8 +99,12 @@ describe('ScoringService', () => {
 
     service = module.get<ScoringService>(ScoringService);
     vaultRepo = module.get<Repository<Vault>>(getRepositoryToken(Vault));
-    apyHistoryRepo = module.get<Repository<VaultApyHistory>>(getRepositoryToken(VaultApyHistory));
-    scoreHistoryRepo = module.get<Repository<VaultScoreHistory>>(getRepositoryToken(VaultScoreHistory));
+    apyHistoryRepo = module.get<Repository<VaultApyHistory>>(
+      getRepositoryToken(VaultApyHistory),
+    );
+    scoreHistoryRepo = module.get<Repository<VaultScoreHistory>>(
+      getRepositoryToken(VaultScoreHistory),
+    );
   });
 
   it('should be defined', () => {
@@ -119,7 +141,7 @@ describe('ScoringService', () => {
   describe('calculateTvlStabilityScore', () => {
     it('should return 50 for insufficient data (less than 2 history entries)', async () => {
       jest.spyOn(apyHistoryRepo, 'find').mockResolvedValue([mockApyHistory[0]]);
-      
+
       const score = await service.calculateTvlStabilityScore('test-vault-id');
       expect(score).toBe(50);
     });
@@ -131,7 +153,7 @@ describe('ScoringService', () => {
         { ...mockApyHistory[2], apy: 0.102 },
       ];
       jest.spyOn(apyHistoryRepo, 'find').mockResolvedValue(stableHistory);
-      
+
       const score = await service.calculateTvlStabilityScore('test-vault-id');
       expect(score).toBe(100);
     });
@@ -139,11 +161,11 @@ describe('ScoringService', () => {
     it('should return 75 for stable TVL (moderate coefficient of variation)', async () => {
       const stableHistory = [
         { ...mockApyHistory[0], apy: 0.08 },
-        { ...mockApyHistory[1], apy: 0.10 },
+        { ...mockApyHistory[1], apy: 0.1 },
         { ...mockApyHistory[2], apy: 0.12 },
       ];
       jest.spyOn(apyHistoryRepo, 'find').mockResolvedValue(stableHistory);
-      
+
       const score = await service.calculateTvlStabilityScore('test-vault-id');
       expect(score).toBe(75);
     });
@@ -152,7 +174,7 @@ describe('ScoringService', () => {
   describe('calculateDrawdownScore', () => {
     it('should return 50 for insufficient data (less than 2 history entries)', async () => {
       jest.spyOn(apyHistoryRepo, 'find').mockResolvedValue([mockApyHistory[0]]);
-      
+
       const score = await service.calculateDrawdownScore('test-vault-id');
       expect(score).toBe(50);
     });
@@ -160,23 +182,25 @@ describe('ScoringService', () => {
     it('should return 100 for no drawdown', async () => {
       const increasingHistory = [
         { ...mockApyHistory[0], apy: 0.08 },
-        { ...mockApyHistory[1], apy: 0.10 },
+        { ...mockApyHistory[1], apy: 0.1 },
         { ...mockApyHistory[2], apy: 0.12 },
       ];
       jest.spyOn(apyHistoryRepo, 'find').mockResolvedValue(increasingHistory);
-      
+
       const score = await service.calculateDrawdownScore('test-vault-id');
       expect(score).toBe(100);
     });
 
     it('should return 75 for small drawdown (<= 10%)', async () => {
       const historyWithSmallDrawdown = [
-        { ...mockApyHistory[0], apy: 0.10 },
+        { ...mockApyHistory[0], apy: 0.1 },
         { ...mockApyHistory[1], apy: 0.095 },
         { ...mockApyHistory[2], apy: 0.09 },
       ];
-      jest.spyOn(apyHistoryRepo, 'find').mockResolvedValue(historyWithSmallDrawdown);
-      
+      jest
+        .spyOn(apyHistoryRepo, 'find')
+        .mockResolvedValue(historyWithSmallDrawdown);
+
       const score = await service.calculateDrawdownScore('test-vault-id');
       expect(score).toBe(75);
     });
@@ -190,19 +214,28 @@ describe('ScoringService', () => {
     });
 
     it('should return 50 for vault 1-6 months old', () => {
-      const monthOldVault = { ...mockVault, createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000) };
+      const monthOldVault = {
+        ...mockVault,
+        createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000),
+      };
       const score = service.calculateOperatorScore(monthOldVault);
       expect(score).toBe(50);
     });
 
     it('should return 75 for vault 6+ months old', () => {
-      const sixMonthOldVault = { ...mockVault, createdAt: new Date(Date.now() - 200 * 24 * 60 * 60 * 1000) };
+      const sixMonthOldVault = {
+        ...mockVault,
+        createdAt: new Date(Date.now() - 200 * 24 * 60 * 60 * 1000),
+      };
       const score = service.calculateOperatorScore(sixMonthOldVault);
       expect(score).toBe(75);
     });
 
     it('should return 100 for vault 1+ year old', () => {
-      const yearOldVault = { ...mockVault, createdAt: new Date(Date.now() - 400 * 24 * 60 * 60 * 1000) };
+      const yearOldVault = {
+        ...mockVault,
+        createdAt: new Date(Date.now() - 400 * 24 * 60 * 60 * 1000),
+      };
       const score = service.calculateOperatorScore(yearOldVault);
       expect(score).toBe(100);
     });
@@ -211,9 +244,9 @@ describe('ScoringService', () => {
   describe('calculateVaultScore', () => {
     it('should calculate weighted score correctly', async () => {
       jest.spyOn(apyHistoryRepo, 'find').mockResolvedValue(mockApyHistory);
-      
+
       const result = await service.calculateVaultScore(mockVault);
-      
+
       expect(result.strategyScore).toBeGreaterThanOrEqual(0);
       expect(result.strategyScore).toBeLessThanOrEqual(100);
       expect(result.apyScore).toBe(75);
@@ -226,16 +259,18 @@ describe('ScoringService', () => {
   describe('getVaultScoreBreakdown', () => {
     it('should throw error for non-existent vault', async () => {
       jest.spyOn(vaultRepo, 'findOne').mockResolvedValue(null);
-      
-      await expect(service.getVaultScoreBreakdown('non-existent-id')).rejects.toThrow('Vault not found');
+
+      await expect(
+        service.getVaultScoreBreakdown('non-existent-id'),
+      ).rejects.toThrow('Vault not found');
     });
 
     it('should return score breakdown for existing vault', async () => {
       jest.spyOn(vaultRepo, 'findOne').mockResolvedValue(mockVault);
       jest.spyOn(apyHistoryRepo, 'find').mockResolvedValue(mockApyHistory);
-      
+
       const result = await service.getVaultScoreBreakdown('test-vault-id');
-      
+
       expect(result).toHaveProperty('strategyScore');
       expect(result).toHaveProperty('apyScore');
       expect(result).toHaveProperty('tvlStabilityScore');
@@ -250,28 +285,43 @@ describe('ScoringService', () => {
       jest.spyOn(apyHistoryRepo, 'find').mockResolvedValue(mockApyHistory);
       jest.spyOn(vaultRepo, 'update').mockResolvedValue({} as any);
       jest.spyOn(scoreHistoryRepo, 'save').mockResolvedValue({} as any);
-      
+
       await service.recalculateAllVaultScores();
-      
-      expect(vaultRepo.update).toHaveBeenCalledWith(mockVault.id, expect.objectContaining({
-        strategyScore: expect.any(Number),
-      }));
-      expect(scoreHistoryRepo.save).toHaveBeenCalledWith(expect.objectContaining({
-        vaultId: mockVault.id,
-        strategyScore: expect.any(Number),
-      }));
+
+      expect(vaultRepo.update).toHaveBeenCalledWith(
+        mockVault.id,
+        expect.objectContaining({
+          strategyScore: expect.any(Number),
+        }),
+      );
+      expect(scoreHistoryRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          vaultId: mockVault.id,
+          strategyScore: expect.any(Number),
+        }),
+      );
     });
   });
 
   describe('getVaultScoreHistory', () => {
     it('should return score history for a vault', async () => {
       const mockHistory: VaultScoreHistory[] = [
-        { id: '1', vaultId: 'test-vault-id', strategyScore: 75, apyScore: 75, tvlStabilityScore: 100, drawdownScore: 100, operatorScore: 25, snapshotDate: new Date(), createdAt: new Date() } as VaultScoreHistory,
+        {
+          id: '1',
+          vaultId: 'test-vault-id',
+          strategyScore: 75,
+          apyScore: 75,
+          tvlStabilityScore: 100,
+          drawdownScore: 100,
+          operatorScore: 25,
+          snapshotDate: new Date(),
+          createdAt: new Date(),
+        } as VaultScoreHistory,
       ];
       jest.spyOn(scoreHistoryRepo, 'find').mockResolvedValue(mockHistory);
-      
+
       const result = await service.getVaultScoreHistory('test-vault-id');
-      
+
       expect(result).toEqual(mockHistory);
     });
   });

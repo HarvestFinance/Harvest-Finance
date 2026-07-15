@@ -84,15 +84,23 @@ describe('AccountMergeDetectionService', () => {
       const module = await Test.createTestingModule({
         providers: [
           AccountMergeDetectionService,
-          { provide: getRepositoryToken(Vault), useFactory: mockVaultRepository },
+          {
+            provide: getRepositoryToken(Vault),
+            useFactory: mockVaultRepository,
+          },
           { provide: getRepositoryToken(User), useFactory: mockUserRepository },
-          { provide: NotificationsService, useFactory: mockNotificationsService },
+          {
+            provide: NotificationsService,
+            useFactory: mockNotificationsService,
+          },
           {
             provide: ConfigService,
             useValue: {
-              get: jest.fn().mockImplementation((key: string, def?: string) =>
-                key === 'NODE_ENV' ? 'test' : def,
-              ),
+              get: jest
+                .fn()
+                .mockImplementation((key: string, def?: string) =>
+                  key === 'NODE_ENV' ? 'test' : def,
+                ),
             },
           },
         ],
@@ -111,7 +119,9 @@ describe('AccountMergeDetectionService', () => {
 
     it('skips vault owners without a stellarAddress', async () => {
       vaultRepo.find.mockResolvedValue([activeVault]);
-      userRepo.findBy.mockResolvedValue([{ id: 'user-001', stellarAddress: null }]);
+      userRepo.findBy.mockResolvedValue([
+        { id: 'user-001', stellarAddress: null },
+      ]);
       await service.checkVaultAccountExistence();
       expect(mockServer.loadAccount).not.toHaveBeenCalled();
     });
@@ -121,7 +131,9 @@ describe('AccountMergeDetectionService', () => {
       userRepo.findBy.mockResolvedValue([vaultOwner]);
       mockServer.loadAccount.mockResolvedValue({});
       await service.checkVaultAccountExistence();
-      expect(mockServer.loadAccount).toHaveBeenCalledWith(vaultOwner.stellarAddress);
+      expect(mockServer.loadAccount).toHaveBeenCalledWith(
+        vaultOwner.stellarAddress,
+      );
     });
   });
 

@@ -55,7 +55,7 @@ export class RealtimeGateway
   /** Client joins the admin room to receive platform-wide metrics */
   @SubscribeMessage('join:admin')
   handleJoinAdmin(@ConnectedSocket() client: Socket) {
-    client.join('admin');
+    void client.join('admin');
     this.logger.log(`${client.id} joined admin room`);
   }
 
@@ -66,7 +66,7 @@ export class RealtimeGateway
     @MessageBody() data: { userId: string },
   ) {
     if (data?.userId) {
-      client.join(`farmer:${data.userId}`);
+      void client.join(`farmer:${data.userId}`);
       this.logger.log(`${client.id} joined farmer:${data.userId}`);
     }
   }
@@ -87,7 +87,7 @@ export class RealtimeGateway
    *  - if target is 'admin', resolves to 'admin' room.
    *  - otherwise, resolves to 'farmer:<target>' room.
    */
-  emitAlert(target: 'admin' | string, payload: Record<string, unknown>) {
+  emitAlert(target: string, payload: Record<string, unknown>) {
     const room = target === 'admin' ? 'admin' : `farmer:${target}`;
     this.server.to(room).emit('alert:threshold', payload);
   }

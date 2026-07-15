@@ -34,10 +34,7 @@ export interface ChainAdapter {
    * @param onEvent - Callback function invoked when an event occurs
    * @returns Cleanup function to stop the stream
    */
-  streamEvents(
-    address: string,
-    onEvent: (event: any) => void,
-  ): () => void;
+  streamEvents(address: string, onEvent: (event: any) => void): () => void;
 
   /**
    * Estimates the fee for a transaction.

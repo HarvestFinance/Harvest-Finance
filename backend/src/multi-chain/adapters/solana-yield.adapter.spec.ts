@@ -22,9 +22,7 @@ describe('SolanaYieldAdapter', () => {
     },
   ]);
 
-  const buildUsers = (
-    user: Partial<User> | null,
-  ): Repository<User> =>
+  const buildUsers = (user: Partial<User> | null): Repository<User> =>
     ({
       findOne: () => Promise.resolve(user),
     }) as unknown as Repository<User>;

@@ -83,7 +83,9 @@ export class AddRefreshTokenRotation1700000000022 implements MigrationInterface 
     await queryRunner.query(`DROP TYPE IF EXISTS "security_events_type_enum"`);
 
     // sessions rotation columns
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_sessions_user_id_revoked"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_sessions_user_id_revoked"`,
+    );
     await queryRunner.query(`DROP INDEX IF EXISTS "idx_sessions_family_id"`);
     await queryRunner.query(`
       ALTER TABLE "sessions"

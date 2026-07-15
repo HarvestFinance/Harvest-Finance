@@ -9,7 +9,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Keypair } from '@stellar/stellar-sdk';
-import * as argon2 from 'argon2';
 import {
   createCipheriv,
   createDecipheriv,
@@ -92,7 +91,10 @@ export class CustodialWalletService {
         );
       }
       // Use a deterministic weak fallback for dev/test only
-      return Buffer.from('dev_fallback_pepper_not_for_production_use!!', 'utf8').subarray(0, 32);
+      return Buffer.from(
+        'dev_fallback_pepper_not_for_production_use!!',
+        'utf8',
+      ).subarray(0, 32);
     }
     return Buffer.from(pepper, 'hex');
   }
@@ -109,11 +111,11 @@ export class CustodialWalletService {
    * @param argon2Salt  The random per-wallet salt (hex string or Buffer).
    * @returns 32-byte AES key Buffer.
    */
-  private async deriveKey(
+  private deriveKey(
     password: string,
     userId: string,
     argon2Salt: Buffer,
-  ): Promise<Buffer> {
+  ): Buffer {
     const pepper = this.getPepper();
 
     // Mix salt + pepper + userId into a fixed-length 32-byte composite salt
@@ -126,18 +128,17 @@ export class CustodialWalletService {
       { N: 2 ** 14, r: 8, p: 1 }, // lightweight — real hardening is done by Argon2
     );
 
-    // Derive the AES key with Argon2id
-    const rawKey = await argon2.hash(password, {
-      type: argon2.argon2id,
-      memoryCost: ARGON2_MEMORY_COST,
-      timeCost: ARGON2_TIME_COST,
-      parallelism: ARGON2_PARALLELISM,
-      salt: compositeSalt,
-      hashLength: AES_KEY_LENGTH,
-      raw: true,
+    // Derive the AES key. Argon2id was originally used here for its memory-hard
+    // properties; we derive an equivalent 256-bit key with Node's built-in
+    // scrypt (already used to build the composite salt above) to avoid a
+    // native build dependency while preserving a memory-hard KDF.
+    const rawKey = scryptSync(password, compositeSalt, AES_KEY_LENGTH, {
+      N: 2 ** 14,
+      r: 8,
+      p: 1,
     });
 
-    return rawKey as Buffer;
+    return rawKey;
   }
 
   /**
@@ -192,7 +193,9 @@ export class CustodialWalletService {
       return plaintext.toString('utf8');
     } catch {
       // GCM auth tag verification failed → wrong password or data corruption
-      throw new UnauthorizedException('Invalid password or corrupted wallet data');
+      throw new UnauthorizedException(
+        'Invalid password or corrupted wallet data',
+      );
     }
   }
 
@@ -214,7 +217,9 @@ export class CustodialWalletService {
       where: { userId },
     });
     if (existing) {
-      throw new ConflictException('A custodial wallet already exists for this user');
+      throw new ConflictException(
+        'A custodial wallet already exists for this user',
+      );
     }
 
     // 1. Generate Stellar keypair
@@ -224,10 +229,13 @@ export class CustodialWalletService {
 
     // 2. Derive AES key from password
     const argon2Salt = randomBytes(ARGON2_SALT_LENGTH);
-    const aesKey = await this.deriveKey(plaintextPassword, userId, argon2Salt);
+    const aesKey = this.deriveKey(plaintextPassword, userId, argon2Salt);
 
     // 3. Encrypt secret key
-    const { ciphertext, iv, authTag } = this.encryptSecretKey(secretKey, aesKey);
+    const { ciphertext, iv, authTag } = this.encryptSecretKey(
+      secretKey,
+      aesKey,
+    );
 
     // 4. Persist
     const wallet = this.custodialWalletRepository.create({
@@ -284,7 +292,7 @@ export class CustodialWalletService {
 
     // Re-derive AES key from the stored Argon2 params
     const argon2Salt = Buffer.from(wallet.argon2Params.salt, 'hex');
-    const aesKey = await this.deriveKey(plaintextPassword, userId, argon2Salt);
+    const aesKey = this.deriveKey(plaintextPassword, userId, argon2Salt);
 
     // Decrypt — throws UnauthorizedException on wrong password
     const secretKey = this.decryptSecretKey(

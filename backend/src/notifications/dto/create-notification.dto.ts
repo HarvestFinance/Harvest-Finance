@@ -1,7 +1,7 @@
 import { NotificationType } from '../../database/entities/notification.entity';
 
 export class CreateNotificationDto {
-  userId?: string;
+  userId?: string | null;
   adminOnly?: boolean;
   title: string;
   message: string;

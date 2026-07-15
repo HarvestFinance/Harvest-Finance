@@ -7,9 +7,16 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, Not, In } from 'typeorm';
-import { Vault, VaultType, VaultStatus } from '../database/entities/vault.entity';
+import {
+  Vault,
+  VaultType,
+  VaultStatus,
+} from '../database/entities/vault.entity';
 import { Deposit, DepositStatus } from '../database/entities/deposit.entity';
-import { InsuranceClaim, InsuranceClaimStatus } from '../database/entities/insurance-claim.entity';
+import {
+  InsuranceClaim,
+  InsuranceClaimStatus,
+} from '../database/entities/insurance-claim.entity';
 import { User, UserRole } from '../database/entities/user.entity';
 import { CustomLoggerService } from '../logger/custom-logger.service';
 
@@ -31,7 +38,11 @@ export interface InsuranceFundStats {
 @Injectable()
 export class InsuranceFundService {
   private readonly INSURANCE_FUND_VAULT_NAME = 'Insurance Fund';
-  private readonly ESCROW_SIGNERS = ['governance-signer-1', 'governance-signer-2', 'governance-signer-3'];
+  private readonly ESCROW_SIGNERS = [
+    'governance-signer-1',
+    'governance-signer-2',
+    'governance-signer-3',
+  ];
   private readonly ESCROW_THRESHOLD = 2;
 
   constructor(
@@ -67,7 +78,8 @@ export class InsuranceFundService {
         type: VaultType.INSURANCE_FUND,
         status: VaultStatus.ACTIVE,
         vaultName: this.INSURANCE_FUND_VAULT_NAME,
-        description: 'Dedicated insurance fund for protecting depositors against protocol incidents and strategy failures.',
+        description:
+          'Dedicated insurance fund for protecting depositors against protocol incidents and strategy failures.',
         symbol: 'INS',
         assetPair: 'XLM/USDC',
         totalDeposits: 0,
@@ -76,7 +88,10 @@ export class InsuranceFundService {
         isPublic: false,
       });
       await this.vaultRepo.save(vault);
-      this.logger.log('Created insurance fund vault with Soroban multisig escrow', 'InsuranceFundService');
+      this.logger.log(
+        'Created insurance fund vault with Soroban multisig escrow',
+        'InsuranceFundService',
+      );
     }
     return vault;
   }
@@ -86,7 +101,9 @@ export class InsuranceFundService {
       throw new BadRequestException('Deposit amount must be positive');
     }
 
-    const user = await this.userRepo.findOne({ where: { id: userId, isActive: true } });
+    const user = await this.userRepo.findOne({
+      where: { id: userId, isActive: true },
+    });
     if (!user) {
       throw new NotFoundException('User not found or inactive');
     }
@@ -105,10 +122,18 @@ export class InsuranceFundService {
 
     await this.dataSource.transaction(async (manager) => {
       await manager.save(deposit);
-      await manager.increment(Vault, { id: fundVault.id }, 'totalDeposits', amount);
+      await manager.increment(
+        Vault,
+        { id: fundVault.id },
+        'totalDeposits',
+        amount,
+      );
     });
 
-    this.logger.log(`User ${userId} deposited ${amount} to insurance fund`, 'InsuranceFundService');
+    this.logger.log(
+      `User ${userId} deposited ${amount} to insurance fund`,
+      'InsuranceFundService',
+    );
 
     return this.vaultRepo.findOneOrFail({ where: { id: fundVault.id } });
   }
@@ -116,10 +141,18 @@ export class InsuranceFundService {
   async getCoverageRatio(): Promise<number> {
     const [insuranceVault, activeVaults] = await Promise.all([
       this.getOrCreateInsuranceVault(),
-      this.vaultRepo.find({ where: { status: VaultStatus.ACTIVE, type: Not(VaultType.INSURANCE_FUND) } }),
+      this.vaultRepo.find({
+        where: {
+          status: VaultStatus.ACTIVE,
+          type: Not(VaultType.INSURANCE_FUND),
+        },
+      }),
     ]);
 
-    const totalTVL = activeVaults.reduce((sum, v) => sum + Number(v.totalDeposits), 0);
+    const totalTVL = activeVaults.reduce(
+      (sum, v) => sum + Number(v.totalDeposits),
+      0,
+    );
     if (totalTVL === 0) return 0;
     return Number(insuranceVault.totalDeposits) / totalTVL;
   }
@@ -127,15 +160,27 @@ export class InsuranceFundService {
   async getStats(): Promise<InsuranceFundStats> {
     const insuranceVault = await this.getOrCreateInsuranceVault();
     const activeVaults = await this.vaultRepo.find({
-      where: { status: VaultStatus.ACTIVE, type: Not(VaultType.INSURANCE_FUND) },
+      where: {
+        status: VaultStatus.ACTIVE,
+        type: Not(VaultType.INSURANCE_FUND),
+      },
     });
 
-    const totalTVL = activeVaults.reduce((sum, v) => sum + Number(v.totalDeposits), 0);
-    const coverageRatio = totalTVL > 0 ? Number(insuranceVault.totalDeposits) / totalTVL : 0;
+    const totalTVL = activeVaults.reduce(
+      (sum, v) => sum + Number(v.totalDeposits),
+      0,
+    );
+    const coverageRatio =
+      totalTVL > 0 ? Number(insuranceVault.totalDeposits) / totalTVL : 0;
 
-    const claims = await this.claimRepo.find({ where: { status: InsuranceClaimStatus.COMPLETED } });
+    const claims = await this.claimRepo.find({
+      where: { status: InsuranceClaimStatus.COMPLETED },
+    });
     const totalClaimsProcessed = claims.length;
-    const totalPayoutsDistributed = claims.reduce((sum, c) => sum + Number(c.payoutAmount), 0);
+    const totalPayoutsDistributed = claims.reduce(
+      (sum, c) => sum + Number(c.payoutAmount),
+      0,
+    );
 
     return {
       fundBalance: Number(insuranceVault.totalDeposits),
@@ -165,7 +210,9 @@ export class InsuranceFundService {
       throw new ForbiddenException('Only admin may trigger incident payouts');
     }
 
-    const validLosses = Object.entries(losses).filter(([, loss]) => loss > 0 && loss !== null);
+    const validLosses = Object.entries(losses).filter(
+      ([, loss]) => loss > 0 && loss !== null,
+    );
     if (validLosses.length === 0) {
       throw new BadRequestException('No valid losses provided');
     }
@@ -178,7 +225,10 @@ export class InsuranceFundService {
     const validDepositorIds = new Set(validDepositors.map((u) => u.id));
     for (const depositorId of depositorIds) {
       if (!validDepositorIds.has(depositorId)) {
-        this.logger.warn(`Invalid depositor ${depositorId} in incident claim`, 'InsuranceFundService');
+        this.logger.warn(
+          `Invalid depositor ${depositorId} in incident claim`,
+          'InsuranceFundService',
+        );
       }
     }
 
@@ -190,7 +240,8 @@ export class InsuranceFundService {
       throw new BadRequestException('Total losses must be greater than zero');
     }
 
-    const payoutFactor = fundBalance >= totalLosses ? 1 : fundBalance / totalLosses;
+    const payoutFactor =
+      fundBalance >= totalLosses ? 1 : fundBalance / totalLosses;
 
     const claims: InsuranceClaim[] = [];
     await this.dataSource.transaction(async (manager) => {
@@ -201,12 +252,17 @@ export class InsuranceFundService {
           where: {
             vaultId: fundVault.id,
             depositorId,
-            status: In([InsuranceClaimStatus.PENDING, InsuranceClaimStatus.COMPLETED]),
+            status: In([
+              InsuranceClaimStatus.PENDING,
+              InsuranceClaimStatus.COMPLETED,
+            ]),
           },
         });
 
         if (existingClaim) {
-          throw new ConflictException(`Duplicate claim exists for depositor ${depositorId}`);
+          throw new ConflictException(
+            `Duplicate claim exists for depositor ${depositorId}`,
+          );
         }
 
         const payout = Math.floor(loss * payoutFactor * 100) / 100;
@@ -218,16 +274,26 @@ export class InsuranceFundService {
           lossAmount: loss,
           payoutAmount: payout,
           status: InsuranceClaimStatus.PENDING,
-          reason: reason || 'Protocol incident - smart contract exploit or strategy failure',
+          reason:
+            reason ||
+            'Protocol incident - smart contract exploit or strategy failure',
           transactionHash: null,
         });
         await manager.save(claim);
         claims.push(claim);
-        await manager.decrement(Vault, { id: fundVault.id }, 'totalDeposits', payout);
+        await manager.decrement(
+          Vault,
+          { id: fundVault.id },
+          'totalDeposits',
+          payout,
+        );
       }
     });
 
-    await this.claimRepo.update({ id: In(claims.map((c) => c.id)) }, { status: InsuranceClaimStatus.COMPLETED });
+    await this.claimRepo.update(
+      { id: In(claims.map((c) => c.id)) },
+      { status: InsuranceClaimStatus.COMPLETED },
+    );
 
     this.logger.log(
       `Processed incident with ${claims.length} claimants, insufficient funds: ${payoutFactor < 1}`,
@@ -237,16 +303,22 @@ export class InsuranceFundService {
     return claims;
   }
 
-  async declareIncident(adminId: string, adminRole: UserRole, incidentData: {
-    vaultId: string;
-    lossAmount: number;
-    description: string;
-  }): Promise<InsuranceClaim[]> {
+  async declareIncident(
+    adminId: string,
+    adminRole: UserRole,
+    incidentData: {
+      vaultId: string;
+      lossAmount: number;
+      description: string;
+    },
+  ): Promise<InsuranceClaim[]> {
     if (adminRole !== UserRole.ADMIN) {
       throw new ForbiddenException('Only admin may declare incidents');
     }
 
-    const vault = await this.vaultRepo.findOne({ where: { id: incidentData.vaultId } });
+    const vault = await this.vaultRepo.findOne({
+      where: { id: incidentData.vaultId },
+    });
     if (!vault) {
       throw new NotFoundException('Vault not found');
     }
@@ -256,20 +328,30 @@ export class InsuranceFundService {
     });
 
     if (deposits.length === 0) {
-      throw new BadRequestException('No deposits found for the specified vault');
+      throw new BadRequestException(
+        'No deposits found for the specified vault',
+      );
     }
 
     const totalLoss = incidentData.lossAmount;
     const lossesByDepositor: Record<string, number> = {};
 
-    const totalDeposits = deposits.reduce((sum, d) => sum + Number(d.amount), 0);
+    const totalDeposits = deposits.reduce(
+      (sum, d) => sum + Number(d.amount),
+      0,
+    );
     const lossRatio = totalLoss / totalDeposits;
 
     for (const deposit of deposits) {
       lossesByDepositor[deposit.userId] = Number(deposit.amount) * lossRatio;
     }
 
-    return this.processIncident(adminId, adminRole, lossesByDepositor, incidentData.description);
+    return this.processIncident(
+      adminId,
+      adminRole,
+      lossesByDepositor,
+      incidentData.description,
+    );
   }
 
   async getUserClaims(userId: string): Promise<InsuranceClaim[]> {
@@ -279,7 +361,9 @@ export class InsuranceFundService {
     });
   }
 
-  async getClaimsByStatus(status: InsuranceClaimStatus): Promise<InsuranceClaim[]> {
+  async getClaimsByStatus(
+    status: InsuranceClaimStatus,
+  ): Promise<InsuranceClaim[]> {
     return this.claimRepo.find({
       where: { status },
       order: { createdAt: 'DESC' },
@@ -304,7 +388,11 @@ export class InsuranceFundService {
     return claim;
   }
 
-  async finalizeClaim(claimId: string, adminId: string, adminRole: UserRole): Promise<InsuranceClaim> {
+  async finalizeClaim(
+    claimId: string,
+    adminId: string,
+    adminRole: UserRole,
+  ): Promise<InsuranceClaim> {
     if (adminRole !== UserRole.ADMIN) {
       throw new ForbiddenException('Only admin may finalize claims');
     }
@@ -322,7 +410,10 @@ export class InsuranceFundService {
     claim.transactionHash = `payout_tx_${Date.now()}`;
     await this.claimRepo.save(claim);
 
-    this.logger.log(`Claim ${claimId} finalized by admin ${adminId}`, 'InsuranceFundService');
+    this.logger.log(
+      `Claim ${claimId} finalized by admin ${adminId}`,
+      'InsuranceFundService',
+    );
     return claim;
   }
 
@@ -338,7 +429,9 @@ export class InsuranceFundService {
       order: { createdAt: 'DESC' },
     });
 
-    const claimFilter: { vaultId: string; status?: InsuranceClaimStatus } = { vaultId: fundVault.id };
+    const claimFilter: { vaultId: string; status?: InsuranceClaimStatus } = {
+      vaultId: fundVault.id,
+    };
     if (vaultId) {
       claimFilter.status = InsuranceClaimStatus.COMPLETED;
     }

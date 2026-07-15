@@ -24,7 +24,11 @@ export class VaultApproval {
   @Column({ name: 'user_id' })
   userId: string;
 
-  @Column({ type: 'enum', enum: ['PENDING', 'APPROVED', 'REJECTED'], default: 'PENDING' })
+  @Column({
+    type: 'enum',
+    enum: ['PENDING', 'APPROVED', 'REJECTED'],
+    default: 'PENDING',
+  })
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
 
   @Column({ type: 'text', nullable: true })

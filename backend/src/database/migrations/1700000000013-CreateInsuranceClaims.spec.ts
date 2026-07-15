@@ -21,7 +21,11 @@ describe('CreateInsuranceClaims1700000000013', () => {
       expect.objectContaining({
         name: 'insurance_claims',
         columns: expect.arrayContaining([
-          expect.objectContaining({ name: 'id', type: 'uuid', isPrimary: true }),
+          expect.objectContaining({
+            name: 'id',
+            type: 'uuid',
+            isPrimary: true,
+          }),
           expect.objectContaining({ name: 'vault_id', type: 'uuid' }),
           expect.objectContaining({ name: 'depositor_id', type: 'uuid' }),
           expect.objectContaining({ name: 'loss_amount', type: 'decimal' }),
@@ -39,7 +43,12 @@ describe('CreateInsuranceClaims1700000000013', () => {
     const call = (queryRunner.createTable as jest.Mock).mock.calls[0][0];
     const statusColumn = call.columns.find((c: any) => c.name === 'status');
 
-    expect(statusColumn.enum).toEqual(['PENDING', 'COMPLETED', 'FAILED', 'REJECTED']);
+    expect(statusColumn.enum).toEqual([
+      'PENDING',
+      'COMPLETED',
+      'FAILED',
+      'REJECTED',
+    ]);
     expect(statusColumn.default).toBe("'PENDING'");
   });
 

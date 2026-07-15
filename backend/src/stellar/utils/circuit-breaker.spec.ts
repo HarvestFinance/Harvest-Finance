@@ -1,7 +1,4 @@
-import {
-  CircuitBreaker,
-  CircuitBreakerOpenError,
-} from './circuit-breaker';
+import { CircuitBreaker, CircuitBreakerOpenError } from './circuit-breaker';
 
 describe('CircuitBreaker', () => {
   let now: number;
@@ -21,7 +18,8 @@ describe('CircuitBreaker', () => {
 
   it('opens after the configured number of transient failures', async () => {
     const breaker = createBreaker();
-    const transientError = { transient: true };
+    const transientError = new Error('transient') as any;
+    transientError.transient = true;
 
     await expect(
       breaker.execute(() => Promise.reject(transientError)),
@@ -40,7 +38,7 @@ describe('CircuitBreaker', () => {
     const breaker = createBreaker(1);
 
     await expect(
-      breaker.execute(() => Promise.reject({ transient: true })),
+      breaker.execute(() => Promise.reject(new Error('transient') as any)),
     ).rejects.toEqual({ transient: true });
     expect(breaker.snapshot().state).toBe('open');
 
@@ -58,7 +56,8 @@ describe('CircuitBreaker', () => {
 
   it('does not trip on non-transient failures', async () => {
     const breaker = createBreaker(1);
-    const validationError = { transient: false };
+    const validationError = new Error('validation') as any;
+    validationError.transient = false;
 
     await expect(
       breaker.execute(() => Promise.reject(validationError)),
@@ -72,12 +71,12 @@ describe('CircuitBreaker', () => {
     const breaker = createBreaker(1);
 
     await expect(
-      breaker.execute(() => Promise.reject({ transient: true })),
+      breaker.execute(() => Promise.reject(new Error('transient') as any)),
     ).rejects.toEqual({ transient: true });
 
     now = 1000;
     await expect(
-      breaker.execute(() => Promise.reject({ transient: true })),
+      breaker.execute(() => Promise.reject(new Error('transient') as any)),
     ).rejects.toEqual({ transient: true });
 
     expect(breaker.snapshot().state).toBe('open');

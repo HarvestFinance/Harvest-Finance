@@ -12,7 +12,7 @@ import stellarConfig from './stellar.config';
       load: [databaseConfig, stellarConfig],
       validationOptions: {
         allowUnknown: true, // Allows other standard env vars to pass through
-        abortEarly: false,  // Returns ALL validation errors at once, not just the first one
+        abortEarly: false, // Returns ALL validation errors at once, not just the first one
       },
     }),
   ],
@@ -29,8 +29,10 @@ export class AppConfigModule {
 
     for (const key of Object.keys(envValidationSchema.describe().keys)) {
       const val = process.env[key];
-      const isSensitive = sensitiveKeys.some(s => key.toUpperCase().includes(s));
-      
+      const isSensitive = sensitiveKeys.some((s) =>
+        key.toUpperCase().includes(s),
+      );
+
       sanitizedEnv[key] = isSensitive && val ? '********' : val;
     }
 

@@ -104,13 +104,11 @@ export class SolanaYieldAdapter implements ChainAdapter {
     return address && address.length > 0 ? address : null;
   }
 
-  private formatPrincipal(
-    tokenAmount?: {
-      uiAmountString?: string;
-      amount?: string;
-      decimals?: number;
-    },
-  ): string {
+  private formatPrincipal(tokenAmount?: {
+    uiAmountString?: string;
+    amount?: string;
+    decimals?: number;
+  }): string {
     if (tokenAmount?.uiAmountString != null) {
       const ui = Number(tokenAmount.uiAmountString);
       if (!Number.isNaN(ui) && ui > 0) {

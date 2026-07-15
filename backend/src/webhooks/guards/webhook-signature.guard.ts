@@ -31,13 +31,17 @@ export class WebhookSignatureGuard implements CanActivate {
     );
 
     if (!kind) {
-      throw new UnauthorizedException('Webhook authentication is not configured');
+      throw new UnauthorizedException(
+        'Webhook authentication is not configured',
+      );
     }
 
     const envKey = WEBHOOK_SECRET_ENV[kind];
     const secret = this.config.get<string>(envKey);
     if (!secret) {
-      throw new UnauthorizedException('Webhook signing secret is not configured');
+      throw new UnauthorizedException(
+        'Webhook signing secret is not configured',
+      );
     }
 
     const request = context

@@ -65,6 +65,13 @@ export class Withdrawal {
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
+  @Column({
+    type: 'timestamp with time zone',
+    name: 'queued_at',
+    nullable: true,
+  })
+  queuedAt: Date | null;
+
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 

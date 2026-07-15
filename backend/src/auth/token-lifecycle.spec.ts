@@ -115,10 +115,7 @@ describe('AuthService - Token Lifecycle Integration', () => {
   /**
    * Helper to create realistic JWT tokens with expiry
    */
-  const createRealisticToken = (
-    expiresIn: number,
-    secret: string,
-  ): string => {
+  const createRealisticToken = (expiresIn: number, secret: string): string => {
     const payload = {
       sub: mockUser.id,
       email: mockUser.email,
@@ -163,7 +160,9 @@ describe('AuthService - Token Lifecycle Integration', () => {
             jwt.verify(token, options.secret, { ignoreExpiration: false }),
           );
         } catch (error) {
-          return Promise.reject(error);
+          return Promise.reject(
+            error instanceof Error ? error : new Error(String(error)),
+          );
         }
       });
 
@@ -197,7 +196,9 @@ describe('AuthService - Token Lifecycle Integration', () => {
             jwt.verify(token, options.secret, { ignoreExpiration: false }),
           );
         } catch (error) {
-          return Promise.reject(error);
+          return Promise.reject(
+            error instanceof Error ? error : new Error(String(error)),
+          );
         }
       });
 
@@ -328,9 +329,7 @@ describe('AuthService - Token Lifecycle Integration', () => {
       // Advance time past 7-day expiry
       jest.advanceTimersByTime(604800000 + 1000);
 
-      mockJwtService.verifyAsync.mockRejectedValue(
-        new Error('jwt expired'),
-      );
+      mockJwtService.verifyAsync.mockRejectedValue(new Error('jwt expired'));
 
       // Refresh should fail
       await expect(

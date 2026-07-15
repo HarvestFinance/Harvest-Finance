@@ -1,10 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import * as ExcelJS from 'exceljs';
-import {
-  ExportService,
-  TransactionExportData,
-} from './export.service';
+import { ExportService, TransactionExportData } from './export.service';
 import { Deposit } from '../database/entities/deposit.entity';
 import { Withdrawal } from '../database/entities/withdrawal.entity';
 import { Reward } from '../database/entities/reward.entity';
@@ -62,9 +59,7 @@ async function readExcelRows(buffer: Buffer): Promise<string[][]> {
   const rows: string[][] = [];
   worksheet.eachRow((row) => {
     rows.push(
-      row.values
-        .slice(1)
-        .map((value) => (value == null ? '' : String(value))),
+      row.values.slice(1).map((value) => (value == null ? '' : String(value))),
     );
   });
   return rows;

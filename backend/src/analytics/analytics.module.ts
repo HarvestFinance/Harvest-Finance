@@ -14,7 +14,13 @@ import { ScoringService } from './scoring.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Vault, Deposit, Withdrawal, VaultApyHistory, VaultScoreHistory]),
+    TypeOrmModule.forFeature([
+      Vault,
+      Deposit,
+      Withdrawal,
+      VaultApyHistory,
+      VaultScoreHistory,
+    ]),
   ],
   controllers: [AnalyticsController],
   providers: [

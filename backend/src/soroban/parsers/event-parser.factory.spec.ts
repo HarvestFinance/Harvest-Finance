@@ -8,7 +8,9 @@ describe('EventParserFactory', () => {
   });
 
   it('returns registered versions', () => {
-    expect(factory.registeredVersions()).toEqual(expect.arrayContaining(['v1', 'v2']));
+    expect(factory.registeredVersions()).toEqual(
+      expect.arrayContaining(['v1', 'v2']),
+    );
   });
 
   it('getParser returns null for unknown version', () => {
@@ -17,7 +19,10 @@ describe('EventParserFactory', () => {
 
   describe('v1 parser', () => {
     it('parses well-formed event', () => {
-      const result = factory.parse('v1', ['escrow_funded'], { amount: 100, actor: 'G...' });
+      const result = factory.parse('v1', ['escrow_funded'], {
+        amount: 100,
+        actor: 'G...',
+      });
       expect(result).toMatchObject({
         eventName: 'escrow_funded',
         contractVersion: 'v1',
@@ -32,7 +37,11 @@ describe('EventParserFactory', () => {
 
   describe('v2 parser', () => {
     it('parses well-formed event', () => {
-      const result = factory.parse('v2', ['escrow', 'funded'], { amount: 200, actor: 'G...', memo: 'test' });
+      const result = factory.parse('v2', ['escrow', 'funded'], {
+        amount: 200,
+        actor: 'G...',
+        memo: 'test',
+      });
       expect(result).toMatchObject({
         eventName: 'escrow.funded',
         contractVersion: 'v2',
@@ -46,7 +55,9 @@ describe('EventParserFactory', () => {
   });
 
   it('logs warning and returns null for unknown version', () => {
-    const warnSpy = jest.spyOn((factory as any).logger, 'warn').mockImplementation();
+    const warnSpy = jest
+      .spyOn((factory as any).logger, 'warn')
+      .mockImplementation();
     const result = factory.parse('v99', ['topic'], null);
     expect(result).toBeNull();
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('v99'));

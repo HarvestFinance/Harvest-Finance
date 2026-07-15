@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddSuspendedVaultStatusAndStellarAccount1700000000018
-  implements MigrationInterface
-{
+export class AddSuspendedVaultStatusAndStellarAccount1700000000018 implements MigrationInterface {
   name = 'AddSuspendedVaultStatusAndStellarAccount1700000000018';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

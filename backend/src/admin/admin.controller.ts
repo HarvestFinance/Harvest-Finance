@@ -170,15 +170,18 @@ export class AdminController {
   @ApiParam({
     name: 'templateName',
     description: 'Email template name',
-    enum: ['welcome', 'deposit-confirmed', 'withdrawal-complete', 'security-alert'],
+    enum: [
+      'welcome',
+      'deposit-confirmed',
+      'withdrawal-complete',
+      'security-alert',
+    ],
   })
   @ApiResponse({ status: 200, description: 'Email preview HTML' })
   @ApiResponse({ status: 404, description: 'Template not found' })
   async previewEmailTemplate(
     @Param('templateName') templateName: string,
   ): Promise<{ html: string; subject: string }> {
-    return this.emailTemplatingService.renderPreview(
-      templateName as any,
-    );
+    return this.emailTemplatingService.renderPreview(templateName as any);
   }
 }

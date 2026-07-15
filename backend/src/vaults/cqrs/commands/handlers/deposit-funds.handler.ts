@@ -2,7 +2,10 @@ import { CommandHandler, EventBus, ICommandHandler } from '@nestjs/cqrs';
 import { DepositFundsCommand } from '../deposit-funds.command';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { Deposit, DepositStatus } from '../../../../database/entities/deposit.entity';
+import {
+  Deposit,
+  DepositStatus,
+} from '../../../../database/entities/deposit.entity';
 import { Vault, VaultStatus } from '../../../../database/entities/vault.entity';
 import { NotificationsService } from '../../../../notifications/notifications.service';
 import { NotificationType } from '../../../../database/entities/notification.entity';
@@ -24,7 +27,8 @@ export class DepositFundsHandler implements ICommandHandler<DepositFundsCommand>
   async execute(command: DepositFundsCommand) {
     const { vaultId, userId, amount, idempotencyKey } = command;
 
-    if (amount <= 0) throw new BadRequestException('Deposit amount must be > 0');
+    if (amount <= 0)
+      throw new BadRequestException('Deposit amount must be > 0');
 
     // idempotency check
     if (idempotencyKey) {
@@ -34,7 +38,9 @@ export class DepositFundsHandler implements ICommandHandler<DepositFundsCommand>
       if (existing) return existing;
     }
 
-    const vault = await this.vaultRepository.findOne({ where: { id: vaultId } });
+    const vault = await this.vaultRepository.findOne({
+      where: { id: vaultId },
+    });
     if (!vault) throw new NotFoundException('Vault not found');
     if (vault.status !== VaultStatus.ACTIVE) {
       throw new BadRequestException('Vault is not active for deposits');
@@ -51,7 +57,9 @@ export class DepositFundsHandler implements ICommandHandler<DepositFundsCommand>
     const result = await this.dataSource.transaction(async (manager) => {
       const saved = await manager.save(deposit);
       await manager.increment(Vault, { id: vaultId }, 'totalDeposits', amount);
-      const updatedVault = await manager.findOne(Vault, { where: { id: vaultId } });
+      const updatedVault = await manager.findOne(Vault, {
+        where: { id: vaultId },
+      });
       return { saved, updatedVault };
     });
 

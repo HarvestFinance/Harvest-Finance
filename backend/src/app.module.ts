@@ -40,7 +40,7 @@ import { InsuranceModule } from './insurance/insurance.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { RewardsModule } from './rewards/rewards.module';
 import { ObservabilityModule } from './observability/observability.module';
-import { AppConfigModule } from './config/config.module'; 
+import { AppConfigModule } from './config/config.module';
 
 import {
   Achievement,
@@ -96,12 +96,13 @@ import { CreateVaultScoreHistory1700000000018 } from './database/migrations/1700
 import { CreateVaultReservations1700000000018 } from './database/migrations/1700000000018-CreateVaultReservations';
 import { VaultReservation } from './vaults/entities/vault-reservation.entity';
 import { VaultApproval } from './database/entities/vault-approval.entity';
+import { CustodialWallet } from './wallets/entities/custodial-wallet.entity';
 import { InsuranceClaim } from './database/entities/insurance-claim.entity';
-import { Session } from './database/entities/session.entity';
 import { SecurityEvent } from './database/entities/security-event.entity';
-import { CreateVaultApyHistory1700000000017 } from './database/migrations/1700000000017-CreateVaultApyHistory';
 import { CreateSessionsAndOAuthLinks1700000000022 } from './database/migrations/1700000000022-CreateSessionsAndOAuthLinks';
 import { AddRefreshTokenRotation1700000000022 } from './database/migrations/1700000000022-AddRefreshTokenRotation';
+import { AddDepositorConcentrationThreshold1700000000022 } from './database/migrations/1700000000022-AddDepositorConcentrationThreshold';
+import { CreateCustodialWallets1700000000021 } from './database/migrations/1700000000021-CreateCustodialWallets';
 import { DomainEventsModule } from './domain-events';
 import { DomainEventHandlersModule } from './common/events';
 import { WebhooksModule } from './webhooks/webhooks.module';
@@ -119,76 +120,86 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get<string>('DB_HOST'),
-        port: configService.get<number>('DB_PORT'),
-        username: configService.get<string>('DB_USER'),
-        password: configService.get<string>('DB_PASSWORD'),
-        database: configService.get<string>('DB_NAME'),
-        entities: [
-          User,
-          UserOAuthLink,
-          Session,
-          Order,
-          Transaction,
-          Verification,
-          CreditScore,
-          Vault,
-          VaultDeposit,
-          Deposit,
-          DepositEvent,
-          Achievement,
-          Reward,
-          Notification,
-          Withdrawal,
-          CropCycle,
-          FarmVault,
-          InsurancePlan,
-          InsuranceSubscription,
-          SorobanEvent,
-          IndexerState,
-YieldAnalytics,
-           VaultReservation,
-           CustodialWallet,
-           VaultApproval,
-           InsuranceClaim,
-           CommunityPost,
-           CommunityComment,
-           PostReaction,
-           CommunityGroup,
-           GroupMembership,
-           CoopListing,
-           CoopOrder,
-           CoopReview,
-         ],
-        migrations: [
-          CreateInitialSchema1700000000000,
-          CreateVaultsAndDeposits1700000000001,
-          CreateAchievements1700000000004,
-          CreateRewards1700000000005,
-          CreateNotifications1700000000006,
-          CreateWithdrawals1700000000007,
-          CreateFarmVaults1700000000008,
-          CreateInsurance1700000000009,
-          AddInsuranceNotificationType1700000000010,
-          CreateSorobanEvents1700000000011,
-          CreateYieldAnalytics1700000000012,
-          AddSorobanEventQueryIndexes1700000000013,
-          CreateDepositEvents1700000000016,
-          CreateStrategyAndApyHistory1700000000017,
-          CreateVaultScoreHistory1700000000018,
-          CreateVaultReservations1700000000018,
-          AddDepositorConcentrationThreshold1700000000022,
-          CreateVaultApyHistory1700000000017,
-          CreateSessionsAndOAuthLinks1700000000022,
-          CreateCustodialWallets1700000000021,
-          AddRefreshTokenRotation1700000000022,
-        ],
-        synchronize: false,
-        migrationsRun: false,
-        logging: configService.get<string>('NODE_ENV') === 'development',
-      }),
+      useFactory: (configService: ConfigService) => {
+        const databaseUrl = configService.get<string>('DATABASE_URL') || '';
+        const common = {
+          entities: [
+            User,
+            UserOAuthLink,
+            Session,
+            Order,
+            Transaction,
+            Verification,
+            CreditScore,
+            Vault,
+            VaultDeposit,
+            Deposit,
+            DepositEvent,
+            Achievement,
+            Reward,
+            Notification,
+            Withdrawal,
+            CropCycle,
+            FarmVault,
+            InsurancePlan,
+            InsuranceSubscription,
+            SorobanEvent,
+            IndexerState,
+            YieldAnalytics,
+            VaultReservation,
+            CustodialWallet,
+            VaultApproval,
+            InsuranceClaim,
+            CommunityPost,
+            CommunityComment,
+            PostReaction,
+            CommunityGroup,
+            GroupMembership,
+            CoopListing,
+            CoopOrder,
+            CoopReview,
+          ],
+          migrations: [
+            CreateInitialSchema1700000000000,
+            CreateVaultsAndDeposits1700000000001,
+            CreateAchievements1700000000004,
+            CreateRewards1700000000005,
+            CreateNotifications1700000000006,
+            CreateWithdrawals1700000000007,
+            CreateFarmVaults1700000000008,
+            CreateInsurance1700000000009,
+            AddInsuranceNotificationType1700000000010,
+            CreateSorobanEvents1700000000011,
+            CreateYieldAnalytics1700000000012,
+            AddSorobanEventQueryIndexes1700000000013,
+            CreateDepositEvents1700000000016,
+            CreateStrategyAndApyHistory1700000000017,
+            CreateVaultScoreHistory1700000000018,
+            CreateVaultReservations1700000000018,
+            AddDepositorConcentrationThreshold1700000000022,
+            CreateSessionsAndOAuthLinks1700000000022,
+            CreateCustodialWallets1700000000021,
+            AddRefreshTokenRotation1700000000022,
+          ],
+          synchronize: false,
+          migrationsRun: false,
+          logging: configService.get<string>('NODE_ENV') === 'development',
+        };
+
+        if (databaseUrl) {
+          return { ...common, url: databaseUrl };
+        }
+
+        return {
+          ...common,
+          type: 'postgres',
+          host: configService.get<string>('DB_HOST'),
+          port: configService.get<number>('DB_PORT'),
+          username: configService.get<string>('DB_USER'),
+          password: configService.get<string>('DB_PASSWORD'),
+          database: configService.get<string>('DB_NAME'),
+        };
+      },
       inject: [ConfigService],
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({

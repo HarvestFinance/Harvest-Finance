@@ -7,7 +7,10 @@ import { Deposit, DepositStatus } from '../database/entities/deposit.entity';
  * Only the methods actually exercised by DepositRepository are mocked.
  */
 function buildMockRepo(): jest.Mocked<
-  Pick<Repository<Deposit>, 'findOne' | 'create' | 'update' | 'createQueryBuilder'>
+  Pick<
+    Repository<Deposit>,
+    'findOne' | 'create' | 'update' | 'createQueryBuilder'
+  >
 > {
   return {
     findOne: jest.fn(),
@@ -50,10 +53,17 @@ describe('DepositRepository', () => {
 
   describe('findByIdempotencyKey', () => {
     it('returns the deposit when found', async () => {
-      const deposit = { id: 'dep-1', idempotencyKey: 'idem-key', userId: 'user-1' } as Deposit;
+      const deposit = {
+        id: 'dep-1',
+        idempotencyKey: 'idem-key',
+        userId: 'user-1',
+      } as Deposit;
       (mockRepo.findOne as jest.Mock).mockResolvedValue(deposit);
 
-      const result = await depositRepository.findByIdempotencyKey('idem-key', 'user-1');
+      const result = await depositRepository.findByIdempotencyKey(
+        'idem-key',
+        'user-1',
+      );
 
       expect(result).toBe(deposit);
       expect(mockRepo.findOne).toHaveBeenCalledWith({
@@ -65,7 +75,10 @@ describe('DepositRepository', () => {
     it('returns null when no matching deposit exists', async () => {
       (mockRepo.findOne as jest.Mock).mockResolvedValue(null);
 
-      const result = await depositRepository.findByIdempotencyKey('missing-key', 'user-1');
+      const result = await depositRepository.findByIdempotencyKey(
+        'missing-key',
+        'user-1',
+      );
 
       expect(result).toBeNull();
     });
@@ -76,7 +89,9 @@ describe('DepositRepository', () => {
       await depositRepository.findByIdempotencyKey('key', 'user-99');
 
       expect(mockRepo.findOne).toHaveBeenCalledWith(
-        expect.objectContaining({ where: expect.objectContaining({ userId: 'user-99' }) }),
+        expect.objectContaining({
+          where: expect.objectContaining({ userId: 'user-99' }),
+        }),
       );
     });
   });
@@ -126,7 +141,10 @@ describe('DepositRepository', () => {
 
   describe('findById', () => {
     it('returns the deposit regardless of status', async () => {
-      const deposit = { id: 'dep-3', status: DepositStatus.CONFIRMED } as Deposit;
+      const deposit = {
+        id: 'dep-3',
+        status: DepositStatus.CONFIRMED,
+      } as Deposit;
       (mockRepo.findOne as jest.Mock).mockResolvedValue(deposit);
 
       const result = await depositRepository.findById('dep-3');
@@ -162,7 +180,10 @@ describe('DepositRepository', () => {
 
   describe('findPendingByMemoId', () => {
     it('returns a PENDING deposit matching the memo id', async () => {
-      const deposit = { id: 'memo-uuid', status: DepositStatus.PENDING } as Deposit;
+      const deposit = {
+        id: 'memo-uuid',
+        status: DepositStatus.PENDING,
+      } as Deposit;
       (mockRepo.findOne as jest.Mock).mockResolvedValue(deposit);
 
       const result = await depositRepository.findPendingByMemoId('memo-uuid');
@@ -189,10 +210,18 @@ describe('DepositRepository', () => {
 
   describe('findPendingByUserAndAmount', () => {
     it('returns the oldest PENDING deposit for the user and amount', async () => {
-      const deposit = { id: 'dep-4', userId: 'user-2', amount: 500, status: DepositStatus.PENDING } as unknown as Deposit;
+      const deposit = {
+        id: 'dep-4',
+        userId: 'user-2',
+        amount: 500,
+        status: DepositStatus.PENDING,
+      } as unknown as Deposit;
       (mockRepo.findOne as jest.Mock).mockResolvedValue(deposit);
 
-      const result = await depositRepository.findPendingByUserAndAmount('user-2', 500);
+      const result = await depositRepository.findPendingByUserAndAmount(
+        'user-2',
+        500,
+      );
 
       expect(result).toBe(deposit);
       expect(mockRepo.findOne).toHaveBeenCalledWith({
@@ -205,7 +234,10 @@ describe('DepositRepository', () => {
     it('returns null when no matching pending deposit exists', async () => {
       (mockRepo.findOne as jest.Mock).mockResolvedValue(null);
 
-      const result = await depositRepository.findPendingByUserAndAmount('user-2', 9999);
+      const result = await depositRepository.findPendingByUserAndAmount(
+        'user-2',
+        9999,
+      );
 
       expect(result).toBeNull();
     });
@@ -240,7 +272,8 @@ describe('DepositRepository', () => {
     it('returns the parsed float when the query returns a total', async () => {
       buildQbChain({ total: '1234.56789' });
 
-      const result = await depositRepository.getUserTotalConfirmedDeposits('user-3');
+      const result =
+        await depositRepository.getUserTotalConfirmedDeposits('user-3');
 
       expect(result).toBeCloseTo(1234.56789);
     });
@@ -248,7 +281,8 @@ describe('DepositRepository', () => {
     it('returns 0 when there are no confirmed deposits (null total)', async () => {
       buildQbChain({ total: null });
 
-      const result = await depositRepository.getUserTotalConfirmedDeposits('user-3');
+      const result =
+        await depositRepository.getUserTotalConfirmedDeposits('user-3');
 
       expect(result).toBe(0);
     });
@@ -256,7 +290,8 @@ describe('DepositRepository', () => {
     it('returns 0 when getRawOne returns undefined', async () => {
       buildQbChain(undefined);
 
-      const result = await depositRepository.getUserTotalConfirmedDeposits('user-3');
+      const result =
+        await depositRepository.getUserTotalConfirmedDeposits('user-3');
 
       expect(result).toBe(0);
     });
@@ -264,7 +299,8 @@ describe('DepositRepository', () => {
     it('returns 0 when the total string is falsy (empty string)', async () => {
       buildQbChain({ total: '' });
 
-      const result = await depositRepository.getUserTotalConfirmedDeposits('user-3');
+      const result =
+        await depositRepository.getUserTotalConfirmedDeposits('user-3');
 
       expect(result).toBe(0);
     });
@@ -304,7 +340,11 @@ describe('DepositRepository', () => {
 
   describe('create', () => {
     it('delegates to the underlying repo and returns the entity', () => {
-      const partial = { userId: 'user-1', amount: 100, status: DepositStatus.PENDING };
+      const partial = {
+        userId: 'user-1',
+        amount: 100,
+        status: DepositStatus.PENDING,
+      };
       const entity = { ...partial, id: 'new-id' } as Deposit;
       (mockRepo.create as jest.Mock).mockReturnValue(entity);
 
@@ -348,7 +388,9 @@ describe('DepositRepository', () => {
       (mockRepo.update as jest.Mock).mockRejectedValue(new Error('DB error'));
 
       await expect(
-        depositRepository.updateStatus('dep-7', { status: DepositStatus.FAILED }),
+        depositRepository.updateStatus('dep-7', {
+          status: DepositStatus.FAILED,
+        }),
       ).rejects.toThrow('DB error');
     });
   });

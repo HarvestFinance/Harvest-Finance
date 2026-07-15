@@ -8,7 +8,8 @@ export class WebhookAcceptedResponseDto {
   eventId: string;
 
   @ApiProperty({
-    description: 'True when the event was already processed (idempotent replay)',
+    description:
+      'True when the event was already processed (idempotent replay)',
     example: false,
   })
   duplicate: boolean;

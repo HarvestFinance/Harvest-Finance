@@ -86,7 +86,5 @@ export class SorobanStorageService {
     // In a real scenario, this would submit a transaction with ExtendFootprintTTLOp
     // For the stress test, we log a warning indicating the intent to extend.
     this.logger.warn(`Extending TTL for ${contractId}`);
-
-
   }
 }

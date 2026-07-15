@@ -5,4 +5,3 @@ import { MetricsModule } from './metrics/metrics.module';
   imports: [MetricsModule],
 })
 export class ObservabilityModule {}
-

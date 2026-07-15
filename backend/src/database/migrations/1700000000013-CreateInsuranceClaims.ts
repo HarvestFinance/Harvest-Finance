@@ -87,9 +87,18 @@ export class CreateInsuranceClaims1700000000013 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropIndex('insurance_claims', 'idx_insurance_claims_vault');
-    await queryRunner.dropIndex('insurance_claims', 'idx_insurance_claims_depositor');
-    await queryRunner.dropIndex('insurance_claims', 'idx_insurance_claims_status');
+    await queryRunner.dropIndex(
+      'insurance_claims',
+      'idx_insurance_claims_vault',
+    );
+    await queryRunner.dropIndex(
+      'insurance_claims',
+      'idx_insurance_claims_depositor',
+    );
+    await queryRunner.dropIndex(
+      'insurance_claims',
+      'idx_insurance_claims_status',
+    );
     await queryRunner.dropTable('insurance_claims');
   }
 }
