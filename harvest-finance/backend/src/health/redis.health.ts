@@ -1,21 +1,29 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { HealthIndicator, HealthIndicatorResult, HealthCheckError } from '@nestjs/terminus';
-import Redis from 'ioredis';
+import { ConfigService } from '@nestjs/config';
+import { createClient } from 'redis';
 
 @Injectable()
 export class RedisHealthIndicator extends HealthIndicator {
-  constructor(@Inject('REDIS_CLIENT') private readonly client: Redis) {}
+  constructor(private readonly configService: ConfigService) {
+    super();
+  }
 
-  async isHealthy(key = 'redis', timeout = 3000): Promise<HealthIndicatorResult> {
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Redis timeout')), timeout),
+  async isHealthy(key: string, timeoutMs = 3000): Promise<HealthIndicatorResult> {
+    const client = createClient({ url: this.configService.get<string>('REDIS_URL', 'redis://localhost:6379') });
+
+    const timer = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Redis ping timed out')), timeoutMs),
     );
-    const pingPromise = this.client.ping();
+
     try {
-      await Promise.race([pingPromise, timeoutPromise]);
+      await client.connect();
+      await Promise.race([client.ping(), timer]);
+      await client.disconnect();
       return this.getStatus(key, true);
-    } catch {
-      throw new HealthCheckError('Redis is unavailable', { [key]: { status: 'down' } });
+    } catch (err) {
+      await client.disconnect().catch(() => undefined);
+      throw new HealthCheckError('Redis health check failed', this.getStatus(key, false, { message: (err as Error).message }));
     }
   }
 }

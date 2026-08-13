@@ -58,13 +58,13 @@ export class Verification {
   })
   status: VerificationStatus;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   notes: string | null;
 
   @Column({ name: 'inspection_date', type: 'date', nullable: true })
   inspectionDate: Date | null;
 
-  @Column({ name: 'crop_quality', nullable: true })
+  @Column({ name: 'crop_quality', type: 'varchar', nullable: true })
   cropQuality: string | null;
 
   @Column({

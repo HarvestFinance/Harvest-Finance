@@ -79,10 +79,10 @@ export class CoopListing {
   })
   deliveryOption: DeliveryOption;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   location: string | null;
 
-  @Column({ nullable: true, name: 'image_url' })
+  @Column({ type: 'text', nullable: true, name: 'image_url' })
   imageUrl: string | null;
 
   @Column({

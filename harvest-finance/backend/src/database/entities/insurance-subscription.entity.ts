@@ -77,7 +77,7 @@ export class InsuranceSubscription {
   coverageEnd: Date;
 
   /** Optional Farm Vault ID linked for automatic premium deductions */
-  @Column({ name: 'farm_vault_id', nullable: true })
+  @Column({ name: 'farm_vault_id', type: 'varchar', nullable: true })
   farmVaultId: string | null;
 
   /** Risk score that was computed at subscription time (0 – 100) */

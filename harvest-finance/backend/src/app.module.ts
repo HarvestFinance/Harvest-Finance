@@ -1,7 +1,8 @@
 import { CacheModule } from '@nestjs/cache-manager';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ClassSerializerInterceptor } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -50,17 +51,21 @@ import {
   Notification,
   Order,
   Reward,
+  Session,
   SorobanEvent,
+  Strategy,
   Transaction,
   User,
   UserOAuthLink,
   Vault,
+  VaultApyHistory,
   VaultDeposit,
+  VaultScoreHistory,
   Verification,
   Withdrawal,
   YieldAnalytics,
-  VaultApyHistory,
 } from './database/entities';
+import { IndexerState } from './database/entities/indexer-state.entity';
 import { CommunityPost } from './database/entities/community-post.entity';
 import { CommunityComment } from './database/entities/community-comment.entity';
 import { PostReaction } from './database/entities/post-reaction.entity';
@@ -73,6 +78,7 @@ import { CropCycle } from './database/entities/crop-cycle.entity';
 import { InsurancePlan } from './database/entities/insurance-plan.entity';
 import { InsuranceSubscription } from './database/entities/insurance-subscription.entity';
 import { CreateInitialSchema1700000000000 } from './database/migrations/1700000000000-CreateInitialSchema';
+import { CreateVaultsAndDeposits1700000000001 } from './database/migrations/1700000000001-CreateVaultsAndDeposits';
 import { CreateAchievements1700000000004 } from './database/migrations/1700000000004-CreateAchievements';
 import { CreateRewards1700000000005 } from './database/migrations/1700000000005-CreateRewards';
 import { CreateNotifications1700000000006 } from './database/migrations/1700000000006-CreateNotifications';
@@ -84,9 +90,18 @@ import { CreateSorobanEvents1700000000011 } from './database/migrations/17000000
 import { CreateYieldAnalytics1700000000012 } from './database/migrations/1700000000012-CreateYieldAnalytics';
 import { AddSorobanEventQueryIndexes1700000000013 } from './database/migrations/1700000000013-AddSorobanEventQueryIndexes';
 import { CreateDepositEvents1700000000016 } from './database/migrations/1700000000016-CreateDepositEvents';
+import { CreateStrategyAndApyHistory1700000000017 } from './database/migrations/1700000000017-CreateStrategyAndApyHistory';
+import { CreateVaultScoreHistory1700000000018 } from './database/migrations/1700000000018-CreateVaultScoreHistory';
+
 import { CreateVaultReservations1700000000018 } from './database/migrations/1700000000018-CreateVaultReservations';
 import { VaultReservation } from './vaults/entities/vault-reservation.entity';
+import { VaultApproval } from './database/entities/vault-approval.entity';
+import { InsuranceClaim } from './database/entities/insurance-claim.entity';
+import { Session } from './database/entities/session.entity';
+import { SecurityEvent } from './database/entities/security-event.entity';
 import { CreateVaultApyHistory1700000000017 } from './database/migrations/1700000000017-CreateVaultApyHistory';
+import { CreateSessionsAndOAuthLinks1700000000022 } from './database/migrations/1700000000022-CreateSessionsAndOAuthLinks';
+import { AddRefreshTokenRotation1700000000022 } from './database/migrations/1700000000022-AddRefreshTokenRotation';
 import { DomainEventsModule } from './domain-events';
 import { DomainEventHandlersModule } from './common/events';
 import { WebhooksModule } from './webhooks/webhooks.module';
@@ -114,6 +129,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
         entities: [
           User,
           UserOAuthLink,
+          Session,
           Order,
           Transaction,
           Verification,
@@ -131,12 +147,24 @@ import { WebhooksModule } from './webhooks/webhooks.module';
           InsurancePlan,
           InsuranceSubscription,
           SorobanEvent,
-          YieldAnalytics,
-          VaultReservation,
-          VaultApyHistory,
-        ],
+          IndexerState,
+YieldAnalytics,
+           VaultReservation,
+           CustodialWallet,
+           VaultApproval,
+           InsuranceClaim,
+           CommunityPost,
+           CommunityComment,
+           PostReaction,
+           CommunityGroup,
+           GroupMembership,
+           CoopListing,
+           CoopOrder,
+           CoopReview,
+         ],
         migrations: [
           CreateInitialSchema1700000000000,
+          CreateVaultsAndDeposits1700000000001,
           CreateAchievements1700000000004,
           CreateRewards1700000000005,
           CreateNotifications1700000000006,
@@ -148,8 +176,14 @@ import { WebhooksModule } from './webhooks/webhooks.module';
           CreateYieldAnalytics1700000000012,
           AddSorobanEventQueryIndexes1700000000013,
           CreateDepositEvents1700000000016,
+          CreateStrategyAndApyHistory1700000000017,
+          CreateVaultScoreHistory1700000000018,
           CreateVaultReservations1700000000018,
+          AddDepositorConcentrationThreshold1700000000022,
           CreateVaultApyHistory1700000000017,
+          CreateSessionsAndOAuthLinks1700000000022,
+          CreateCustodialWallets1700000000021,
+          AddRefreshTokenRotation1700000000022,
         ],
         synchronize: false,
         migrationsRun: false,
@@ -197,6 +231,10 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ClassSerializerInterceptor,
     },
   ],
 })

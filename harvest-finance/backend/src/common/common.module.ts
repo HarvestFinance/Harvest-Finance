@@ -12,7 +12,8 @@ import { ContractCacheService } from './cache/contract-cache.service';
 import { BatchProcessorService } from './batch/batch-processor.service';
 import { InputSanitizerService } from './sanitization/input-sanitizer.service';
 import { RateLimitGuard } from './guards/rate-limit.guard';
-
+import { PlatformCircuitBreakerService } from './circuit-breaker/platform-circuit-breaker.service';
+import { PlatformCircuitBreakerGuard } from './guards/platform-circuit-breaker.guard';
 import { SecretsService } from './secrets/secrets.service';
 import { CustomLoggerService } from '../logger/custom-logger.service';
 
@@ -23,6 +24,8 @@ import { CustomLoggerService } from '../logger/custom-logger.service';
     BatchProcessorService,
     InputSanitizerService,
     RateLimitGuard,
+    PlatformCircuitBreakerService,
+    PlatformCircuitBreakerGuard,
     SecretsService,
   ],
   controllers: [VersionInfoController],
@@ -32,6 +35,8 @@ import { CustomLoggerService } from '../logger/custom-logger.service';
     BatchProcessorService,
     InputSanitizerService,
     RateLimitGuard,
+    PlatformCircuitBreakerService,
+    PlatformCircuitBreakerGuard,
     SecretsService,
   ],
 })

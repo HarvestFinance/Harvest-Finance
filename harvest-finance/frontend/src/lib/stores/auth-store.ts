@@ -10,6 +10,7 @@ interface User {
   name: string;
   email: string;
   role: UserRole;
+  wallet_type?: 'none' | 'self-custody' | 'custodial';
 }
 
 interface AuthState {
@@ -22,7 +23,7 @@ interface AuthState {
 
 interface AuthActions {
   login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string, role: UserRole) => Promise<void>;
+  signup: (name: string, email: string, password: string, role: UserRole, walletType: string, stellarAddress?: string) => Promise<void>;
   stellarLogin: (publicKey: string, walletType?: string) => Promise<void>;
   logout: () => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
@@ -62,6 +63,19 @@ function loadFromStorage(): { token: string | null; user: User | null } {
   return { token, user };
 }
 
+function applyUserLocale(userId: string) {
+  if (typeof window === 'undefined') return;
+  const savedLocale = localStorage.getItem(`harvest_locale_user_${userId}`);
+  if (savedLocale) {
+    const currentCookie = document.cookie.match(/(^|;)\s*NEXT_LOCALE\s*=\s*([^;]+)/)?.[2];
+    if (currentCookie !== savedLocale) {
+      document.cookie = `NEXT_LOCALE=${savedLocale}; path=/; max-age=31536000; SameSite=Lax`;
+      localStorage.setItem('NEXT_LOCALE', savedLocale);
+      window.location.reload();
+    }
+  }
+}
+
 export const useAuthStore = create<AuthStore>((set) => ({
   user: null,
   token: null,
@@ -78,9 +92,10 @@ export const useAuthStore = create<AuthStore>((set) => ({
       });
 
       const { access_token, user } = response.data;
-      const normalizedUser = { ...user, role: normalizeRole(user.role) };
+      const normalizedUser = { ...user, role: normalizeRole(user.role), wallet_type: user.wallet_type };
       saveToStorage(access_token, normalizedUser);
       set({ user: normalizedUser, token: access_token, isAuthenticated: true, isLoading: false });
+      applyUserLocale(normalizedUser.id);
     } catch (err: any) {
       set({
         isLoading: false,
@@ -89,20 +104,29 @@ export const useAuthStore = create<AuthStore>((set) => ({
     }
   },
 
-  signup: async (name, email, password, role) => {
+  signup: async (name, email, password, role, walletType, stellarAddress) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/register`, {
+      const payload: any = {
         full_name: name,
         email,
         password,
         role: role.toUpperCase(),
-      });
+      };
+
+      if (walletType === 'custodial') {
+        payload.use_custodial_wallet = true;
+      } else if (stellarAddress) {
+        payload.stellar_address = stellarAddress;
+      }
+
+      const response = await axios.post(`${API_BASE_URL}/auth/register`, payload);
 
       const { access_token, user } = response.data;
-      const normalizedUser = { ...user, role: normalizeRole(user.role) };
+      const normalizedUser = { ...user, role: normalizeRole(user.role), wallet_type: user.wallet_type };
       saveToStorage(access_token, normalizedUser);
       set({ user: normalizedUser, token: access_token, isAuthenticated: true, isLoading: false });
+      applyUserLocale(normalizedUser.id);
     } catch (err: any) {
       set({
         isLoading: false,
@@ -208,11 +232,13 @@ export const useAuthStore = create<AuthStore>((set) => ({
         id: user.id,
         name: user.full_name,
         email: user.email,
-        role: normalizeRole(user.role) 
+        role: normalizeRole(user.role),
+        wallet_type: user.wallet_type,
       } as User;
       
       saveToStorage(access_token, normalizedUser);
       set({ user: normalizedUser, token: access_token, isAuthenticated: true, isLoading: false });
+      applyUserLocale(normalizedUser.id);
     } catch (err: any) {
       set({
         isLoading: false,
@@ -240,6 +266,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     const { token, user } = loadFromStorage();
     if (token && user) {
       set({ token, user, isAuthenticated: true });
+      applyUserLocale(user.id);
     }
   },
 }));

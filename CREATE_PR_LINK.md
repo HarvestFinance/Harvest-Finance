@@ -4,87 +4,74 @@
 
 **Click here to create the Pull Request:**
 
-https://github.com/Whiznificent/Harvest-Finance/compare/master...feature/stellar-authentication
+https://github.com/mrmoney10010-design/Harvest-Finance/compare/main...feature/platform-circuit-breaker
 
 ## 📋 PR Details
 
-**Title:** `feat: Implement Stellar authentication (SEP-10)`
+**Title:** `feat: implement platform-wide circuit breaker for deposits and withdrawals`
 
-**Base Branch:** `master`
+**Base Branch:** `main`
 
-**Compare Branch:** `feature/stellar-authentication`
+**Compare Branch:** `feature/platform-circuit-breaker`
 
 ## 🔗 Alternative PR Creation Methods
 
 ### Method 1: GitHub Web Interface
-1. Visit: https://github.com/Whiznificent/Harvest-Finance
-2. Click "Pull requests" tab
+1. Visit: https://github.com/mrmoney10010-design/Harvest-Finance
+2. Click the "Pull requests" tab
 3. Click "New pull request"
-4. Select base: `master`
-5. Select compare: `feature/stellar-authentication`
+4. Select base: `main`
+5. Select compare: `feature/platform-circuit-breaker`
 6. Click "Create pull request"
 
-### Method 2: GitHub CLI
-```bash
-gh pr create --base master --head feature/stellar-authentication --title "feat: Implement Stellar authentication (SEP-10)" --body "Implements Stellar authentication with SEP-10 compliance"
+### Method 2: Direct URL Parameters
 ```
-
-### Method 3: Direct URL Parameters
-```
-https://github.com/Whiznificent/Harvest-Finance/compare/master...feature/stellar-authentication?expand=1
+https://github.com/mrmoney10010-design/Harvest-Finance/compare/main...feature/platform-circuit-breaker?expand=1
 ```
 
 ## 📝 PR Description Template
 
 ```markdown
 ## Summary
-This PR implements "Sign-in with Stellar" authentication using SEP-10 standard for the Harvest Finance platform, addressing issues #162 and #97.
+Adds a platform-wide circuit breaker that allows administrators to instantly halt and resume all deposit and withdrawal operations across all service instances.
 
-## Features Implemented
-- ✅ SEP-10 compliant challenge-response authentication
-- ✅ Freighter wallet integration
-- ✅ Secure signature verification
-- ✅ JWT token integration
-- ✅ Comprehensive test suite (42 tests, 85%+ coverage)
-- ✅ Complete documentation and setup guides
+## Purpose / Motivation
+To protect user funds and limit platform liability during critical events (e.g. smart contract failures, third-party oracle/RPC failures, or malicious exploits), administrators need a quick, highly reliable way to pause all transactional actions (deposits and withdrawals) across all vault types (Stellar, farm-vaults, and insurance-funds).
 
 ## Changes Made
-- **Backend**: Stellar strategy, auth endpoints, DTOs, guards
-- **Frontend**: StellarAuth component, login page updates, auth store integration
-- **Tests**: Unit tests, integration tests, component tests
-- **Documentation**: Setup guides, API docs, test reports
-
-## Environment Variables Required
-```env
-# Backend
-STELLAR_SERVER_SECRET=your_server_secret
-STELLAR_NETWORK_PASSPHRASE=Test SDF Network ; September 2015
-
-# Frontend
-NEXT_PUBLIC_API_URL=http://localhost:5000/api/v1
-```
+- **PlatformCircuitBreakerService**: Implements breaker state validation, activation (`open`), and deactivation (`close`) with state persistence in Redis cache.
+- **PlatformCircuitBreakerGuard**: Throws a `503 Service Unavailable` with a clear message `Maintenance Mode` when the circuit breaker is active.
+- **Admin Endpoints**: Adds `POST /api/v1/admin/platform/circuit-breaker/open` and `/api/v1/admin/platform/circuit-breaker/close` with proper admin role checking and audit trail logging.
+- **Controller Protections**: Applied `@UseGuards(PlatformCircuitBreakerGuard)` to deposit and withdrawal endpoints in:
+  - `VaultsController`
+  - `FarmVaultsController`
+  - `InsuranceFundController`
+- **Unit and Integration Tests**:
+  - `platform-circuit-breaker.service.spec.ts`
+  - `platform-circuit-breaker.guard.spec.ts`
+  - `circuit-breaker.controller.spec.ts`
+  - `circuit-breaker.e2e-spec.ts` (End-to-end verification of endpoint blocking, propagation via Redis, and rapid toggles)
 
 ## How to Test
-1. Install Freighter wallet extension
-2. Set up environment variables
-3. Run backend and frontend servers
-4. Navigate to login page and select "Stellar" auth method
-5. Connect wallet and authenticate
+1. Set up env variables and ensure Redis is running.
+2. Run backend E2E tests:
+   ```bash
+   npm run test:e2e test/circuit-breaker.e2e-spec.ts
+   ```
+3. Test manually by authenticating as admin:
+   - Open circuit breaker: `POST /api/v1/admin/platform/circuit-breaker/open`
+   - Attempt deposit or withdraw; confirm it fails with `503 Service Unavailable (Maintenance Mode)`.
+   - Close circuit breaker: `POST /api/v1/admin/platform/circuit-breaker/close`
+   - Attempt deposit or withdraw; confirm it succeeds.
 
-## Security Features
-- SEP-10 compliance
-- Challenge expiration (5 minutes)
-- Server and client signature verification
-- Replay attack prevention
-- Network validation
+## Related Issues
+Implements the platform-wide circuit breaker specification.
 
-## Test Coverage
-- 42 total tests
-- 85%+ code coverage
-- All security scenarios covered
-- Performance benchmarks met
-
-Fixes #162 #97
+## Checklist
+- [x] Code builds successfully
+- [x] Tests added/updated
+- [x] No console errors
+- [x] Documentation updated
 ```
 
 ## 🎯 Quick Actions
@@ -94,27 +81,6 @@ Fixes #162 #97
 3. **Fill in the PR description** using the template above
 4. **Create the pull request** for review
 
-## 📊 Implementation Status
-
-- ✅ All code implemented and tested
-- ✅ Documentation complete
-- ✅ Ready for review and merge
-- ✅ Addresses all requirements from issues #162 and #97
-
 ---
 
 **Ready for Review!** 🚀
-```
-
-## 🚀 Direct PR Creation Link
-
-**Click here to create your Pull Request:**
-
-### https://github.com/Whiznificent/Harvest-Finance/compare/master...feature/stellar-authentication
-
-This link will take you directly to GitHub where you can:
-1. Review all the changes between branches
-2. See the file comparisons
-3. Create the pull request with a single click
-
-The PR will include all the Stellar authentication implementation with 42 tests, 85%+ coverage, and complete documentation addressing issues #162 and #97.

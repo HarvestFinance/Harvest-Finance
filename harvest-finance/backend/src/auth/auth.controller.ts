@@ -7,6 +7,7 @@ import {
   HttpCode,
   HttpStatus,
   Get,
+  Query,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import type { Request } from 'express';
@@ -42,7 +43,7 @@ import { StellarStrategy } from './strategies/stellar.strategy';
 
 /**
  * Authentication Controller
- * 
+ *
  * Throttling Tiers Overview:
  * - short: Strict rate limits for high-risk or resource-intensive operations (e.g., login, password reset). Protects against brute-force attacks.
  * - medium: Moderate limits for standard operations (e.g., token refresh, generating challenges). Balances usability with spam prevention.
@@ -62,7 +63,7 @@ export class AuthController {
   /**
    * Register a new user
    *
-   * Uses long tier: Registration is an infrequent operation, so a longer 
+   * Uses long tier: Registration is an infrequent operation, so a longer
    * window prevents spam while allowing normal user onboarding.
    */
    @Post('register')
@@ -98,7 +99,7 @@ export class AuthController {
   /**
    * Login user
    *
-   * Uses stricter long tier limits: Login is a high-value target for 
+   * Uses stricter long tier limits: Login is a high-value target for
    * brute-force attacks and requires tighter throttling.
    */
    @Post('login')
@@ -127,8 +128,13 @@ export class AuthController {
      status: 500,
      description: 'Internal server error',
    })
-  async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
-    return this.authService.login(loginDto);
+  async login(@Body() loginDto: LoginDto, @Req() req: Request): Promise<AuthResponseDto> {
+    const userAgent = req.headers['user-agent'];
+    const ipAddress =
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ??
+      req.socket?.remoteAddress ??
+      undefined;
+    return this.authService.login(loginDto, userAgent, ipAddress);
   }
 
   /**
@@ -375,7 +381,12 @@ export class AuthController {
     type: AuthResponseDto,
   })
   async googleAuthRedirect(@Req() req): Promise<AuthResponseDto> {
-    return this.authService.loginWithOAuth(req.user);
+    const userAgent = req.headers['user-agent'];
+    const ipAddress =
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ??
+      req.socket?.remoteAddress ??
+      undefined;
+    return this.authService.loginWithOAuth(req.user, userAgent, ipAddress);
   }
 
   /**
@@ -401,6 +412,42 @@ export class AuthController {
     type: AuthResponseDto,
   })
   async githubAuthRedirect(@Req() req): Promise<AuthResponseDto> {
-    return this.authService.loginWithOAuth(req.user);
+    const userAgent = req.headers['user-agent'];
+    const ipAddress =
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ??
+      req.socket?.remoteAddress ??
+      undefined;
+    return this.authService.loginWithOAuth(req.user, userAgent, ipAddress);
+  }
+
+  @Get('verify-email')
+  @ApiOperation({
+    summary: 'Verify email address',
+    description: 'Verifies a user\'s email address using the JWT token sent via email. The token expires in 24 hours.',
+  })
+  @ApiResponse({ status: 200, description: 'Email verified successfully', schema: { type: 'object', properties: { success: { type: 'boolean' }, message: { type: 'string' } } } })
+  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
+  async verifyEmail(@Query('token') token: string) {
+    return this.authService.verifyEmail(token);
+  }
+
+  @Post('resend-verification')
+  @UseGuards(JwtAuthGuard)
+  @UseGuards(RateLimitGuard)
+  @RateLimit({
+    limit: 3,
+    ttl: 3600,
+    message: 'Too many verification requests. Please try again in 1 hour.',
+  })
+  @ApiOperation({
+    summary: 'Resend verification email',
+    description: 'Resends the email verification link. Only available for unverified users. Rate limited to 3 requests per hour.',
+  })
+  @ApiResponse({ status: 200, description: 'Verification email sent', schema: { type: 'object', properties: { success: { type: 'boolean' }, message: { type: 'string' } } } })
+  @ApiResponse({ status: 400, description: 'User not found or already verified' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
+  async resendVerification(@Req() req) {
+    return this.authService.resendVerification(req.user.id);
   }
 }

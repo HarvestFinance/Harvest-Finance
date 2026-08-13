@@ -21,10 +21,12 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
+import { EmailTemplatingService } from '../notifications/email/email-templating.service';
 import { DashboardStatsDto } from './dto/dashboard-stats.dto';
 import { PlatformAnalyticsDto } from './dto/analytics.dto';
 import { CreateVaultDto, UpdateVaultDto } from './dto/vault-crud.dto';
 import { UpdateUserStatusDto } from './dto/user-status.dto';
+import { CircuitBreakerActionDto } from './dto/circuit-breaker.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -39,7 +41,10 @@ import { UserRole } from '../database/entities/user.entity';
 @Roles(UserRole.ADMIN)
 @ApiBearerAuth()
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly emailTemplatingService: EmailTemplatingService,
+  ) {}
 
   @Get('stats')
   @ApiOperation({ summary: 'Get overall dashboard metrics' })
@@ -115,10 +120,65 @@ export class AdminController {
     return this.adminService.updateUserStatus(id, body.isActive);
   }
 
+  @Post('users/:id/unlock')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Manually unlock a locked user account' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'Account unlocked successfully' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async unlockUser(@Param('id') id: string): Promise<{ message: string }> {
+    return this.adminService.unlockUser(id);
+  }
+
   @Get('users/activity')
   @ApiOperation({ summary: 'Get all user transactions/deposits' })
   @ApiResponse({ status: 200 })
   async getUserActivity(): Promise<any[]> {
     return this.adminService.getUserActivity();
+  }
+
+  @Post('platform/circuit-breaker/open')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Activate platform circuit breaker to halt all deposits and withdrawals',
+  })
+  @ApiResponse({ status: 200, description: 'Circuit breaker activated' })
+  async openCircuitBreaker(
+    @Request() req: any,
+    @Body() body?: CircuitBreakerActionDto,
+  ): Promise<{ active: boolean }> {
+    return this.adminService.openCircuitBreaker(req.user.id, body?.reason);
+  }
+
+  @Post('platform/circuit-breaker/close')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Deactivate platform circuit breaker to resume all deposits and withdrawals',
+  })
+  @ApiResponse({ status: 200, description: 'Circuit breaker deactivated' })
+  async closeCircuitBreaker(
+    @Request() req: any,
+    @Body() body?: CircuitBreakerActionDto,
+  ): Promise<{ active: boolean }> {
+    return this.adminService.closeCircuitBreaker(req.user.id, body?.reason);
+  }
+
+  @Get('email-preview/:templateName')
+  @ApiOperation({ summary: 'Preview email template in browser' })
+  @ApiParam({
+    name: 'templateName',
+    description: 'Email template name',
+    enum: ['welcome', 'deposit-confirmed', 'withdrawal-complete', 'security-alert'],
+  })
+  @ApiResponse({ status: 200, description: 'Email preview HTML' })
+  @ApiResponse({ status: 404, description: 'Template not found' })
+  async previewEmailTemplate(
+    @Param('templateName') templateName: string,
+  ): Promise<{ html: string; subject: string }> {
+    return this.emailTemplatingService.renderPreview(
+      templateName as any,
+    );
   }
 }

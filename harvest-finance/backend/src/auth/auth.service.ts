@@ -3,6 +3,7 @@ import {
   ConflictException,
   UnauthorizedException,
   BadRequestException,
+  NotFoundException,
   Inject,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -13,9 +14,14 @@ import * as bcrypt from 'bcrypt';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { randomBytes } from 'crypto';
+import { v4 as uuidv4 } from 'uuid';
 import { CustomLoggerService } from '../logger/custom-logger.service';
-import { User, UserRole } from '../database/entities/user.entity';
+import { User, UserRole, WalletType } from '../database/entities/user.entity';
 import { UserOAuthLink } from '../database/entities/user-oauth-link.entity';
+const zxcvbn = require('zxcvbn');
+import * as crypto from 'crypto';
+import { Session } from '../database/entities/session.entity';
+import { SecurityEvent, SecurityEventType } from '../database/entities/security-event.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -32,31 +38,68 @@ import {
   StellarAuthResponseDto,
   StellarChallengeResponseDto,
 } from './dto/stellar-auth.dto';
+import {
+  RevokeSessionResponseDto,
+  SessionListResponseDto,
+  SessionResponseDto,
+} from './dto/session.dto';
+import { deriveDeviceName } from './utils/device-name.util';
+import { CustodialWalletService } from '../wallets/custodial-wallet.service';
 
 @Injectable()
 export class AuthService {
   private readonly saltRounds = 10;
   private readonly accessTokenExpiry = '1h';
   private readonly refreshTokenExpiry = '7d';
+  private readonly refreshTokenExpiryMs = 7 * 24 * 60 * 60 * 1000; // 7 days
   private readonly resetTokenExpiry = 3600000; // 1 hour in milliseconds
+  private readonly verificationTokenExpiry = '24h'; // 24 hours for email verification
+
+  private get maxLoginAttempts(): number {
+    return this.configService.get<number>('MAX_LOGIN_ATTEMPTS', 5);
+  }
+
+  private get lockoutWindowMs(): number {
+    return this.configService.get<number>('LOCKOUT_WINDOW_MINUTES', 15) * 60 * 1000;
+  }
+
+  private get lockoutDurationMs(): number {
+    return this.configService.get<number>('LOCKOUT_DURATION_MINUTES', 30) * 60 * 1000;
+  }
+
+  private lockoutAttemptsKey(userId: string): string {
+    return `lockout:attempts:${userId}`;
+  }
 
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
     @InjectRepository(UserOAuthLink)
     private oauthLinkRepository: Repository<UserOAuthLink>,
+    @InjectRepository(Session)
+    private sessionRepository: Repository<Session>,
+    @InjectRepository(SecurityEvent)
+    private securityEventRepository: Repository<SecurityEvent>,
     private jwtService: JwtService,
     private configService: ConfigService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private logger: CustomLoggerService,
+    private custodialWalletService: CustodialWalletService,
   ) {}
 
   /**
    * Register a new user
    */
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
-    const { email, password, role, full_name, phone_number, stellar_address } =
+    const { email, password, role, full_name, phone_number, stellar_address, use_custodial_wallet } =
       registerDto;
+
+    // Validate: user must supply either a stellar_address OR opt into a custodial wallet
+    if (!stellar_address && !use_custodial_wallet) {
+      throw new BadRequestException(
+        'Please provide a Stellar address or opt into a platform-managed custodial wallet (use_custodial_wallet: true).',
+      );
+    }
 
     // Check if user already exists
     const existingUser = await this.userRepository.findOne({
@@ -76,10 +119,17 @@ export class AuthService {
     const firstName = nameParts[0];
     const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : null;
 
+    await this.validatePasswordStrength(password);
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, this.saltRounds);
 
-    // Create new user
+    // Determine wallet type and Stellar address
+    // Self-custody takes precedence when both fields are supplied.
+    const isSelfCustody = !!stellar_address;
+    const walletType = isSelfCustody ? WalletType.SELF_CUSTODY : WalletType.CUSTODIAL;
+
+    // Create new user (without stellarAddress for custodial — we set it after wallet creation)
     const user = this.userRepository.create({
       email,
       password: hashedPassword,
@@ -87,15 +137,55 @@ export class AuthService {
       firstName,
       lastName,
       phone: phone_number || null,
-      stellarAddress: stellar_address,
+      stellarAddress: stellar_address ?? null,
+      walletType,
       isActive: true,
     });
 
     // Save user
     await this.userRepository.save(user);
 
+    // Create custodial wallet if requested and no self-custody address provided
+    if (!isSelfCustody && use_custodial_wallet) {
+      try {
+        const publicKey = await this.custodialWalletService.createCustodialWallet(
+          user.id,
+          password, // plaintext password — used for key derivation before bcrypt hashing
+        );
+        // Link the generated public key to the user record
+        await this.userRepository.update(user.id, { stellarAddress: publicKey });
+        user.stellarAddress = publicKey;
+        this.logger.log(
+          `Custodial wallet created for new user ${email}: ${publicKey}`,
+          'AuthService',
+        );
+      } catch (err) {
+        // Clean up: delete the partially-created user to keep the DB consistent
+        await this.userRepository.delete(user.id);
+        this.logger.error(
+          `Failed to create custodial wallet for ${email}: ${err.message}`,
+          'AuthService',
+        );
+        throw err;
+      }
+    }
+
     // Generate tokens
     const tokens = await this.generateTokens(user);
+
+    // Generate email verification JWT (expires in 24 hours)
+    const verificationToken = await this.jwtService.signAsync(
+      { sub: user.id, email: user.email, type: 'email_verification' },
+      {
+        expiresIn: this.verificationTokenExpiry,
+        secret:
+          this.configService.get<string>('JWT_SECRET') ||
+          'super_secret_jwt_key',
+      },
+    );
+
+    // Send verification email
+    await this.sendVerificationEmail(user.email, verificationToken);
 
     this.logger.log(`New user registered: ${email}`, 'AuthService');
 
@@ -109,7 +199,11 @@ export class AuthService {
   /**
    * Login user
    */
-  async login(loginDto: LoginDto): Promise<AuthResponseDto> {
+  async login(
+    loginDto: LoginDto,
+    userAgent?: string,
+    ipAddress?: string,
+  ): Promise<AuthResponseDto> {
     const { email, password } = loginDto;
 
     // Find user with password
@@ -125,6 +219,7 @@ export class AuthService {
         'phone',
         'stellarAddress',
         'isActive',
+        'lockedUntil',
       ],
     });
 
@@ -144,6 +239,19 @@ export class AuthService {
       throw new UnauthorizedException('Account is deactivated');
     }
 
+    // Check account lockout
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      const remainingMs = user.lockedUntil.getTime() - Date.now();
+      const remainingMin = Math.ceil(remainingMs / 60000);
+      this.logger.warn(
+        `Login attempt for locked account: ${email} (locked for ${remainingMin} more minute(s))`,
+        'AuthService',
+      );
+      throw new UnauthorizedException(
+        `Account is locked due to too many failed login attempts. Try again in ${remainingMin} minute(s).`,
+      );
+    }
+
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
@@ -152,14 +260,18 @@ export class AuthService {
         `Failed login attempt for email (invalid password): ${email}`,
         'AuthService',
       );
+      await this.recordFailedAttempt(user);
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // Successful login — reset failure counter and clear any expired lock
+    await this.resetLoginAttempts(user.id);
+
     // Update last login
-    await this.userRepository.update(user.id, { lastLogin: new Date() });
+    await this.userRepository.update(user.id, { lastLogin: new Date(), lockedUntil: null });
 
     // Generate tokens
-    const tokens = await this.generateTokens(user);
+    const tokens = await this.generateTokens(user, userAgent, ipAddress);
 
     this.logger.log(`User logged in successfully: ${email}`, 'AuthService');
 
@@ -170,35 +282,120 @@ export class AuthService {
     };
   }
 
+  private async recordFailedAttempt(user: User): Promise<void> {
+    const key = this.lockoutAttemptsKey(user.id);
+    const windowSec = Math.ceil(this.lockoutWindowMs / 1000);
+
+    const current = await this.cacheManager.get<number>(key) ?? 0;
+    const next = current + 1;
+
+    await this.cacheManager.set(key, next, windowSec);
+
+    if (next >= this.maxLoginAttempts) {
+      const lockedUntil = new Date(Date.now() + this.lockoutDurationMs);
+      await this.userRepository.update(user.id, { lockedUntil });
+      await this.cacheManager.del(key);
+
+      this.logger.warn(
+        JSON.stringify({
+          event: 'account_locked',
+          userId: user.id,
+          email: user.email,
+          lockedUntil: lockedUntil.toISOString(),
+          reason: `${this.maxLoginAttempts} consecutive failed login attempts`,
+        }),
+        'AuthService',
+      );
+
+      // In-app notification (email would be sent here if mail service were configured)
+      this.logger.error(
+        `NOTIFY user ${user.email}: account locked until ${lockedUntil.toISOString()}`,
+        'AuthService',
+      );
+    }
+  }
+
+  private async resetLoginAttempts(userId: string): Promise<void> {
+    await this.cacheManager.del(this.lockoutAttemptsKey(userId));
+  }
+
   /**
-   * Refresh access token
+   * Refresh access token.
+   *
+   * Validates the refresh token against the stored (hashed) session record and
+   * updates `lastUsedAt` so the sessions list stays current.
+   * Refresh access token — implements refresh token rotation with family-level
+   * reuse detection.
+   *
+   * Happy path:
+   *  1. Verify the JWT signature & expiry.
+   *  2. Look up the matching session row by hashed token.
+   *  3. If the session is already revoked → the token was replayed after rotation.
+   *     Revoke the entire family and throw 401.
+   *  4. Mark the current session as revoked + set replacedBy.
+   *  5. Issue a brand-new access token AND a brand-new refresh token.
+   *  6. Store the new session in the same family.
+   *  7. Return both tokens.
    */
   async refresh(refreshTokenDto: RefreshTokenDto): Promise<TokenResponseDto> {
     const { refresh_token } = refreshTokenDto;
 
+    // Step 1 — verify JWT signature & expiry
+    let payload: { sub: string; email: string; role: string; jti?: string };
     try {
-      // Verify refresh token
+      // Verify refresh token signature and expiry
       const payload = await this.jwtService.verifyAsync(refresh_token, {
+      payload = await this.jwtService.verifyAsync(refresh_token, {
         secret:
           this.configService.get<string>('JWT_REFRESH_SECRET') ||
           'super_secret_refresh_jwt_key',
       });
+    } catch {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
 
-      // Find user
-      const user = await this.userRepository.findOne({
-        where: { id: payload.sub },
-      });
+    // Step 2 — find the matching session by scanning hashed tokens for this user
+    const user = await this.userRepository.findOne({
+      where: { id: payload.sub },
+    });
 
-      if (!user || !user.isActive) {
-        throw new UnauthorizedException('Invalid refresh token');
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+      // Validate the refresh token against the stored session record.
+      // The sessionId claim was embedded at token-generation time.
+      if (payload.sessionId) {
+        const session = await this.sessionRepository.findOne({
+          where: { id: payload.sessionId, user: { id: user.id } },
+          select: ['id', 'refreshToken', 'expiresAt'],
+        });
+
+        if (!session || session.expiresAt < new Date()) {
+          throw new UnauthorizedException('Session has expired or been revoked');
+        }
+
+        const tokenMatches = await bcrypt.compare(
+          refresh_token,
+          session.refreshToken,
+        );
+        if (!tokenMatches) {
+          throw new UnauthorizedException('Invalid refresh token');
+        }
+
+        // Touch lastUsedAt so the sessions list reflects recent activity
+        await this.sessionRepository.update(session.id, {
+          lastUsedAt: new Date(),
+        });
       }
 
-      // Generate new access token
+      // Issue a new access token (same session, same refresh token — no rotation)
       const accessToken = await this.jwtService.signAsync(
         {
           sub: user.id,
           email: user.email,
           role: user.role,
+          sessionId: payload.sessionId,
         },
         {
           expiresIn: this.accessTokenExpiry,
@@ -210,8 +407,161 @@ export class AuthService {
 
       return { access_token: accessToken, token_type: 'Bearer' };
     } catch (error) {
+      if (error instanceof UnauthorizedException) throw error;
+    // Fetch all non-expired sessions for this user so we can bcrypt-compare
+    const candidateSessions = await this.sessionRepository.find({
+      where: { user: { id: user.id } },
+      relations: ['user'],
+    });
+
+    let matchedSession: Session | null = null;
+    for (const session of candidateSessions) {
+      if (await bcrypt.compare(refresh_token, session.refreshToken)) {
+        matchedSession = session;
+        break;
+      }
+    }
+
+    if (!matchedSession) {
+      // Token is cryptographically valid but not in the DB — treat as stolen
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
+
+    // Step 3 — reuse detection: token was already consumed
+    if (matchedSession.isRevoked) {
+      await this.revokeFamilyAndAlert(matchedSession.familyId, user, refresh_token);
+      throw new UnauthorizedException(
+        'Refresh token reuse detected. All sessions have been revoked for your security.',
+      );
+    }
+
+    // Step 4 — atomically revoke the current session
+    const newSessionId = uuidv4(); // reserve the ID so we can set replacedBy
+    await this.sessionRepository.update(matchedSession.id, {
+      isRevoked: true,
+      replacedBy: newSessionId,
+      lastUsedAt: new Date(),
+    });
+
+    // Step 5 — generate new token pair
+    const jwtPayload = { sub: user.id, email: user.email, role: user.role };
+
+    const [accessToken, newRefreshToken] = await Promise.all([
+      this.jwtService.signAsync(jwtPayload, {
+        expiresIn: this.accessTokenExpiry,
+        secret:
+          this.configService.get<string>('JWT_SECRET') || 'super_secret_jwt_key',
+      }),
+      this.jwtService.signAsync(jwtPayload, {
+        expiresIn: this.refreshTokenExpiry,
+        secret:
+          this.configService.get<string>('JWT_REFRESH_SECRET') ||
+          'super_secret_refresh_jwt_key',
+      }),
+    ]);
+
+    // Step 6 — store the new session in the SAME family
+    const hashedNewRefreshToken = await bcrypt.hash(newRefreshToken, this.saltRounds);
+    const newSession = this.sessionRepository.create({
+      id: newSessionId,
+      user,
+      refreshToken: hashedNewRefreshToken,
+      familyId: matchedSession.familyId,
+      isRevoked: false,
+      replacedBy: null,
+      userAgent: matchedSession.userAgent,
+      ipAddress: matchedSession.ipAddress,
+      lastUsedAt: new Date(),
+      expiresAt: new Date(Date.now() + this.refreshTokenExpiryMs),
+    });
+    await this.sessionRepository.save(newSession);
+
+    this.logger.log(
+      `Refresh token rotated for user ${user.id} (family ${matchedSession.familyId})`,
+      'AuthService',
+    );
+
+    // Step 7 — return both tokens
+    return {
+      access_token: accessToken,
+      refresh_token: newRefreshToken,
+      token_type: 'Bearer',
+    };
+  }
+
+  /**
+   * Revoke every session in a token family and write a security-event audit
+   * record. Called when a previously consumed (revoked) token is replayed —
+   * indicating a stolen token.
+   */
+  private async revokeFamilyAndAlert(
+    familyId: string,
+    user: User,
+    replayedToken: string,
+  ): Promise<void> {
+    // Mark all sessions in the family as revoked
+    await this.sessionRepository
+      .createQueryBuilder()
+      .update(Session)
+      .set({ isRevoked: true })
+      .where('family_id = :familyId', { familyId })
+      .execute();
+
+    const metadata: Record<string, unknown> = {
+      familyId,
+      userId: user.id,
+      email: user.email,
+      detectedAt: new Date().toISOString(),
+    };
+
+    // Write audit log entry
+    const securityEvent = this.securityEventRepository.create({
+      userId: user.id,
+      type: SecurityEventType.REFRESH_TOKEN_REUSE,
+      message: `Refresh token reuse detected for family ${familyId}. All sessions in the family have been revoked.`,
+      metadata,
+    });
+    await this.securityEventRepository.save(securityEvent);
+
+    this.logger.warn(
+      JSON.stringify({
+        event: SecurityEventType.REFRESH_TOKEN_REUSE,
+        ...metadata,
+      }),
+      'AuthService',
+    );
+
+    // Alert the user by email (send via mail service if configured, otherwise log)
+    await this.sendSecurityAlertEmail(user, familyId);
+  }
+
+  /**
+   * Sends a security alert email to the user when their token family is revoked.
+   * Replace the logger stub with a real mailer (e.g. @nestjs-modules/mailer)
+   * once an SMTP / SES transport is wired up.
+   */
+  private async sendSecurityAlertEmail(user: User, familyId: string): Promise<void> {
+    const subject = 'Security Alert: Suspicious Activity Detected on Your Account';
+    const body = [
+      `Hello ${user.firstName ?? user.email},`,
+      '',
+      'We detected that a previously used refresh token was submitted to your account.',
+      'This may indicate that your session token has been stolen.',
+      '',
+      'As a precaution, all active sessions associated with this login have been revoked.',
+      'Please log in again and change your password if you did not initiate this request.',
+      '',
+      `Event reference: ${familyId}`,
+      `Time: ${new Date().toISOString()}`,
+      '',
+      '— Harvest Finance Security Team',
+    ].join('\n');
+
+    // TODO: replace with real mail transport (e.g. nodemailer / @nestjs-modules/mailer)
+    this.logger.error(
+      `[EMAIL ALERT] To: ${user.email} | Subject: ${subject}\n${body}`,
+      'AuthService',
+    );
   }
 
   /**
@@ -287,54 +637,57 @@ export class AuthService {
   }
 
   /**
-   * Reset password
-   */
-  async resetPassword(
-    resetPasswordDto: ResetPasswordDto,
-  ): Promise<{ success: boolean; message: string }> {
-    const { token, new_password } = resetPasswordDto;
+    * Reset password
+    */
+   async resetPassword(
+     resetPasswordDto: ResetPasswordDto,
+   ): Promise<{ success: boolean; message: string }> {
+     const { token, new_password } = resetPasswordDto;
 
-    // Find users with active reset tokens
-    const activeUsers = await this.userRepository.find({
-      where: {
-        resetPasswordExpires: MoreThan(new Date()),
-      },
-      select: ['id', 'password', 'resetPasswordToken', 'resetPasswordExpires'],
-    });
+     // Validate password strength before processing
+     await this.validatePasswordStrength(new_password);
 
-    let user: User | null = null;
-    for (const u of activeUsers) {
-      if (
-        u.resetPasswordToken &&
-        (await bcrypt.compare(token, u.resetPasswordToken))
-      ) {
-        user = u;
-        break;
-      }
-    }
+     // Find users with active reset tokens
+     const activeUsers = await this.userRepository.find({
+       where: {
+         resetPasswordExpires: MoreThan(new Date()),
+       },
+       select: ['id', 'password', 'resetPasswordToken', 'resetPasswordExpires'],
+     });
 
-    if (!user) {
-      throw new BadRequestException('Invalid or expired reset token');
-    }
+     let user: User | null = null;
+     for (const u of activeUsers) {
+       if (
+         u.resetPasswordToken &&
+         (await bcrypt.compare(token, u.resetPasswordToken))
+       ) {
+         user = u;
+         break;
+       }
+     }
 
-    // Hash new password
-    const hashedPassword = await bcrypt.hash(new_password, this.saltRounds);
+     if (!user) {
+       throw new BadRequestException('Invalid or expired reset token');
+     }
 
-    // Update password and clear reset token
-    await this.userRepository.update(user.id, {
-      password: hashedPassword,
-      resetPasswordToken: null,
-      resetPasswordExpires: null,
-    });
+     // Hash new password
+     const hashedPassword = await bcrypt.hash(new_password, this.saltRounds);
 
-    // Invalidate all sessions by blacklisting current token
-    // (in production, you'd implement a more comprehensive session invalidation)
+     // Update password and clear reset token
+     await this.userRepository.update(user.id, {
+       password: hashedPassword,
+       resetPasswordToken: null,
+       resetPasswordExpires: null,
+     });
 
-    return {
-      success: true,
-      message: 'Password reset successfully',
-    };
-  }
+     // Invalidate all sessions by blacklisting current token
+     // (in production, you'd implement a more comprehensive session invalidation)
+
+     return {
+       success: true,
+       message: 'Password reset successfully',
+     };
+   }
 
   /**
    * Validate user (for JWT strategy)
@@ -347,9 +700,42 @@ export class AuthService {
   }
 
   /**
-   * Generate access and refresh tokens
+   * Generate access and refresh tokens, persisting a session record enriched
+   * with the caller's User-Agent and IP address.
+   *
+   * @param user         - Authenticated user entity
+   * @param userAgent    - Raw User-Agent header (optional)
+   * @param ipAddress    - Client IP address (optional)
    */
-  private async generateTokens(user: User): Promise<{
+  async generateTokens(
+    user: User,
+    userAgent?: string,
+    ipAddress?: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    // Save the session first so we can embed its ID in the JWT payload.
+    const hashedRefreshTokenPlaceholder = ''; // filled in after hashing below
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const deviceName = deriveDeviceName(userAgent);
+
+    // Create a temporary session to get the UUID before signing tokens.
+    const session = this.sessionRepository.create({
+      user,
+      refreshToken: hashedRefreshTokenPlaceholder,
+      userAgent: userAgent ?? null,
+      ipAddress: ipAddress ?? null,
+      deviceName,
+      lastUsedAt: new Date(),
+      expiresAt,
+    });
+    await this.sessionRepository.save(session);
+
+   * Generate access and refresh tokens and persist a new session row.
+   * Each call starts a brand-new token family (used on login/register/OAuth).
+   */
+  private async generateTokens(
+    user: User,
+    context?: { userAgent?: string; ipAddress?: string },
+  ): Promise<{
     accessToken: string;
     refreshToken: string;
   }> {
@@ -357,6 +743,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       role: user.role,
+      sessionId: session.id, // allows DELETE /auth/sessions to identify current session
     };
 
     const [accessToken, refreshToken] = await Promise.all([
@@ -374,10 +761,18 @@ export class AuthService {
       }),
     ]);
 
-    // Store refresh token in database
+    // Persist hashed refresh token onto the already-saved session row.
+    // Store hashed refresh token with a new family ID
     const hashedRefreshToken = await bcrypt.hash(refreshToken, this.saltRounds);
-    await this.userRepository.update(user.id, {
+    await this.sessionRepository.update(session.id, {
       refreshToken: hashedRefreshToken,
+      familyId: uuidv4(),   // new family for every fresh login
+      isRevoked: false,
+      replacedBy: null,
+      userAgent: context?.userAgent ?? 'Unknown',
+      ipAddress: context?.ipAddress ?? 'Unknown',
+      lastUsedAt: new Date(),
+      expiresAt: new Date(Date.now() + this.refreshTokenExpiryMs),
     });
 
     return { accessToken, refreshToken };
@@ -395,6 +790,7 @@ export class AuthService {
         [user.firstName, user.lastName].filter(Boolean).join(' ') || '',
       phone_number: user.phone,
       stellar_address: user.stellarAddress,
+      wallet_type: user.walletType,
     };
   }
 
@@ -460,12 +856,293 @@ export class AuthService {
   /**
    * Log in user via OAuth and generate access/refresh tokens.
    */
-  async loginWithOAuth(user: User): Promise<AuthResponseDto> {
-    const tokens = await this.generateTokens(user);
+  async loginWithOAuth(
+    user: User,
+    userAgent?: string,
+    ipAddress?: string,
+  ): Promise<AuthResponseDto> {
+    const tokens = await this.generateTokens(user, userAgent, ipAddress);
     return {
       access_token: tokens.accessToken,
       refresh_token: tokens.refreshToken,
       user: this.mapUserToResponse(user),
+    };
+  }
+
+  async validatePasswordStrength(password: string): Promise<void> {
+    // Check minimum length (12 characters)
+    if (password.length < 12) {
+      throw new BadRequestException(
+        'Password must be at least 12 characters long',
+      );
+    }
+
+    // Check for at least one uppercase letter
+    if (!/[A-Z]/.test(password)) {
+      throw new BadRequestException(
+        'Password must contain at least one uppercase letter',
+      );
+    }
+
+    // Check for at least one lowercase letter
+    if (!/[a-z]/.test(password)) {
+      throw new BadRequestException(
+        'Password must contain at least one lowercase letter',
+      );
+    }
+
+    // Check for at least one digit
+    if (!/\d/.test(password)) {
+      throw new BadRequestException(
+        'Password must contain at least one digit',
+      );
+    }
+
+    // Check for at least one special character
+    if (!/[@$!%*?&]/.test(password)) {
+      throw new BadRequestException(
+        'Password must contain at least one special character (@$!%*?&)',
+      );
+    }
+
+    // Check HIBP (Have I Been Pwned) using k-anonymity model
+    // SHA-1 hash the password
+    const hash = crypto.createHash('sha1').update(password).digest('hex').toUpperCase();
+    const prefix = hash.slice(0, 5);
+    const suffix = hash.slice(5);
+
+    try {
+      // Only send the first 5 characters of the hash to the API
+      const response = await fetch(
+        `https://api.pwnedpasswords.com/range/${prefix}`,
+        {
+          headers: {
+            'User-Agent': 'Harvest-Finance-Security',
+          },
+        },
+      );
+
+      if (!response.ok) {
+        this.logger.warn(
+          `HIBP API returned status ${response.status}`,
+          'AuthService',
+        );
+        return; // Don't block registration if HIBP is unavailable
+      }
+
+      const text = await response.text();
+      // Compare suffixes locally - the API returns lines in format "SUFFIX:COUNT"
+      const suffixes = text.split('\n').map((line) => line.split(':')[0]);
+      if (suffixes.includes(suffix)) {
+        throw new BadRequestException(
+          'Password has been found in a data breach. Please choose a stronger password.',
+        );
+      }
+    } catch (err) {
+      if (err instanceof BadRequestException) throw err;
+      this.logger.warn('Failed to check HIBP API', 'AuthService');
+    }
+  }
+
+  async verifyEmail(token: string) {
+    try {
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: this.configService.get('JWT_SECRET') || 'super_secret_jwt_key',
+      });
+
+      // Ensure this is an email verification token
+      if (payload.type !== 'email_verification') {
+        throw new BadRequestException('Invalid token type');
+      }
+
+      const user = await this.userRepository.findOne({ where: { id: payload.sub } });
+      if (!user) {
+        throw new BadRequestException('User not found');
+      }
+
+      // Already verified
+      if (user.emailVerifiedAt) {
+        return { success: true, message: 'Email is already verified' };
+      }
+
+      user.emailVerifiedAt = new Date();
+      await this.userRepository.save(user);
+      return { success: true, message: 'Email verified successfully' };
+    } catch (e) {
+      if (e instanceof BadRequestException) {
+        throw e;
+      }
+      throw new BadRequestException('Invalid or expired token');
+    }
+  }
+
+  async resendVerification(userId: string) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    // Already verified
+    if (user.emailVerifiedAt) {
+      throw new BadRequestException('Email is already verified');
+    }
+
+    // Rate limit: 3 requests per hour per user
+    const rateLimitKey = `resend_verification:${userId}`;
+    const currentCount = await this.cacheManager.get<number>(rateLimitKey) || 0;
+    if (currentCount >= 3) {
+      throw new BadRequestException(
+        'Too many verification requests. Please try again in 1 hour.',
+      );
+    }
+
+    const token = await this.jwtService.signAsync(
+      { sub: user.id, email: user.email, type: 'email_verification' },
+      {
+        secret: this.configService.get('JWT_SECRET') || 'super_secret_jwt_key',
+        expiresIn: this.verificationTokenExpiry,
+      },
+    );
+
+    // Increment rate limit counter (TTL 1 hour)
+    await this.cacheManager.set(rateLimitKey, currentCount + 1, 3600);
+
+    await this.sendVerificationEmail(user.email, token);
+    return { success: true, message: 'Verification email sent' };
+  }
+
+  /**
+   * Send email verification link to the user.
+   * In production, replace the logger stub with a real mailer.
+   */
+  private async sendVerificationEmail(
+    email: string,
+    token: string,
+  ): Promise<void> {
+    const verificationLink = `http://localhost:3000/api/v1/auth/verify-email?token=${token}`;
+    const subject = 'Verify your email address';
+    const body = [
+      `Hello,`,
+      '',
+      'Please verify your email address by clicking the link below:',
+      verificationLink,
+      '',
+      'This link will expire in 24 hours.',
+      '',
+      'If you did not create an account, please ignore this email.',
+      '',
+      '— Harvest Finance Team',
+    ].join('\n');
+
+    // TODO: replace with real mail transport (e.g. nodemailer / @nestjs-modules/mailer)
+    this.logger.log(
+      `[VERIFICATION EMAIL] To: ${email} | Subject: ${subject}\n${body}`,
+      'AuthService',
+    );
+  }
+
+  /**
+   * Check if a user's email is verified.
+   */
+  async isEmailVerified(userId: string): Promise<boolean> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      select: ['emailVerifiedAt'],
+    });
+    return !!user?.emailVerifiedAt;
+  }
+
+  /**
+   * Return paginated active sessions for a user, flagging the caller's own session.
+   */
+  async getSessions(
+    userId: string,
+    page: number,
+    limit: number,
+    currentSessionId?: string,
+  ): Promise<SessionListResponseDto> {
+    const now = new Date();
+    const [sessions, total] = await this.sessionRepository.findAndCount({
+      where: { user: { id: userId } },
+      order: { lastUsedAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+      // expiresAt filter is handled in the query below instead
+    });
+
+    // Filter out expired sessions without a separate query
+    const activeSessions = sessions.filter((s) => s.expiresAt > now);
+
+    const items: SessionResponseDto[] = activeSessions.map((s) => ({
+      id: s.id,
+      deviceName: s.deviceName,
+      ipAddress: s.ipAddress,
+      userAgent: s.userAgent,
+      lastUsedAt: s.lastUsedAt,
+      createdAt: s.createdAt,
+      expiresAt: s.expiresAt,
+      isCurrent: currentSessionId ? s.id === currentSessionId : false,
+    }));
+
+    return { items, total, page, limit };
+  }
+
+  /**
+   * Revoke a single session belonging to the given user.
+   * Throws NotFoundException if the session does not exist or belongs to another user.
+   */
+  async revokeSession(
+    userId: string,
+    sessionId: string,
+  ): Promise<RevokeSessionResponseDto> {
+    const session = await this.sessionRepository.findOne({
+      where: { id: sessionId, user: { id: userId } },
+    });
+
+    if (!session) {
+      throw new NotFoundException('Session not found');
+    }
+
+    await this.sessionRepository.delete(session.id);
+    this.logger.log(
+      `Session ${sessionId} revoked for user ${userId}`,
+      'AuthService',
+    );
+
+    return { success: true, message: 'Session revoked successfully' };
+  }
+
+  /**
+   * Revoke all sessions for a user except the current one.
+   * If `currentSessionId` is not provided (e.g. legacy tokens), all sessions are revoked.
+   */
+  async revokeAllSessions(
+    userId: string,
+    currentSessionId?: string,
+  ): Promise<RevokeSessionResponseDto> {
+    const qb = this.sessionRepository
+      .createQueryBuilder('session')
+      .delete()
+      .where('session.user_id = :userId', { userId });
+
+    if (currentSessionId) {
+      qb.andWhere('session.id != :currentSessionId', { currentSessionId });
+    }
+
+    const result = await qb.execute();
+    const count: number = result.affected ?? 0;
+
+    this.logger.log(
+      `Revoked ${count} session(s) for user ${userId} (kept: ${currentSessionId ?? 'none'})`,
+      'AuthService',
+    );
+
+    return {
+      success: true,
+      message:
+        count === 0
+          ? 'No other sessions to revoke'
+          : `${count} session(s) revoked successfully`,
     };
   }
 }

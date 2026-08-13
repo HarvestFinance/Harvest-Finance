@@ -8,10 +8,12 @@ import {
   OneToMany,
   OneToOne,
 } from 'typeorm';
+import { Exclude } from 'class-transformer';
 import { Order } from './order.entity';
 import { Verification } from './verification.entity';
 import { CreditScore } from './credit-score.entity';
 import { UserOAuthLink } from './user-oauth-link.entity';
+import { Session } from './session.entity';
 
 /**
  * User roles in the agricultural marketplace
@@ -21,6 +23,18 @@ export enum UserRole {
   BUYER = 'BUYER',
   INSPECTOR = 'INSPECTOR',
   ADMIN = 'ADMIN',
+}
+
+/**
+ * Wallet custody type for a user's Stellar account.
+ * - none        → user has not linked any Stellar wallet yet.
+ * - self-custody → user supplied their own Stellar address (e.g. Freighter).
+ * - custodial   → platform generated and manages the wallet on behalf of the user.
+ */
+export enum WalletType {
+  NONE = 'none',
+  SELF_CUSTODY = 'self-custody',
+  CUSTODIAL = 'custodial',
 }
 
 /**
@@ -47,6 +61,7 @@ export class User {
   email: string;
 
   @Column({ select: false })
+  @Exclude()
   password: string;
 
   @Column({
@@ -56,47 +71,90 @@ export class User {
   })
   role: UserRole;
 
-  @Column({ name: 'stellar_address', nullable: true })
+  @Column({ name: 'stellar_address', type: 'varchar', nullable: true })
   stellarAddress: string | null;
 
-  @Column({ name: 'solana_address', nullable: true })
+  /**
+   * Indicates how the user's Stellar wallet is managed.
+   * Defaults to 'none' until the user links or creates a wallet.
+   */
+  @Column({
+    name: 'wallet_type',
+    type: 'enum',
+    enum: WalletType,
+    default: WalletType.NONE,
+  })
+  walletType: WalletType;
+
+  @Column({ name: 'solana_address', type: 'varchar', nullable: true })
   solanaAddress: string | null;
 
-  @Column({ name: 'ethereum_address', nullable: true })
+  @Column({ name: 'ethereum_address', type: 'varchar', nullable: true })
   ethereumAddress: string | null;
 
-  @Column({ name: 'polygon_address', nullable: true })
+  @Column({ name: 'polygon_address', type: 'varchar', nullable: true })
   polygonAddress: string | null;
 
   @Column({ name: 'is_active', default: true })
   isActive: boolean;
 
-  @Column({ name: 'first_name', nullable: true })
+  @Column({ name: 'first_name', type: 'varchar', nullable: true })
   firstName: string | null;
 
-  @Column({ name: 'last_name', nullable: true })
+  @Column({ name: 'last_name', type: 'varchar', nullable: true })
   lastName: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   phone: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   address: string | null;
 
-  @Column({ name: 'profile_image_url', nullable: true })
+  @Column({ name: 'profile_image_url', type: 'text', nullable: true })
   profileImageUrl: string | null;
 
-  @Column({ name: 'last_login', nullable: true })
+  @Column({ name: 'last_login', type: 'timestamp', nullable: true })
   lastLogin: Date | null;
 
-  @Column({ name: 'refresh_token', select: false, nullable: true })
-  refreshToken: string | null;
+  @Column({ name: 'email_verified_at', type: 'timestamp', nullable: true })
+  emailVerifiedAt: Date | null;
 
-  @Column({ name: 'reset_password_token', select: false, nullable: true })
+  @Column({ name: 'email_verification_token', type: 'varchar', nullable: true })
+  @Exclude()
+  emailVerificationToken: string | null;
+
+  @Column({ name: 'phone_number', type: 'varchar', nullable: true })
+  phoneNumber: string | null;
+
+  @Column({ name: 'phone_verified_at', type: 'timestamp', nullable: true })
+  phoneVerifiedAt: Date | null;
+
+  @OneToMany(() => Session, (session) => session.user)
+  sessions: Session[];
+
+  @Column({ name: 'reset_password_token', type: 'varchar', select: false, nullable: true })
+  @Exclude()
   resetPasswordToken: string | null;
 
-  @Column({ name: 'reset_password_expires', nullable: true })
+  @Column({ name: 'reset_password_expires', type: 'timestamp', nullable: true })
   resetPasswordExpires: Date | null;
+
+  @Column({ name: 'locked_until', type: 'timestamp', nullable: true, default: null })
+  lockedUntil: Date | null;
+
+  @Column({
+    name: 'notification_preferences',
+    type: 'jsonb',
+    nullable: true,
+    default: () => `'{
+      "depositConfirmed": {"email": true, "sms": false, "push": true, "inApp": true},
+      "withdrawalCompleted": {"email": true, "sms": false, "push": true, "inApp": true},
+      "vaultPaused": {"email": true, "sms": true, "push": true, "inApp": true},
+      "securityAlert": {"email": true, "sms": true, "push": true, "inApp": true},
+      "yieldMilestone": {"email": true, "sms": false, "push": true, "inApp": true}
+    }'::jsonb`,
+  })
+  notificationPreferences: Record<string, any> | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

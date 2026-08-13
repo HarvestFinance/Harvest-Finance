@@ -75,7 +75,7 @@ export class InsurancePlan {
   @Column({ length: 120, name: 'provider_name' })
   providerName: string;
 
-  @Column({ length: 200, name: 'provider_contact', nullable: true })
+  @Column({ type: 'varchar', length: 200, name: 'provider_contact', nullable: true })
   providerContact: string | null;
 
   @Column({ default: true, name: 'is_active' })

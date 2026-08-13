@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
@@ -16,6 +17,7 @@ import {
 import { DashboardStatsDto } from './dto/dashboard-stats.dto';
 import { CreateVaultDto, UpdateVaultDto } from './dto/vault-crud.dto';
 import { PlatformAnalyticsDto } from './dto/analytics.dto';
+import { PlatformCircuitBreakerService } from '../common/circuit-breaker/platform-circuit-breaker.service';
 
 @Injectable()
 export class AdminService {
@@ -31,6 +33,7 @@ export class AdminService {
     @InjectRepository(Withdrawal)
     private withdrawalRepository: Repository<Withdrawal>,
     private dataSource: DataSource,
+    private circuitBreakerService: PlatformCircuitBreakerService,
   ) {}
 
   /**
@@ -112,6 +115,16 @@ export class AdminService {
     return this.userRepository.save(user);
   }
 
+  async unlockUser(id: string): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    await this.userRepository.update(id, { lockedUntil: null });
+    return { message: `User ${id} has been unlocked` };
+  }
+
   /**
    * Vault CRUD Operations
    */
@@ -126,6 +139,14 @@ export class AdminService {
     createVaultDto: CreateVaultDto,
     adminId: string,
   ): Promise<Vault> {
+    // Check email verification
+    const isVerified = await this.authService.isEmailVerified(adminId);
+    if (!isVerified) {
+      throw new ForbiddenException(
+        'Email verification is required to create a vault. Please verify your email address.',
+      );
+    }
+
     const vault = this.vaultRepository.create({
       ...createVaultDto,
       ownerId: adminId,
@@ -272,5 +293,19 @@ export class AdminService {
       })),
       totalWithdrawals: parseFloat(totalWithdrawalsResult?.total || '0'),
     };
+  }
+
+  async openCircuitBreaker(
+    adminId: string,
+    reason?: string,
+  ): Promise<{ active: boolean }> {
+    return this.circuitBreakerService.activate(adminId, reason);
+  }
+
+  async closeCircuitBreaker(
+    adminId: string,
+    reason?: string,
+  ): Promise<{ active: boolean }> {
+    return this.circuitBreakerService.deactivate(adminId, reason);
   }
 }

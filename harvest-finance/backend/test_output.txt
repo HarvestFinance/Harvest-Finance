@@ -1,0 +1,517 @@
+FAIL test/circuit-breaker.e2e-spec.ts (10.334 s)
+  ● Platform Circuit Breaker Integration (e2e) › Admin endpoints › should activate circuit breaker as admin
+
+    Config validation error: "DB_HOST" is required. "DB_USER" is required. "DB_PASSWORD" is required. "DB_NAME" is required. "JWT_SECRET" is required. "JWT_REFRESH_SECRET" is required. "STELLAR_NETWORK" is required. "STELLAR_NETWORK_PASSPHRASE" is required. "STELLAR_SERVER_SECRET" is required. "STELLAR_PLATFORM_PUBLIC_KEY" is required. "WEBHOOK_PAYMENTS_HMAC_SECRET" is required. "WEBHOOK_CHAIN_EVENTS_HMAC_SECRET" is required
+
+       7 | @Module({
+       8 |   imports: [
+    >  9 |     NestConfigModule.forRoot({
+         |                      ^
+      10 |       isGlobal: true, // Makes ConfigService available everywhere without re-importing
+      11 |       validationSchema: envValidationSchema,
+      12 |       load: [databaseConfig, stellarConfig],
+
+      at ConfigModule.forRoot (../node_modules/@nestjs/config/dist/config.module.js:96:23)
+      at Object.<anonymous> (../src/config/config.module.ts:9:22)
+      at Object.<anonymous> (../src/app.module.ts:43:1)
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:4:1)
+
+  ● Platform Circuit Breaker Integration (e2e) › Admin endpoints › should activate circuit breaker as admin
+
+    TypeError: Cannot read properties of undefined (reading 'getHttpServer')
+
+      111 |
+      112 |   afterEach(async () => {
+    > 113 |     const state = await request(app.getHttpServer())
+          |                                     ^
+      114 |       .post('/api/v1/admin/platform/circuit-breaker/close')
+      115 |       .set('Authorization', `Bearer ${adminAccessToken}`)
+      116 |       .send({ reason: 'Test cleanup' });
+
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:113:37)
+
+  ● Platform Circuit Breaker Integration (e2e) › Admin endpoints › should deactivate circuit breaker as admin
+
+    Config validation error: "DB_HOST" is required. "DB_USER" is required. "DB_PASSWORD" is required. "DB_NAME" is required. "JWT_SECRET" is required. "JWT_REFRESH_SECRET" is required. "STELLAR_NETWORK" is required. "STELLAR_NETWORK_PASSPHRASE" is required. "STELLAR_SERVER_SECRET" is required. "STELLAR_PLATFORM_PUBLIC_KEY" is required. "WEBHOOK_PAYMENTS_HMAC_SECRET" is required. "WEBHOOK_CHAIN_EVENTS_HMAC_SECRET" is required
+
+       7 | @Module({
+       8 |   imports: [
+    >  9 |     NestConfigModule.forRoot({
+         |                      ^
+      10 |       isGlobal: true, // Makes ConfigService available everywhere without re-importing
+      11 |       validationSchema: envValidationSchema,
+      12 |       load: [databaseConfig, stellarConfig],
+
+      at ConfigModule.forRoot (../node_modules/@nestjs/config/dist/config.module.js:96:23)
+      at Object.<anonymous> (../src/config/config.module.ts:9:22)
+      at Object.<anonymous> (../src/app.module.ts:43:1)
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:4:1)
+
+  ● Platform Circuit Breaker Integration (e2e) › Admin endpoints › should deactivate circuit breaker as admin
+
+    TypeError: Cannot read properties of undefined (reading 'getHttpServer')
+
+      111 |
+      112 |   afterEach(async () => {
+    > 113 |     const state = await request(app.getHttpServer())
+          |                                     ^
+      114 |       .post('/api/v1/admin/platform/circuit-breaker/close')
+      115 |       .set('Authorization', `Bearer ${adminAccessToken}`)
+      116 |       .send({ reason: 'Test cleanup' });
+
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:113:37)
+
+  ● Platform Circuit Breaker Integration (e2e) › Admin endpoints › should reject non-admin access to circuit breaker endpoints
+
+    Config validation error: "DB_HOST" is required. "DB_USER" is required. "DB_PASSWORD" is required. "DB_NAME" is required. "JWT_SECRET" is required. "JWT_REFRESH_SECRET" is required. "STELLAR_NETWORK" is required. "STELLAR_NETWORK_PASSPHRASE" is required. "STELLAR_SERVER_SECRET" is required. "STELLAR_PLATFORM_PUBLIC_KEY" is required. "WEBHOOK_PAYMENTS_HMAC_SECRET" is required. "WEBHOOK_CHAIN_EVENTS_HMAC_SECRET" is required
+
+       7 | @Module({
+       8 |   imports: [
+    >  9 |     NestConfigModule.forRoot({
+         |                      ^
+      10 |       isGlobal: true, // Makes ConfigService available everywhere without re-importing
+      11 |       validationSchema: envValidationSchema,
+      12 |       load: [databaseConfig, stellarConfig],
+
+      at ConfigModule.forRoot (../node_modules/@nestjs/config/dist/config.module.js:96:23)
+      at Object.<anonymous> (../src/config/config.module.ts:9:22)
+      at Object.<anonymous> (../src/app.module.ts:43:1)
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:4:1)
+
+  ● Platform Circuit Breaker Integration (e2e) › Admin endpoints › should reject non-admin access to circuit breaker endpoints
+
+    TypeError: Cannot read properties of undefined (reading 'getHttpServer')
+
+      111 |
+      112 |   afterEach(async () => {
+    > 113 |     const state = await request(app.getHttpServer())
+          |                                     ^
+      114 |       .post('/api/v1/admin/platform/circuit-breaker/close')
+      115 |       .set('Authorization', `Bearer ${adminAccessToken}`)
+      116 |       .send({ reason: 'Test cleanup' });
+
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:113:37)
+
+  ● Platform Circuit Breaker Integration (e2e) › Admin endpoints › should reject unauthenticated access to circuit breaker endpoints
+
+    Config validation error: "DB_HOST" is required. "DB_USER" is required. "DB_PASSWORD" is required. "DB_NAME" is required. "JWT_SECRET" is required. "JWT_REFRESH_SECRET" is required. "STELLAR_NETWORK" is required. "STELLAR_NETWORK_PASSPHRASE" is required. "STELLAR_SERVER_SECRET" is required. "STELLAR_PLATFORM_PUBLIC_KEY" is required. "WEBHOOK_PAYMENTS_HMAC_SECRET" is required. "WEBHOOK_CHAIN_EVENTS_HMAC_SECRET" is required
+
+       7 | @Module({
+       8 |   imports: [
+    >  9 |     NestConfigModule.forRoot({
+         |                      ^
+      10 |       isGlobal: true, // Makes ConfigService available everywhere without re-importing
+      11 |       validationSchema: envValidationSchema,
+      12 |       load: [databaseConfig, stellarConfig],
+
+      at ConfigModule.forRoot (../node_modules/@nestjs/config/dist/config.module.js:96:23)
+      at Object.<anonymous> (../src/config/config.module.ts:9:22)
+      at Object.<anonymous> (../src/app.module.ts:43:1)
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:4:1)
+
+  ● Platform Circuit Breaker Integration (e2e) › Admin endpoints › should reject unauthenticated access to circuit breaker endpoints
+
+    TypeError: Cannot read properties of undefined (reading 'getHttpServer')
+
+      111 |
+      112 |   afterEach(async () => {
+    > 113 |     const state = await request(app.getHttpServer())
+          |                                     ^
+      114 |       .post('/api/v1/admin/platform/circuit-breaker/close')
+      115 |       .set('Authorization', `Bearer ${adminAccessToken}`)
+      116 |       .send({ reason: 'Test cleanup' });
+
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:113:37)
+
+  ● Platform Circuit Breaker Integration (e2e) › Deposit blocking › should allow deposit when circuit breaker is inactive
+
+    Config validation error: "DB_HOST" is required. "DB_USER" is required. "DB_PASSWORD" is required. "DB_NAME" is required. "JWT_SECRET" is required. "JWT_REFRESH_SECRET" is required. "STELLAR_NETWORK" is required. "STELLAR_NETWORK_PASSPHRASE" is required. "STELLAR_SERVER_SECRET" is required. "STELLAR_PLATFORM_PUBLIC_KEY" is required. "WEBHOOK_PAYMENTS_HMAC_SECRET" is required. "WEBHOOK_CHAIN_EVENTS_HMAC_SECRET" is required
+
+       7 | @Module({
+       8 |   imports: [
+    >  9 |     NestConfigModule.forRoot({
+         |                      ^
+      10 |       isGlobal: true, // Makes ConfigService available everywhere without re-importing
+      11 |       validationSchema: envValidationSchema,
+      12 |       load: [databaseConfig, stellarConfig],
+
+      at ConfigModule.forRoot (../node_modules/@nestjs/config/dist/config.module.js:96:23)
+      at Object.<anonymous> (../src/config/config.module.ts:9:22)
+      at Object.<anonymous> (../src/app.module.ts:43:1)
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:4:1)
+
+  ● Platform Circuit Breaker Integration (e2e) › Deposit blocking › should allow deposit when circuit breaker is inactive
+
+    TypeError: Cannot read properties of undefined (reading 'getHttpServer')
+
+      111 |
+      112 |   afterEach(async () => {
+    > 113 |     const state = await request(app.getHttpServer())
+          |                                     ^
+      114 |       .post('/api/v1/admin/platform/circuit-breaker/close')
+      115 |       .set('Authorization', `Bearer ${adminAccessToken}`)
+      116 |       .send({ reason: 'Test cleanup' });
+
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:113:37)
+
+  ● Platform Circuit Breaker Integration (e2e) › Deposit blocking › should block deposit when circuit breaker is active
+
+    Config validation error: "DB_HOST" is required. "DB_USER" is required. "DB_PASSWORD" is required. "DB_NAME" is required. "JWT_SECRET" is required. "JWT_REFRESH_SECRET" is required. "STELLAR_NETWORK" is required. "STELLAR_NETWORK_PASSPHRASE" is required. "STELLAR_SERVER_SECRET" is required. "STELLAR_PLATFORM_PUBLIC_KEY" is required. "WEBHOOK_PAYMENTS_HMAC_SECRET" is required. "WEBHOOK_CHAIN_EVENTS_HMAC_SECRET" is required
+
+       7 | @Module({
+       8 |   imports: [
+    >  9 |     NestConfigModule.forRoot({
+         |                      ^
+      10 |       isGlobal: true, // Makes ConfigService available everywhere without re-importing
+      11 |       validationSchema: envValidationSchema,
+      12 |       load: [databaseConfig, stellarConfig],
+
+      at ConfigModule.forRoot (../node_modules/@nestjs/config/dist/config.module.js:96:23)
+      at Object.<anonymous> (../src/config/config.module.ts:9:22)
+      at Object.<anonymous> (../src/app.module.ts:43:1)
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:4:1)
+
+  ● Platform Circuit Breaker Integration (e2e) › Deposit blocking › should block deposit when circuit breaker is active
+
+    TypeError: Cannot read properties of undefined (reading 'getHttpServer')
+
+      111 |
+      112 |   afterEach(async () => {
+    > 113 |     const state = await request(app.getHttpServer())
+          |                                     ^
+      114 |       .post('/api/v1/admin/platform/circuit-breaker/close')
+      115 |       .set('Authorization', `Bearer ${adminAccessToken}`)
+      116 |       .send({ reason: 'Test cleanup' });
+
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:113:37)
+
+  ● Platform Circuit Breaker Integration (e2e) › Deposit blocking › should block batch deposit when circuit breaker is active
+
+    Config validation error: "DB_HOST" is required. "DB_USER" is required. "DB_PASSWORD" is required. "DB_NAME" is required. "JWT_SECRET" is required. "JWT_REFRESH_SECRET" is required. "STELLAR_NETWORK" is required. "STELLAR_NETWORK_PASSPHRASE" is required. "STELLAR_SERVER_SECRET" is required. "STELLAR_PLATFORM_PUBLIC_KEY" is required. "WEBHOOK_PAYMENTS_HMAC_SECRET" is required. "WEBHOOK_CHAIN_EVENTS_HMAC_SECRET" is required
+
+       7 | @Module({
+       8 |   imports: [
+    >  9 |     NestConfigModule.forRoot({
+         |                      ^
+      10 |       isGlobal: true, // Makes ConfigService available everywhere without re-importing
+      11 |       validationSchema: envValidationSchema,
+      12 |       load: [databaseConfig, stellarConfig],
+
+      at ConfigModule.forRoot (../node_modules/@nestjs/config/dist/config.module.js:96:23)
+      at Object.<anonymous> (../src/config/config.module.ts:9:22)
+      at Object.<anonymous> (../src/app.module.ts:43:1)
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:4:1)
+
+  ● Platform Circuit Breaker Integration (e2e) › Deposit blocking › should block batch deposit when circuit breaker is active
+
+    TypeError: Cannot read properties of undefined (reading 'getHttpServer')
+
+      111 |
+      112 |   afterEach(async () => {
+    > 113 |     const state = await request(app.getHttpServer())
+          |                                     ^
+      114 |       .post('/api/v1/admin/platform/circuit-breaker/close')
+      115 |       .set('Authorization', `Bearer ${adminAccessToken}`)
+      116 |       .send({ reason: 'Test cleanup' });
+
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:113:37)
+
+  ● Platform Circuit Breaker Integration (e2e) › Withdrawal blocking › should block withdrawal when circuit breaker is active
+
+    Config validation error: "DB_HOST" is required. "DB_USER" is required. "DB_PASSWORD" is required. "DB_NAME" is required. "JWT_SECRET" is required. "JWT_REFRESH_SECRET" is required. "STELLAR_NETWORK" is required. "STELLAR_NETWORK_PASSPHRASE" is required. "STELLAR_SERVER_SECRET" is required. "STELLAR_PLATFORM_PUBLIC_KEY" is required. "WEBHOOK_PAYMENTS_HMAC_SECRET" is required. "WEBHOOK_CHAIN_EVENTS_HMAC_SECRET" is required
+
+       7 | @Module({
+       8 |   imports: [
+    >  9 |     NestConfigModule.forRoot({
+         |                      ^
+      10 |       isGlobal: true, // Makes ConfigService available everywhere without re-importing
+      11 |       validationSchema: envValidationSchema,
+      12 |       load: [databaseConfig, stellarConfig],
+
+      at ConfigModule.forRoot (../node_modules/@nestjs/config/dist/config.module.js:96:23)
+      at Object.<anonymous> (../src/config/config.module.ts:9:22)
+      at Object.<anonymous> (../src/app.module.ts:43:1)
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:4:1)
+
+  ● Platform Circuit Breaker Integration (e2e) › Withdrawal blocking › should block withdrawal when circuit breaker is active
+
+    TypeError: Cannot read properties of undefined (reading 'getHttpServer')
+
+      111 |
+      112 |   afterEach(async () => {
+    > 113 |     const state = await request(app.getHttpServer())
+          |                                     ^
+      114 |       .post('/api/v1/admin/platform/circuit-breaker/close')
+      115 |       .set('Authorization', `Bearer ${adminAccessToken}`)
+      116 |       .send({ reason: 'Test cleanup' });
+
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:113:37)
+
+  ● Platform Circuit Breaker Integration (e2e) › Farm vault blocking › should block farm vault deposit when circuit breaker is active
+
+    Config validation error: "DB_HOST" is required. "DB_USER" is required. "DB_PASSWORD" is required. "DB_NAME" is required. "JWT_SECRET" is required. "JWT_REFRESH_SECRET" is required. "STELLAR_NETWORK" is required. "STELLAR_NETWORK_PASSPHRASE" is required. "STELLAR_SERVER_SECRET" is required. "STELLAR_PLATFORM_PUBLIC_KEY" is required. "WEBHOOK_PAYMENTS_HMAC_SECRET" is required. "WEBHOOK_CHAIN_EVENTS_HMAC_SECRET" is required
+
+       7 | @Module({
+       8 |   imports: [
+    >  9 |     NestConfigModule.forRoot({
+         |                      ^
+      10 |       isGlobal: true, // Makes ConfigService available everywhere without re-importing
+      11 |       validationSchema: envValidationSchema,
+      12 |       load: [databaseConfig, stellarConfig],
+
+      at ConfigModule.forRoot (../node_modules/@nestjs/config/dist/config.module.js:96:23)
+      at Object.<anonymous> (../src/config/config.module.ts:9:22)
+      at Object.<anonymous> (../src/app.module.ts:43:1)
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:4:1)
+
+  ● Platform Circuit Breaker Integration (e2e) › Farm vault blocking › should block farm vault deposit when circuit breaker is active
+
+    TypeError: Cannot read properties of undefined (reading 'getHttpServer')
+
+      111 |
+      112 |   afterEach(async () => {
+    > 113 |     const state = await request(app.getHttpServer())
+          |                                     ^
+      114 |       .post('/api/v1/admin/platform/circuit-breaker/close')
+      115 |       .set('Authorization', `Bearer ${adminAccessToken}`)
+      116 |       .send({ reason: 'Test cleanup' });
+
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:113:37)
+
+  ● Platform Circuit Breaker Integration (e2e) › Farm vault blocking › should block farm vault withdrawal when circuit breaker is active
+
+    Config validation error: "DB_HOST" is required. "DB_USER" is required. "DB_PASSWORD" is required. "DB_NAME" is required. "JWT_SECRET" is required. "JWT_REFRESH_SECRET" is required. "STELLAR_NETWORK" is required. "STELLAR_NETWORK_PASSPHRASE" is required. "STELLAR_SERVER_SECRET" is required. "STELLAR_PLATFORM_PUBLIC_KEY" is required. "WEBHOOK_PAYMENTS_HMAC_SECRET" is required. "WEBHOOK_CHAIN_EVENTS_HMAC_SECRET" is required
+
+       7 | @Module({
+       8 |   imports: [
+    >  9 |     NestConfigModule.forRoot({
+         |                      ^
+      10 |       isGlobal: true, // Makes ConfigService available everywhere without re-importing
+      11 |       validationSchema: envValidationSchema,
+      12 |       load: [databaseConfig, stellarConfig],
+
+      at ConfigModule.forRoot (../node_modules/@nestjs/config/dist/config.module.js:96:23)
+      at Object.<anonymous> (../src/config/config.module.ts:9:22)
+      at Object.<anonymous> (../src/app.module.ts:43:1)
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:4:1)
+
+  ● Platform Circuit Breaker Integration (e2e) › Farm vault blocking › should block farm vault withdrawal when circuit breaker is active
+
+    TypeError: Cannot read properties of undefined (reading 'getHttpServer')
+
+      111 |
+      112 |   afterEach(async () => {
+    > 113 |     const state = await request(app.getHttpServer())
+          |                                     ^
+      114 |       .post('/api/v1/admin/platform/circuit-breaker/close')
+      115 |       .set('Authorization', `Bearer ${adminAccessToken}`)
+      116 |       .send({ reason: 'Test cleanup' });
+
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:113:37)
+
+  ● Platform Circuit Breaker Integration (e2e) › Insurance fund deposit blocking › should block insurance fund deposit when circuit breaker is active
+
+    Config validation error: "DB_HOST" is required. "DB_USER" is required. "DB_PASSWORD" is required. "DB_NAME" is required. "JWT_SECRET" is required. "JWT_REFRESH_SECRET" is required. "STELLAR_NETWORK" is required. "STELLAR_NETWORK_PASSPHRASE" is required. "STELLAR_SERVER_SECRET" is required. "STELLAR_PLATFORM_PUBLIC_KEY" is required. "WEBHOOK_PAYMENTS_HMAC_SECRET" is required. "WEBHOOK_CHAIN_EVENTS_HMAC_SECRET" is required
+
+       7 | @Module({
+       8 |   imports: [
+    >  9 |     NestConfigModule.forRoot({
+         |                      ^
+      10 |       isGlobal: true, // Makes ConfigService available everywhere without re-importing
+      11 |       validationSchema: envValidationSchema,
+      12 |       load: [databaseConfig, stellarConfig],
+
+      at ConfigModule.forRoot (../node_modules/@nestjs/config/dist/config.module.js:96:23)
+      at Object.<anonymous> (../src/config/config.module.ts:9:22)
+      at Object.<anonymous> (../src/app.module.ts:43:1)
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:4:1)
+
+  ● Platform Circuit Breaker Integration (e2e) › Insurance fund deposit blocking › should block insurance fund deposit when circuit breaker is active
+
+    TypeError: Cannot read properties of undefined (reading 'getHttpServer')
+
+      111 |
+      112 |   afterEach(async () => {
+    > 113 |     const state = await request(app.getHttpServer())
+          |                                     ^
+      114 |       .post('/api/v1/admin/platform/circuit-breaker/close')
+      115 |       .set('Authorization', `Bearer ${adminAccessToken}`)
+      116 |       .send({ reason: 'Test cleanup' });
+
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:113:37)
+
+  ● Platform Circuit Breaker Integration (e2e) › Read-only endpoints › should allow reading vault info when circuit breaker is active
+
+    Config validation error: "DB_HOST" is required. "DB_USER" is required. "DB_PASSWORD" is required. "DB_NAME" is required. "JWT_SECRET" is required. "JWT_REFRESH_SECRET" is required. "STELLAR_NETWORK" is required. "STELLAR_NETWORK_PASSPHRASE" is required. "STELLAR_SERVER_SECRET" is required. "STELLAR_PLATFORM_PUBLIC_KEY" is required. "WEBHOOK_PAYMENTS_HMAC_SECRET" is required. "WEBHOOK_CHAIN_EVENTS_HMAC_SECRET" is required
+
+       7 | @Module({
+       8 |   imports: [
+    >  9 |     NestConfigModule.forRoot({
+         |                      ^
+      10 |       isGlobal: true, // Makes ConfigService available everywhere without re-importing
+      11 |       validationSchema: envValidationSchema,
+      12 |       load: [databaseConfig, stellarConfig],
+
+      at ConfigModule.forRoot (../node_modules/@nestjs/config/dist/config.module.js:96:23)
+      at Object.<anonymous> (../src/config/config.module.ts:9:22)
+      at Object.<anonymous> (../src/app.module.ts:43:1)
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:4:1)
+
+  ● Platform Circuit Breaker Integration (e2e) › Read-only endpoints › should allow reading vault info when circuit breaker is active
+
+    TypeError: Cannot read properties of undefined (reading 'getHttpServer')
+
+      111 |
+      112 |   afterEach(async () => {
+    > 113 |     const state = await request(app.getHttpServer())
+          |                                     ^
+      114 |       .post('/api/v1/admin/platform/circuit-breaker/close')
+      115 |       .set('Authorization', `Bearer ${adminAccessToken}`)
+      116 |       .send({ reason: 'Test cleanup' });
+
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:113:37)
+
+  ● Platform Circuit Breaker Integration (e2e) › Read-only endpoints › should allow reading user vaults when circuit breaker is active
+
+    Config validation error: "DB_HOST" is required. "DB_USER" is required. "DB_PASSWORD" is required. "DB_NAME" is required. "JWT_SECRET" is required. "JWT_REFRESH_SECRET" is required. "STELLAR_NETWORK" is required. "STELLAR_NETWORK_PASSPHRASE" is required. "STELLAR_SERVER_SECRET" is required. "STELLAR_PLATFORM_PUBLIC_KEY" is required. "WEBHOOK_PAYMENTS_HMAC_SECRET" is required. "WEBHOOK_CHAIN_EVENTS_HMAC_SECRET" is required
+
+       7 | @Module({
+       8 |   imports: [
+    >  9 |     NestConfigModule.forRoot({
+         |                      ^
+      10 |       isGlobal: true, // Makes ConfigService available everywhere without re-importing
+      11 |       validationSchema: envValidationSchema,
+      12 |       load: [databaseConfig, stellarConfig],
+
+      at ConfigModule.forRoot (../node_modules/@nestjs/config/dist/config.module.js:96:23)
+      at Object.<anonymous> (../src/config/config.module.ts:9:22)
+      at Object.<anonymous> (../src/app.module.ts:43:1)
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:4:1)
+
+  ● Platform Circuit Breaker Integration (e2e) › Read-only endpoints › should allow reading user vaults when circuit breaker is active
+
+    TypeError: Cannot read properties of undefined (reading 'getHttpServer')
+
+      111 |
+      112 |   afterEach(async () => {
+    > 113 |     const state = await request(app.getHttpServer())
+          |                                     ^
+      114 |       .post('/api/v1/admin/platform/circuit-breaker/close')
+      115 |       .set('Authorization', `Bearer ${adminAccessToken}`)
+      116 |       .send({ reason: 'Test cleanup' });
+
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:113:37)
+
+  ● Platform Circuit Breaker Integration (e2e) › Redis propagation › should propagate activation across requests
+
+    Config validation error: "DB_HOST" is required. "DB_USER" is required. "DB_PASSWORD" is required. "DB_NAME" is required. "JWT_SECRET" is required. "JWT_REFRESH_SECRET" is required. "STELLAR_NETWORK" is required. "STELLAR_NETWORK_PASSPHRASE" is required. "STELLAR_SERVER_SECRET" is required. "STELLAR_PLATFORM_PUBLIC_KEY" is required. "WEBHOOK_PAYMENTS_HMAC_SECRET" is required. "WEBHOOK_CHAIN_EVENTS_HMAC_SECRET" is required
+
+       7 | @Module({
+       8 |   imports: [
+    >  9 |     NestConfigModule.forRoot({
+         |                      ^
+      10 |       isGlobal: true, // Makes ConfigService available everywhere without re-importing
+      11 |       validationSchema: envValidationSchema,
+      12 |       load: [databaseConfig, stellarConfig],
+
+      at ConfigModule.forRoot (../node_modules/@nestjs/config/dist/config.module.js:96:23)
+      at Object.<anonymous> (../src/config/config.module.ts:9:22)
+      at Object.<anonymous> (../src/app.module.ts:43:1)
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:4:1)
+
+  ● Platform Circuit Breaker Integration (e2e) › Redis propagation › should propagate activation across requests
+
+    TypeError: Cannot read properties of undefined (reading 'getHttpServer')
+
+      111 |
+      112 |   afterEach(async () => {
+    > 113 |     const state = await request(app.getHttpServer())
+          |                                     ^
+      114 |       .post('/api/v1/admin/platform/circuit-breaker/close')
+      115 |       .set('Authorization', `Bearer ${adminAccessToken}`)
+      116 |       .send({ reason: 'Test cleanup' });
+
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:113:37)
+
+  ● Platform Circuit Breaker Integration (e2e) › Edge cases › should work without optional reason field
+
+    Config validation error: "DB_HOST" is required. "DB_USER" is required. "DB_PASSWORD" is required. "DB_NAME" is required. "JWT_SECRET" is required. "JWT_REFRESH_SECRET" is required. "STELLAR_NETWORK" is required. "STELLAR_NETWORK_PASSPHRASE" is required. "STELLAR_SERVER_SECRET" is required. "STELLAR_PLATFORM_PUBLIC_KEY" is required. "WEBHOOK_PAYMENTS_HMAC_SECRET" is required. "WEBHOOK_CHAIN_EVENTS_HMAC_SECRET" is required
+
+       7 | @Module({
+       8 |   imports: [
+    >  9 |     NestConfigModule.forRoot({
+         |                      ^
+      10 |       isGlobal: true, // Makes ConfigService available everywhere without re-importing
+      11 |       validationSchema: envValidationSchema,
+      12 |       load: [databaseConfig, stellarConfig],
+
+      at ConfigModule.forRoot (../node_modules/@nestjs/config/dist/config.module.js:96:23)
+      at Object.<anonymous> (../src/config/config.module.ts:9:22)
+      at Object.<anonymous> (../src/app.module.ts:43:1)
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:4:1)
+
+  ● Platform Circuit Breaker Integration (e2e) › Edge cases › should work without optional reason field
+
+    TypeError: Cannot read properties of undefined (reading 'getHttpServer')
+
+      111 |
+      112 |   afterEach(async () => {
+    > 113 |     const state = await request(app.getHttpServer())
+          |                                     ^
+      114 |       .post('/api/v1/admin/platform/circuit-breaker/close')
+      115 |       .set('Authorization', `Bearer ${adminAccessToken}`)
+      116 |       .send({ reason: 'Test cleanup' });
+
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:113:37)
+
+  ● Platform Circuit Breaker Integration (e2e) › Edge cases › should handle rapid open/close toggles
+
+    Config validation error: "DB_HOST" is required. "DB_USER" is required. "DB_PASSWORD" is required. "DB_NAME" is required. "JWT_SECRET" is required. "JWT_REFRESH_SECRET" is required. "STELLAR_NETWORK" is required. "STELLAR_NETWORK_PASSPHRASE" is required. "STELLAR_SERVER_SECRET" is required. "STELLAR_PLATFORM_PUBLIC_KEY" is required. "WEBHOOK_PAYMENTS_HMAC_SECRET" is required. "WEBHOOK_CHAIN_EVENTS_HMAC_SECRET" is required
+
+       7 | @Module({
+       8 |   imports: [
+    >  9 |     NestConfigModule.forRoot({
+         |                      ^
+      10 |       isGlobal: true, // Makes ConfigService available everywhere without re-importing
+      11 |       validationSchema: envValidationSchema,
+      12 |       load: [databaseConfig, stellarConfig],
+
+      at ConfigModule.forRoot (../node_modules/@nestjs/config/dist/config.module.js:96:23)
+      at Object.<anonymous> (../src/config/config.module.ts:9:22)
+      at Object.<anonymous> (../src/app.module.ts:43:1)
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:4:1)
+
+  ● Platform Circuit Breaker Integration (e2e) › Edge cases › should handle rapid open/close toggles
+
+    TypeError: Cannot read properties of undefined (reading 'getHttpServer')
+
+      111 |
+      112 |   afterEach(async () => {
+    > 113 |     const state = await request(app.getHttpServer())
+          |                                     ^
+      114 |       .post('/api/v1/admin/platform/circuit-breaker/close')
+      115 |       .set('Authorization', `Bearer ${adminAccessToken}`)
+      116 |       .send({ reason: 'Test cleanup' });
+
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:113:37)
+
+
+  ● Test suite failed to run
+
+    TypeError: Cannot read properties of undefined (reading 'delete')
+
+      102 |
+      103 |   afterAll(async () => {
+    > 104 |     await depositRepository.delete({ userId: testUser.id });
+          |                             ^
+      105 |     await withdrawalRepository.delete({ userId: testUser.id });
+      106 |     await vaultRepository.delete({ id: activeVault.id });
+      107 |     await userRepository.delete({ id: adminUser.id });
+
+      at Object.<anonymous> (circuit-breaker.e2e-spec.ts:104:29)
+
+Test Suites: 1 failed, 1 total
+Tests:       16 failed, 16 total
+Snapshots:   0 total
+Time:        11.024 s
+Ran all test suites matching test/circuit-breaker.e2e-spec.ts.
