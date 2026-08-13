@@ -123,7 +123,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
       if (typeof navigator !== "undefined" && !navigator.onLine) {
         enqueueOfflineAction({
           type: "deposit",
-          endpoint: `http://localhost:3001/api/v1/farm-vaults/${vault.id}/deposit`,
+          endpoint: `/api/v1/farm-vaults/${vault.id}/deposit`,
           payload: { amount: i128Value },
         });
         onSuccess?.();
@@ -136,7 +136,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
       toastId = toast.loading('Deposit pending — awaiting confirmation...', { autoClose: false });
 
       await axios.post(
-        `http://localhost:3001/api/v1/farm-vaults/${vault.id}/deposit`,
+        `/api/v1/farm-vaults/${vault.id}/deposit`,
         { amount: i128Value },
         { headers: { Authorization: `Bearer ${token}` } },
       );

@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 
 export interface QueryHistoryItem {
   id: string;
@@ -19,9 +19,10 @@ function getAuthHeaders(): HeadersInit {
 }
 
 export async function fetchQueryHistory(search?: string): Promise<QueryHistoryItem[]> {
-  const url = new URL(`${API_BASE}/ai-query-history`);
-  if (search) url.searchParams.set('search', search);
-  const res = await fetch(url.toString(), { headers: getAuthHeaders() });
+  const params = new URLSearchParams();
+  if (search) params.set('search', search);
+  const queryString = params.toString();
+  const res = await fetch(`${API_BASE}/ai-query-history${queryString ? `?${queryString}` : ''}`, { headers: getAuthHeaders() });
   if (!res.ok) throw new Error('Failed to fetch query history');
   return res.json();
 }

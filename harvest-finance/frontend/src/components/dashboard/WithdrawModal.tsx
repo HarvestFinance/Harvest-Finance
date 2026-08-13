@@ -111,7 +111,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
       if (typeof navigator !== "undefined" && !navigator.onLine) {
         enqueueOfflineAction({
           type: "withdraw",
-          endpoint: `http://localhost:3001/api/v1/farm-vaults/${vault!.id}/withdraw`,
+          endpoint: `/api/v1/farm-vaults/${vault!.id}/withdraw`,
           payload: { amount: i128Amount },
         });
         onSuccess?.();
@@ -122,7 +122,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
       toastId = toast.loading('Withdrawal pending — awaiting confirmation...', { autoClose: false });
 
       await axios.post(
-        `http://localhost:3001/api/v1/farm-vaults/${vault!.id}/withdraw`,
+        `/api/v1/farm-vaults/${vault!.id}/withdraw`,
         { amount: i128Amount },
         { headers: { Authorization: `Bearer ${token}` } },
       );

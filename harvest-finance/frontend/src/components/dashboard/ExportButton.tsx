@@ -32,8 +32,8 @@ export const ExportButton: React.FC<ExportButtonProps> = ({
     setIsExporting(format);
     try {
       const endpoint = vaultId 
-        ? `http://localhost:3001/api/v1/export/users/${userId}/vault/export`
-        : `http://localhost:3001/api/v1/export/users/${userId}/transactions`;
+        ? `/api/v1/export/users/${userId}/vault/export`
+        : `/api/v1/export/users/${userId}/transactions`;
 
       const response = await axios.get(endpoint, {
         params: { format },

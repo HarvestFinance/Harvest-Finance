@@ -183,7 +183,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
           }
           signedTransaction = await window.ethereum.request({
             method: 'stellar_signTransaction',
-            params: { transaction, network_passphrase }
+            params: [transaction, network_passphrase]
           });
           break;
 

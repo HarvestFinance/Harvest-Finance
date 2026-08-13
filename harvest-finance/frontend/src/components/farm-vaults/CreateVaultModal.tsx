@@ -74,7 +74,7 @@ export function CreateVaultModal({ isOpen, onClose, onSuccess }: { isOpen: boole
 
   useEffect(() => {
     if (isOpen) {
-      axios.get('http://localhost:3001/api/v1/farm-vaults/crop-cycles', {
+      axios.get('/api/v1/farm-vaults/crop-cycles', {
         headers: { Authorization: `Bearer ${token}` }
       })
       .then(res => {
@@ -95,7 +95,7 @@ export function CreateVaultModal({ isOpen, onClose, onSuccess }: { isOpen: boole
     setIsLoading(true);
     try {
       await axios.post(
-        'http://localhost:3001/api/v1/farm-vaults',
+        '/api/v1/farm-vaults',
         { 
           name: vaultName, 
           cropCycleId: selectedCycle.id, 

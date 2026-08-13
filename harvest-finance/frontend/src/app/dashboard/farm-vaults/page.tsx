@@ -84,7 +84,7 @@ export default function FarmVaultsPage() {
     if (!user) return;
     try {
       const response = await axios.get(
-        "http://localhost:3001/api/v1/farm-vaults",
+        "/api/v1/farm-vaults",
         {
           headers: { Authorization: `Bearer ${token}` },
         },

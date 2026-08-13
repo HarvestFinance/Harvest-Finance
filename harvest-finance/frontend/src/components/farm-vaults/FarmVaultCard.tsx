@@ -59,7 +59,7 @@ export function FarmVaultCard({
     setIsDepositing(true);
     try {
       await axios.post(
-        `http://localhost:3001/api/v1/farm-vaults/${vault.id}/deposit`,
+        `/api/v1/farm-vaults/${vault.id}/deposit`,
         { amount: parseFloat(depositAmount) },
         { headers: { Authorization: `Bearer ${token}` } },
       );
