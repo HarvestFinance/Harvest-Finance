@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { QueryHistoryItem } from '@/lib/api/ai-query-history-client';
 
-let mockHistory: QueryHistoryItem[] = [
+const mockHistory: QueryHistoryItem[] = [
   {
     id: 'hist-1',
     query: 'What crops are best for my current season?',

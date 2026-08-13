@@ -28,13 +28,16 @@ export function OfflineStatus({ compact = false, showDetailed = false, onSyncCli
       const connection = navigator as Navigator & { connection: { effectiveType: string } };
       const effectiveType = connection.connection?.effectiveType;
       
-      if (effectiveType === '4g') {
-        setNetworkQuality('good');
-      } else if (effectiveType === '3g' || effectiveType === '2g') {
-        setNetworkQuality('slow');
-      } else {
-        setNetworkQuality('poor');
-      }
+      const setQuality = () => {
+        if (effectiveType === '4g') {
+          setNetworkQuality('good');
+        } else if (effectiveType === '3g' || effectiveType === '2g') {
+          setNetworkQuality('slow');
+        } else {
+          setNetworkQuality('poor');
+        }
+      };
+      setQuality();
     }
   }, []);
 

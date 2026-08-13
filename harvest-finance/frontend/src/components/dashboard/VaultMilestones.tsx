@@ -74,9 +74,9 @@ export const VaultMilestones: React.FC<VaultMilestonesProps> = ({
               milestones.findLast(m => m.achieved)?.name || 'Planning'
             }</span>
           </div>
-          <p className="text-xs text-gray-500 italic">
-            "Your crops are entering a critical growth phase. Ensure consistent moisture levels for optimal yield."
-          </p>
+            <p className="text-xs text-gray-500 italic">
+               &quot;Your crops are entering a critical growth phase. Ensure consistent moisture levels for optimal yield.&quot;
+             </p>
         </Stack>
       </CardBody>
     </Card>

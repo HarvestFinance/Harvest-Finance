@@ -11,6 +11,7 @@ interface Particle {
   color: string;
   size: number;
   delay: number;
+  duration: number;
 }
 
 const COLORS = ['#16a34a', '#22c55e', '#4ade80', '#86efac', '#f59e0b', '#fbbf24'];
@@ -24,6 +25,7 @@ function generateParticles(count: number): Particle[] {
     color: COLORS[Math.floor(Math.random() * COLORS.length)],
     size: 6 + Math.random() * 6,
     delay: Math.random() * 0.5,
+    duration: 2 + Math.random(),
   }));
 }
 
@@ -40,7 +42,8 @@ export const MilestoneConfetti: React.FC<MilestoneConfettiProps> = ({
 
   useEffect(() => {
     if (trigger) {
-      setParticles(generateParticles(30));
+      const particles = generateParticles(30);
+      setParticles(particles);
       const timer = setTimeout(() => {
         setParticles([]);
         onComplete?.();
@@ -70,7 +73,7 @@ export const MilestoneConfetti: React.FC<MilestoneConfettiProps> = ({
                 opacity: [1, 1, 0],
               }}
               transition={{
-                duration: 2 + Math.random(),
+                duration: p.duration,
                 delay: p.delay,
                 ease: 'easeIn',
               }}

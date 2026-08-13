@@ -56,7 +56,7 @@ const SAMPLE_TIPS: SeasonalTip[] = [
 ];
 
 function parseQuery(qs: URLSearchParams): TipsQueryParams {
-  const params: any = {};
+  const params: Record<string, unknown> = {};
   if (qs.has('cropType')) params.cropType = qs.get('cropType') as CropType;
   if (qs.has('season')) params.season = qs.get('season') as Season;
   if (qs.has('tipType')) params.tipType = qs.get('tipType') as TipType;

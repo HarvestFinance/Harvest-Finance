@@ -42,7 +42,7 @@ export const ExportKeyModal: React.FC<ExportKeyModalProps> = ({ isOpen, onClose 
       );
 
       setSecretKey(response.data.secret_key);
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err.response?.status === 429) {
         setError('Too many attempts. Please try again later.');
       } else if (err.response?.status === 401) {

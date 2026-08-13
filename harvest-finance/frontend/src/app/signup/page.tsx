@@ -164,7 +164,7 @@ export default function SignupPage() {
                 <span className="text-xs font-black uppercase tracking-widest text-[var(--brand-strong)]">Beginner Friendly</span>
               </div>
               <p className="mt-3 text-sm font-semibold text-slate-900 dark:text-white">Platform-Managed (Custodial)</p>
-              <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-gray-400">We'll create a secure Stellar wallet for you.</p>
+              <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-gray-400">We&apos;ll create a secure Stellar wallet for you.</p>
             </button>
             <button
               type="button"

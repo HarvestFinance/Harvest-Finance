@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardHeader,
@@ -72,15 +72,15 @@ const mockFarmVaults = [
 
 export default function FarmVaultsPage() {
   const { user, token } = useAuthStore();
-  const [vaults, setVaults] = useState<any[]>([]);
+  const [vaults, setVaults] = useState<Record<string, unknown>[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [selectedVault, setSelectedVault] = useState<any>(null);
+  const [selectedVault, setSelectedVault] = useState<Record<string, unknown> | null>(null);
   const [isDepositOpen, setIsDepositOpen] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
 
-  const fetchVaults = async () => {
+  const fetchVaults = useCallback(async () => {
     if (!user) return;
     try {
       const response = await axios.get(
@@ -106,13 +106,13 @@ export default function FarmVaultsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user, token, selectedVault]);
 
   useEffect(() => {
-    fetchVaults();
+    void fetchVaults();
     const timer = setTimeout(() => setShowAlert(true), 1000);
     return () => clearTimeout(timer);
-  }, [user]);
+  }, [fetchVaults]);
 
   const activeVault = selectedVault || (vaults.length > 0 ? vaults[0] : null);
 

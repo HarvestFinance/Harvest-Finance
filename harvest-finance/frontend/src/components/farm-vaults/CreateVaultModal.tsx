@@ -21,7 +21,7 @@ import { useAuthStore } from '@/lib/stores/auth-store';
 import { getTermTooltip } from '@/lib/defi-terms';
 import axios from '@/lib/api-client';
 
-const iconMap: Record<string, any> = {
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Sprout,
   Wheat,
   Coffee,
@@ -66,8 +66,8 @@ const mockCycles = [
 export function CreateVaultModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onClose: () => void; onSuccess: () => void }) {
   const { token } = useAuthStore();
   const [step, setStep] = useState(1);
-  const [cycles, setCycles] = useState<any[]>(mockCycles);
-  const [selectedCycle, setSelectedCycle] = useState<any>(null);
+  const [cycles, setCycles] = useState<Record<string, unknown>[]>(mockCycles);
+  const [selectedCycle, setSelectedCycle] = useState<Record<string, unknown> | null>(null);
   const [vaultName, setVaultName] = useState('');
   const [targetAmount, setTargetAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);

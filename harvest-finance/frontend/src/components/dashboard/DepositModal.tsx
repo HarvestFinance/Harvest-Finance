@@ -146,7 +146,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
       onDepositSuccess?.(vault.id, Number(amount));
       onClose();
       setAmount("");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Deposit failed:", err);
       const parsed = parseStellarError(err);
       // update toast to error with parsed message
@@ -232,7 +232,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
             <div className="group relative">
                <Input
                 value={amount}
-                onChange={(e: any) => {
+                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   setAmount(e.target.value);
                   setError(null);
                 }}

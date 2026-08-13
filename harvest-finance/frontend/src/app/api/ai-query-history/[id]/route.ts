@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-let mockHistory: any[] = [
+const mockHistory: Record<string, unknown>[] = [
   {
     id: 'hist-1',
     query: 'What crops are best for my current season?',

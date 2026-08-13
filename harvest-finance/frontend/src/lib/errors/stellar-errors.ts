@@ -41,14 +41,14 @@ export const DEFAULT_ERROR_MESSAGE = "Something went wrong with the transaction.
 export interface ParsedStellarError {
   message: string;
   code: string;
-  originalError?: any;
+  originalError?: unknown;
   isStellarError: boolean;
 }
 
 /**
  * Parses an error object (Stellar SDK or Freighter) and returns a human-readable message.
  */
-export function parseStellarError(error: any): ParsedStellarError {
+export function parseStellarError(error: unknown): ParsedStellarError {
   if (!error) {
     return {
       message: DEFAULT_ERROR_MESSAGE,
@@ -57,8 +57,20 @@ export function parseStellarError(error: any): ParsedStellarError {
     };
   }
 
+  if (error === "User cancelled") {
+    return {
+      message: STELLAR_ERROR_MAP.user_cancelled,
+      code: "user_cancelled",
+      originalError: error,
+      isStellarError: true
+    };
+  }
+
+  const err = error as Record<string, unknown>;
+  const messageStr = err.message as string | undefined;
+
   // Handle Freighter/User cancellation
-  if (error === "User cancelled" || error.message === "User cancelled") {
+  if (messageStr === "User cancelled") {
     return {
       message: STELLAR_ERROR_MAP.user_cancelled,
       code: "user_cancelled",
@@ -69,9 +81,12 @@ export function parseStellarError(error: any): ParsedStellarError {
 
   // Handle Stellar SDK result codes in nested objects
   // Often in error.response.data.extras.result_codes
-  const resultCodes = error.response?.data?.extras?.result_codes;
+  const response = err.response as Record<string, unknown> | undefined;
+  const data = response?.data as Record<string, unknown> | undefined;
+  const extras = data?.extras as Record<string, unknown> | undefined;
+  const resultCodes = extras?.result_codes as Record<string, unknown> | undefined;
   if (resultCodes) {
-    const code = resultCodes.transaction || (resultCodes.operations && resultCodes.operations[0]);
+    const code = (resultCodes.transaction as string) || ((resultCodes.operations as string[])?.[0]);
     if (code && STELLAR_ERROR_MAP[code]) {
       return {
         message: STELLAR_ERROR_MAP[code],
@@ -83,7 +98,7 @@ export function parseStellarError(error: any): ParsedStellarError {
   }
 
   // Handle direct message matching for common patterns
-  const errorMessage = error.message?.toLowerCase() || "";
+  const errorMessage = (messageStr || "").toLowerCase();
   for (const [code, translation] of Object.entries(STELLAR_ERROR_MAP)) {
     if (errorMessage.includes(code.toLowerCase())) {
       return {
@@ -97,7 +112,7 @@ export function parseStellarError(error: any): ParsedStellarError {
 
   // Final fallback
   return {
-    message: error.message || DEFAULT_ERROR_MESSAGE,
+    message: messageStr || DEFAULT_ERROR_MESSAGE,
     code: "unknown",
     originalError: error,
     isStellarError: false

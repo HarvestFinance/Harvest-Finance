@@ -4,8 +4,8 @@ export interface OfflineAction {
   id: string;
   url: string;
   method: string;
-  body: any;
-  headers: any;
+  body: unknown;
+  headers: Record<string, string>;
   timestamp: number;
   idempotencyKey: string;
 }
@@ -33,7 +33,7 @@ class SyncService {
     return this.dbPromise;
   }
 
-  async queueAction(url: string, method: string, body: any, headers: any) {
+  async queueAction(url: string, method: string, body: unknown, headers: Record<string, string>) {
     const idempotencyKey = `offline_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const action: OfflineAction = {
       id: crypto.randomUUID(),

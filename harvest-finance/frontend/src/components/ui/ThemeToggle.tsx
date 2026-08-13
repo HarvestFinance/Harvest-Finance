@@ -23,7 +23,12 @@ export function ThemeToggle({ className }: { className?: string }) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setMounted(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   // Render a placeholder of the same size to avoid layout shift during SSR
   if (!mounted) {

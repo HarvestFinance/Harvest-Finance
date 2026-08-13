@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
       await fs.mkdir(dataDir, { recursive: true });
       const filePath = path.join(dataDir, "ai-chat.json");
 
-      let existing: any[] = [];
+      let existing: Record<string, unknown>[] = [];
       try {
         const raw = await fs.readFile(filePath, "utf8");
         existing = JSON.parse(raw || "[]");

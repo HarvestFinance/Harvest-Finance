@@ -96,10 +96,11 @@ export const useAuthStore = create<AuthStore>((set) => ({
       saveToStorage(access_token, normalizedUser);
       set({ user: normalizedUser, token: access_token, isAuthenticated: true, isLoading: false });
       applyUserLocale(normalizedUser.id);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } };
       set({
         isLoading: false,
-        error: err.response?.data?.message || 'Login failed. Check your credentials.',
+        error: e?.response?.data?.message || 'Login failed. Check your credentials.',
       });
     }
   },
@@ -107,7 +108,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   signup: async (name, email, password, role, walletType, stellarAddress) => {
     set({ isLoading: true, error: null });
     try {
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         full_name: name,
         email,
         password,
@@ -127,10 +128,11 @@ export const useAuthStore = create<AuthStore>((set) => ({
       saveToStorage(access_token, normalizedUser);
       set({ user: normalizedUser, token: access_token, isAuthenticated: true, isLoading: false });
       applyUserLocale(normalizedUser.id);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } };
       set({
         isLoading: false,
-        error: err.response?.data?.message || 'Signup failed. Please try again.',
+        error: e?.response?.data?.message || 'Signup failed. Please try again.',
       });
     }
   },
@@ -239,10 +241,11 @@ export const useAuthStore = create<AuthStore>((set) => ({
       saveToStorage(access_token, normalizedUser);
       set({ user: normalizedUser, token: access_token, isAuthenticated: true, isLoading: false });
       applyUserLocale(normalizedUser.id);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } };
       set({
         isLoading: false,
-        error: err.response?.data?.message || err.message || 'Stellar authentication failed',
+        error: e?.response?.data?.message || (err instanceof Error ? err.message : 'Stellar authentication failed'),
       });
     }
   },
@@ -252,10 +255,11 @@ export const useAuthStore = create<AuthStore>((set) => ({
     try {
       await axios.post(`${API_BASE_URL}/auth/forgot-password`, { email });
       set({ isLoading: false });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } };
       set({
         isLoading: false,
-        error: err.response?.data?.message || 'Request failed. Please try again.',
+        error: e?.response?.data?.message || 'Request failed. Please try again.',
       });
     }
   },

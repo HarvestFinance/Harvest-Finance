@@ -59,7 +59,7 @@ export default function AdminDashboardPage() {
 
   // Modal states
   const [isVaultModalOpen, setIsVaultModalOpen] = useState(false);
-  const [editingVault, setEditingVault] = useState<any>(null);
+  const [editingVault, setEditingVault] = useState<Record<string, unknown> | null>(null);
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
@@ -78,12 +78,12 @@ export default function AdminDashboardPage() {
         axios.get(`${API_BASE_URL}/admin/analytics`, { headers: authHeader }),
       ]);
 
-      setStats({ ...statsRes.data, totalWithdrawals: analyticsRes.data.totalWithdrawals ?? 0 });
-      setVaults(vaultsRes.data);
-      setActivity(activityRes.data);
-      setUsers(usersRes.data);
-      setAnalytics(analyticsRes.data);
-    } catch (err: any) {
+       setStats({ ...statsRes.data, totalWithdrawals: analyticsRes.data.totalWithdrawals ?? 0 });
+       setVaults(vaultsRes.data as Record<string, unknown>[]);
+       setActivity(activityRes.data as Record<string, unknown>[]);
+       setUsers(usersRes.data as Record<string, unknown>[]);
+       setAnalytics(analyticsRes.data);
+     } catch (err: unknown) {
       console.error('Failed to fetch admin data:', err);
       setError(err.response?.data?.message || 'Failed to load dashboard data. Ensure you have admin privileges.');
     } finally {
@@ -108,7 +108,7 @@ export default function AdminDashboardPage() {
       router.push('/dashboard');
       return;
     }
-    fetchData();
+    void fetchData();
   }, [user, token, router]);
 
   const handleCreateVault = () => {
@@ -116,7 +116,7 @@ export default function AdminDashboardPage() {
     setIsVaultModalOpen(true);
   };
 
-  const handleEditVault = (vault: any) => {
+  const handleEditVault = (vault: Record<string, unknown>) => {
     setEditingVault(vault);
     setIsVaultModalOpen(true);
   };

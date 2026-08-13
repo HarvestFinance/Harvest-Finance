@@ -340,7 +340,10 @@ export function CropInsurancePanel() {
   const [showForm, setShowForm]     = useState(false);
 
   // Immediately show mock data so the panel is never empty
-  useEffect(() => { setData(MOCK_RECOMMENDATION); }, []);
+  useEffect(() => {
+    const initData = () => setData(MOCK_RECOMMENDATION);
+    initData();
+  }, []);
 
   const loadRecommendations = useCallback(async () => {
     setLoading(true);
@@ -390,8 +393,9 @@ export function CropInsurancePanel() {
       });
       setEnrolled((prev) => new Set([...prev, rec.plan.id]));
       await loadSubscriptions();
-    } catch (e: any) {
-      setError(e?.response?.data?.message ?? 'Failed to enroll. Please try again.');
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } } };
+      setError(err?.response?.data?.message ?? 'Failed to enroll. Please try again.');
     } finally {
       setSubId(null);
     }

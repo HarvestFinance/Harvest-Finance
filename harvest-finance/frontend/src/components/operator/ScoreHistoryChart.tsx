@@ -26,14 +26,14 @@ function scoreColor(score: number): string {
   return '#ef4444';
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip: React.FC<{ active?: boolean; payload?: Array<{ value?: number; color?: string; name?: string }>; label?: string }> = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     const value = payload[0].value;
     return (
       <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
         <p className="text-sm font-medium text-gray-900 dark:text-zinc-100">{label}</p>
-        <p className="text-sm font-bold" style={{ color: scoreColor(value) }}>
-          Score: {Math.round(value)}
+        <p className="text-sm font-bold" style={{ color: scoreColor(value ?? 0) }}>
+          Score: {Math.round(value ?? 0)}
         </p>
       </div>
     );

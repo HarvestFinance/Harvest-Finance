@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { MapPin, Package, Star, Truck } from 'lucide-react';
-import { Card, CardBody, Badge, Button } from '@/components/ui';
+import { Card, CardBody, Badge, BadgeVariant } from '@/components/ui';
 
 export interface Listing {
   id: string;
@@ -50,11 +51,14 @@ const DELIVERY_LABELS: Record<string, string> = {
 export const ListingCard: React.FC<ListingCardProps> = ({ listing, onOrder, onViewSeller }) => (
   <Card className="border border-gray-100 dark:border-[rgba(141,187,85,0.12)] hover:shadow-md transition-shadow h-full flex flex-col">
     {listing.imageUrl ? (
-      <img
-        src={listing.imageUrl}
-        alt={listing.title}
-        className="w-full h-40 object-cover rounded-t-xl"
-      />
+      <div className="relative w-full h-40 rounded-t-xl overflow-hidden">
+        <Image
+          src={listing.imageUrl}
+          alt={listing.title}
+          fill
+          className="object-cover"
+        />
+      </div>
     ) : (
       <div className="w-full h-40 rounded-t-xl bg-gradient-to-br from-harvest-green-50 to-harvest-green-100 dark:from-harvest-green-950/30 dark:to-harvest-green-900/20 flex items-center justify-center">
         <Package className="w-12 h-12 text-harvest-green-300 dark:text-harvest-green-700" />
@@ -63,7 +67,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, onOrder, onVi
 
     <CardBody className="p-4 flex flex-col flex-1">
       <div className="flex items-start justify-between mb-2">
-        <Badge variant={(CATEGORY_COLORS[listing.category] ?? 'default') as any} isPill className="text-xs">
+        <Badge variant={(CATEGORY_COLORS[listing.category] ?? 'default') as BadgeVariant} isPill className="text-xs">
           {listing.category}
         </Badge>
         <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-zinc-400">

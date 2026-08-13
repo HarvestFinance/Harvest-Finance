@@ -4,8 +4,8 @@ export interface QueryHistoryItem {
   id: string;
   query: string;
   response: string;
-  vaultContext: Record<string, any> | null;
-  seasonalData: Record<string, any> | null;
+  vaultContext: Record<string, unknown> | null;
+  seasonalData: Record<string, unknown> | null;
   createdAt: string;
 }
 
@@ -30,8 +30,8 @@ export async function fetchQueryHistory(search?: string): Promise<QueryHistoryIt
 export async function saveQueryHistory(payload: {
   query: string;
   response: string;
-  vaultContext?: Record<string, any>;
-  seasonalData?: Record<string, any>;
+  vaultContext?: Record<string, unknown>;
+  seasonalData?: Record<string, unknown>;
 }): Promise<QueryHistoryItem> {
   const res = await fetch(`${API_BASE}/ai-query-history`, {
     method: 'POST',

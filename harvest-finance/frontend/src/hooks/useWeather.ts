@@ -51,16 +51,19 @@ export function useWeather() {
       return;
     }
 
+    const successCallback = (position: GeolocationPosition) => {
+      void loadWeather({
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      });
+    };
+    const errorCallback = () => {
+      void loadWeather({ location: FALLBACK_LOCATION });
+    };
+
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        void loadWeather({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-      },
-      () => {
-        void loadWeather({ location: FALLBACK_LOCATION });
-      },
+      successCallback,
+      errorCallback,
       {
         enableHighAccuracy: false,
         timeout: 7000,

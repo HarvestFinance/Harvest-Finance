@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Wifi, WifiOff, RefreshCw } from 'lucide-react';
 import { syncService } from '@/lib/sync-service';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,16 +10,26 @@ export const ConnectionStatus = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [queuedCount, setQueuedCount] = useState(0);
 
+  const handleSync = useCallback(async () => {
+    setIsSyncing(true);
+    await syncService.syncActions();
+    const count = await syncService.getQueuedCount();
+    setQueuedCount(count);
+    setIsSyncing(false);
+  }, []);
+
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      handleSync();
+      void handleSync();
     };
     const handleOffline = () => setIsOnline(false);
 
+    const updateOnlineStatus = () => setIsOnline(navigator.onLine);
+    updateOnlineStatus();
+
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-    setIsOnline(navigator.onLine);
 
     const interval = setInterval(async () => {
       const count = await syncService.getQueuedCount();
@@ -31,15 +41,7 @@ export const ConnectionStatus = () => {
       window.removeEventListener('offline', handleOffline);
       clearInterval(interval);
     };
-  }, []);
-
-  const handleSync = async () => {
-    setIsSyncing(true);
-    await syncService.syncActions();
-    const count = await syncService.getQueuedCount();
-    setQueuedCount(count);
-    setIsSyncing(false);
-  };
+  }, [handleSync]);
 
   return (
     <div className="fixed bottom-4 left-4 z-[60]">

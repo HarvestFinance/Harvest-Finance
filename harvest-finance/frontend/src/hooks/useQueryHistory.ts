@@ -25,7 +25,7 @@ export function useQueryHistory() {
   }, []);
 
   useEffect(() => {
-    load();
+    void load();
   }, [load]);
 
   useEffect(() => {

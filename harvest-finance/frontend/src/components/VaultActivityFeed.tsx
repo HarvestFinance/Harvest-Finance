@@ -147,6 +147,7 @@ const ActivityItem = React.forwardRef<HTMLDivElement, ActivityItemProps>(({ even
     </motion.div>
   );
 });
+ActivityItem.displayName = 'ActivityItem';
 
 interface VaultActivityFeedProps {
   vaultId: string;

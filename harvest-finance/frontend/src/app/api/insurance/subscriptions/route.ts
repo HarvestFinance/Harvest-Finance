@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       farmVaultId?: string;
     };
 
-    const planMap: Record<string, any> = {
+    const planMap: Record<string, Record<string, unknown>> = {
       'plan-1': {
         id: 'plan-1',
         name: 'Crop Yield Protection',

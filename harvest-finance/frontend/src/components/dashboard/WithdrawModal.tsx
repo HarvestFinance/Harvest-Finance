@@ -131,7 +131,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
       onSuccess?.();
       onClose();
       setAmount("");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Withdraw failed:", err);
       const parsed = parseStellarError(err);
       if (toastId) {
@@ -215,7 +215,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                 placeholder="0.00"
                 className="w-full h-24 rounded-[2rem] border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-black/20 px-10 text-4xl font-black text-gray-900 dark:text-white outline-none transition-all focus:border-harvest-green-500 focus:ring-[15px] focus:ring-harvest-green-500/5 shadow-inner"
                 value={amount}
-                onChange={(e: any) => {
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   setAmount(e.target.value);
                   setError(null);
                 }}
