@@ -128,7 +128,6 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-          cache-dependency-path: harvest-finance/frontend/package-lock.json
 
       - run: npm ci
       - run: npm run lint
@@ -146,7 +145,6 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-          cache-dependency-path: harvest-finance/frontend/package-lock.json
 
       - run: npm ci
       - run: npm test -- --passWithNoTests
@@ -168,7 +166,6 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-          cache-dependency-path: harvest-finance/frontend/package-lock.json
 
       - run: npm ci || true
       - run: npm run build || true
