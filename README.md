@@ -1,4 +1,7 @@
-# <p align="center"><img src="harvest-finance/frontend/public/logo.png" width="80" height="80" alt="Harvest Finance Logo"> <br> 🌾 Harvest Finance</p>
+# <p align="center">
+<img width="1254" height="1254" alt="ChatGPT Image Aug 13, 2026, 03_49_51 PM" src="https://github.com/user-attachments/assets/d1cc40c6-e962-41fb-bcb0-a03d8af056bc" />
+
+</p>
 
 <p align="center">
   <b>Blockchain-powered supply chain financing infrastructure for smallholder farmers, built on Stellar.</b>
