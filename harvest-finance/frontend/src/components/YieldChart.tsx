@@ -38,11 +38,7 @@ export const YieldChart: React.FC<YieldChartProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchApyData();
-  }, [vaultId, timeRange]);
-
-  const fetchApyData = async () => {
+  const fetchApyData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -62,11 +58,15 @@ export const YieldChart: React.FC<YieldChartProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [vaultId, timeRange]);
+
+  useEffect(() => {
+    void fetchApyData();
+  }, [fetchApyData]);
 
   const formatApy = (value: number) => `${value.toFixed(2)}%`;
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ payload: ApyDataPoint }>; label?: string }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
@@ -84,6 +84,8 @@ export const YieldChart: React.FC<YieldChartProps> = ({
     return null;
   };
 
+  const ChartComponent = showArea ? AreaChart : LineChart;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center" style={{ height }}>
@@ -98,7 +100,7 @@ export const YieldChart: React.FC<YieldChartProps> = ({
         <div className="text-center text-red-500">
           <p className="text-sm">{error}</p>
           <button
-            onClick={fetchApyData}
+            onClick={() => void fetchApyData()}
             className="mt-2 text-xs text-blue-500 hover:text-blue-700"
           >
             Retry

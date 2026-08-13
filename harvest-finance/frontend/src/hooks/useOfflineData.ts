@@ -20,7 +20,7 @@ export interface UseOfflineDataReturn {
   refreshData: () => Promise<void>;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 
 export function useOfflineData(): UseOfflineDataReturn {
   const { token } = useAuthStore();
@@ -35,13 +35,32 @@ export function useOfflineData(): UseOfflineDataReturn {
   const [recommendations, setRecommendations] = useState<AIRecommendation[]>([]);
   const isInitialized = useRef(false);
 
+  const loadCachedData = useCallback(async (): Promise<void> => {
+    if (isInitialized.current) return;
+    isInitialized.current = true;
+
+    const [cachedVaults, cachedTransactions, cachedRecommendations] = await Promise.all([
+      db.vaults.toArray(),
+      db.transactions.orderBy('timestamp').reverse().limit(50).toArray(),
+      db.aiRecommendations.toArray(),
+    ]);
+
+    const pendingCount = await db.offlineQueue.where('status').equals('pending').count();
+    
+    setVaults(cachedVaults);
+    setTransactions(cachedTransactions);
+    setRecommendations(cachedRecommendations);
+    setPendingActions(pendingCount);
+  }, []);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
-    setIsOnline(navigator.onLine);
+    const updateOnlineStatus = () => setIsOnline(navigator.onLine);
+    updateOnlineStatus();
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
@@ -65,25 +84,7 @@ export function useOfflineData(): UseOfflineDataReturn {
       unsubscribeSync();
       syncManager.stopPeriodicSync();
     };
-  }, []);
-
-  const loadCachedData = async (): Promise<void> => {
-    if (isInitialized.current) return;
-    isInitialized.current = true;
-
-    const [cachedVaults, cachedTransactions, cachedRecommendations] = await Promise.all([
-      db.vaults.toArray(),
-      db.transactions.orderBy('timestamp').reverse().limit(50).toArray(),
-      db.aiRecommendations.toArray(),
-    ]);
-
-    const pendingCount = await db.offlineQueue.where('status').equals('pending').count();
-    
-    setVaults(cachedVaults);
-    setTransactions(cachedTransactions);
-    setRecommendations(cachedRecommendations);
-    setPendingActions(pendingCount);
-  };
+  }, [loadCachedData]);
 
   const cacheVaultData = useCallback(async (vault: VaultData): Promise<void> => {
     await db.vaults.put({ ...vault, updatedAt: new Date().toISOString() });
@@ -192,7 +193,10 @@ export function useOfflineIndicator(): { isOnline: boolean; pendingCount: number
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    setState({ isOnline: navigator.onLine, pendingCount: 0 });
+    const updateInitial = () => {
+      setState(prev => ({ ...prev, isOnline: navigator.onLine, pendingCount: 0 }));
+    };
+    updateInitial();
 
     const handleOnline = () => setState(prev => ({ ...prev, isOnline: true }));
     const handleOffline = () => setState(prev => ({ ...prev, isOnline: false }));

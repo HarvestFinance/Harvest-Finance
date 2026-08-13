@@ -111,7 +111,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
       if (typeof navigator !== "undefined" && !navigator.onLine) {
         enqueueOfflineAction({
           type: "withdraw",
-          endpoint: `http://localhost:3001/api/v1/farm-vaults/${vault!.id}/withdraw`,
+          endpoint: `/api/v1/farm-vaults/${vault!.id}/withdraw`,
           payload: { amount: i128Amount },
         });
         onSuccess?.();
@@ -122,7 +122,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
       toastId = toast.loading('Withdrawal pending — awaiting confirmation...', { autoClose: false });
 
       await axios.post(
-        `http://localhost:3001/api/v1/farm-vaults/${vault!.id}/withdraw`,
+        `/api/v1/farm-vaults/${vault!.id}/withdraw`,
         { amount: i128Amount },
         { headers: { Authorization: `Bearer ${token}` } },
       );
@@ -131,7 +131,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
       onSuccess?.();
       onClose();
       setAmount("");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Withdraw failed:", err);
       const parsed = parseStellarError(err);
       if (toastId) {
@@ -215,7 +215,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                 placeholder="0.00"
                 className="w-full h-24 rounded-[2rem] border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-black/20 px-10 text-4xl font-black text-gray-900 dark:text-white outline-none transition-all focus:border-harvest-green-500 focus:ring-[15px] focus:ring-harvest-green-500/5 shadow-inner"
                 value={amount}
-                onChange={(e: any) => {
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   setAmount(e.target.value);
                   setError(null);
                 }}

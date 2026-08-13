@@ -32,7 +32,7 @@ export const ExportKeyModal: React.FC<ExportKeyModalProps> = ({ isOpen, onClose 
 
     try {
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1'}/wallets/custodial/export-key`,
+        `${process.env.NEXT_PUBLIC_API_URL}/wallets/custodial/export-key`,
         { password },
         {
           headers: {
@@ -42,7 +42,7 @@ export const ExportKeyModal: React.FC<ExportKeyModalProps> = ({ isOpen, onClose 
       );
 
       setSecretKey(response.data.secret_key);
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err.response?.status === 429) {
         setError('Too many attempts. Please try again later.');
       } else if (err.response?.status === 401) {

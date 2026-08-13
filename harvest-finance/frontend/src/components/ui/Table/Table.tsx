@@ -109,10 +109,10 @@ export const TableCaption = React.forwardRef<
 ));
 TableCaption.displayName = 'TableCaption';
 
-export interface TableHeaderProps extends React.HTMLAttributes<HTMLTableSectionElement> {}
-export interface TableBodyProps extends React.HTMLAttributes<HTMLTableSectionElement> {}
-export interface TableFooterProps extends React.HTMLAttributes<HTMLTableSectionElement> {}
-export interface TableHeadProps extends React.ThHTMLAttributes<HTMLTableCellElement> {}
-export interface TableRowProps extends React.HTMLAttributes<HTMLTableRowElement> {}
-export interface TableCellProps extends React.TdHTMLAttributes<HTMLTableCellElement> {}
-export interface TableCaptionProps extends React.HTMLAttributes<HTMLTableCaptionElement> {}
+export type TableHeaderProps = React.HTMLAttributes<HTMLTableSectionElement>;
+export type TableBodyProps = React.HTMLAttributes<HTMLTableSectionElement>;
+export type TableFooterProps = React.HTMLAttributes<HTMLTableSectionElement>;
+export type TableHeadProps = React.ThHTMLAttributes<HTMLTableCellElement>;
+export type TableRowProps = React.HTMLAttributes<HTMLTableRowElement>;
+export type TableCellProps = React.TdHTMLAttributes<HTMLTableCellElement>;
+export type TableCaptionProps = React.HTMLAttributes<HTMLTableCaptionElement>;

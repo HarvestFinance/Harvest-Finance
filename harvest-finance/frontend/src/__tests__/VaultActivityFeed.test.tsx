@@ -6,7 +6,7 @@ import { useVaultRealtime } from '@/hooks/useVaultRealtime';
 jest.mock('@/hooks/useVaultRealtime');
 
 // Treat the mocked hook as a plain jest mock in tests (avoid TypeScript-only syntax for runtime)
-const mockUseVaultRealtime: any = useVaultRealtime;
+const mockUseVaultRealtime = useVaultRealtime as jest.Mock;
 
 describe('VaultActivityFeed', () => {
   const mockTogglePause = jest.fn();

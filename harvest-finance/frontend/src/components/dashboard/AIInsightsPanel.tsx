@@ -61,7 +61,7 @@ export function AIInsightsPanel({
   const [displayedRecs, setDisplayedRecs] = useState<AIRecommendation[]>([]);
   const [showAll, setShowAll] = useState(false);
 
-  useEffect(() => {
+  const updateDisplayedRecs = useCallback(() => {
     let filtered = recommendations;
     
     if (activeFilter !== 'all') {
@@ -77,6 +77,10 @@ export function AIInsightsPanel({
 
     setDisplayedRecs(showAll ? sorted : sorted.slice(0, maxItems));
   }, [recommendations, activeFilter, showAll, maxItems]);
+
+  useEffect(() => {
+    updateDisplayedRecs();
+  }, [updateDisplayedRecs]);
 
   const categories = ['all', 'crop', 'soil', 'weather', 'market', 'general'];
 

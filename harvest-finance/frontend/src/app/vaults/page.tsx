@@ -278,7 +278,7 @@ export default function VaultsPage() {
                   : vaultsWithBalances.map((vault) => (
                     <VaultWithProgress
                       key={vault.id}
-                      vault={vault as any}
+                      vault={vault as Record<string, unknown>}
                       onDeposit={handleDepositClick}
                       onWithdraw={handleWithdrawClick}
                     />
@@ -294,7 +294,7 @@ export default function VaultsPage() {
               </div>
             ) : (
               <VaultTable
-                vaults={vaultsWithBalances as any}
+                vaults={vaultsWithBalances as Record<string, unknown>[]}
                 onDeposit={handleDepositClick}
                 onWithdraw={handleWithdrawClick}
               />

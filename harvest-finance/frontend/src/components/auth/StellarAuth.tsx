@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as StellarSdk from 'stellar-sdk';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { stellarAuthSchema, type StellarAuthFormData } from '@/lib/validations/auth';
 
@@ -130,8 +129,8 @@ export function StellarAuth({ onSuccess, onError }: StellarAuthProps) {
       setValue('public_key', publicKey);
       setWalletConnected(true);
       setShowWalletOptions(false);
-    } catch (err: any) {
-      const errorMessage = err.message || `Failed to connect to ${wallets[walletType].name} wallet`;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : `Failed to connect to ${wallets[walletType].name} wallet`;
       onError?.(errorMessage);
       setSelectedWallet(null);
     } finally {
@@ -143,8 +142,8 @@ export function StellarAuth({ onSuccess, onError }: StellarAuthProps) {
     try {
       await stellarLogin(data.public_key, selectedWallet || 'freighter');
       onSuccess?.();
-    } catch (err: any) {
-      // Error is handled in the store
+    } catch (err: unknown) {
+      void err;
     }
   };
 
@@ -223,7 +222,7 @@ export function StellarAuth({ onSuccess, onError }: StellarAuthProps) {
           )}
 
           <div className="mt-6 text-xs text-slate-500 dark:text-gray-500">
-            <p>Don't have a Stellar wallet?</p>
+            <p>Don&apos;t have a Stellar wallet?</p>
             <div className="flex gap-2 justify-center mt-2">
               <a
                 href="https://www.freighter.app/"
@@ -329,7 +328,7 @@ export function StellarAuth({ onSuccess, onError }: StellarAuthProps) {
 
           <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
             <p className="text-xs text-blue-700 dark:text-blue-300">
-              <strong>Note:</strong> You'll be asked to sign a message in your wallet to verify your identity. 
+              <strong>Note:</strong> You&apos;ll be asked to sign a message in your wallet to verify your identity.
               This does not cost any transaction fees.
             </p>
           </div>
@@ -349,7 +348,7 @@ declare global {
     };
     ethereum?: {
       isStellarSupported?: boolean;
-      request: (args: { method: string; params?: any[] }) => Promise<any>;
+      request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
     };
   }
 }

@@ -192,7 +192,7 @@ try {
     const parsed = JSON.parse(stored);
     // hydrate store with persisted values
     useAIAssistantStore.setState({
-      messages: (parsed.messages || []).map((m: any) => ({
+      messages: (parsed.messages || []).map((m: { id?: string; role?: string; content?: string; timestamp?: string; suggestions?: string[] }) => ({
         ...m,
         timestamp: m.timestamp ? new Date(m.timestamp) : new Date(),
       })),

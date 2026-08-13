@@ -14,6 +14,8 @@ interface AIAssistantChatProps {
 }
 
 export function AIAssistantChat({ context }: AIAssistantChatProps) {
+  const store = useAIAssistantStore();
+  
   const {
     messages,
     isLoading,
@@ -21,12 +23,11 @@ export function AIAssistantChat({ context }: AIAssistantChatProps) {
     isOpen,
     suggestions,
     sendMessage,
-    useSuggestion,
     toggleOpen,
     closeChat,
     clearChat,
     clearError,
-  } = useAIAssistantStore();
+  } = store;
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -40,7 +41,7 @@ export function AIAssistantChat({ context }: AIAssistantChatProps) {
       const load = async () => {
         try {
           await useAIAssistantStore.getState().loadHistoryFromServer?.();
-        } catch (e) {
+        } catch {
           // ignore
         }
       };
@@ -49,13 +50,13 @@ export function AIAssistantChat({ context }: AIAssistantChatProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleSend = (message: string) => {
+  const handleSend = useCallback((message: string) => {
     sendMessage(message, context);
-  };
+  }, [sendMessage, context]);
 
-  const handleSuggestionClick = (suggestion: string) => {
-    useSuggestion(suggestion, context);
-  };
+  const handleSuggestionClick = useCallback((suggestion: string) => {
+    void store.useSuggestion(suggestion, context);
+  }, [store, context]);
 
   return (
     <>

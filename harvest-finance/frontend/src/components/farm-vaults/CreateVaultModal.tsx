@@ -21,7 +21,7 @@ import { useAuthStore } from '@/lib/stores/auth-store';
 import { getTermTooltip } from '@/lib/defi-terms';
 import axios from '@/lib/api-client';
 
-const iconMap: Record<string, any> = {
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Sprout,
   Wheat,
   Coffee,
@@ -66,15 +66,15 @@ const mockCycles = [
 export function CreateVaultModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onClose: () => void; onSuccess: () => void }) {
   const { token } = useAuthStore();
   const [step, setStep] = useState(1);
-  const [cycles, setCycles] = useState<any[]>(mockCycles);
-  const [selectedCycle, setSelectedCycle] = useState<any>(null);
+  const [cycles, setCycles] = useState<Record<string, unknown>[]>(mockCycles);
+  const [selectedCycle, setSelectedCycle] = useState<Record<string, unknown> | null>(null);
   const [vaultName, setVaultName] = useState('');
   const [targetAmount, setTargetAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      axios.get('http://localhost:3001/api/v1/farm-vaults/crop-cycles', {
+      axios.get('/api/v1/farm-vaults/crop-cycles', {
         headers: { Authorization: `Bearer ${token}` }
       })
       .then(res => {
@@ -95,7 +95,7 @@ export function CreateVaultModal({ isOpen, onClose, onSuccess }: { isOpen: boole
     setIsLoading(true);
     try {
       await axios.post(
-        'http://localhost:3001/api/v1/farm-vaults',
+        '/api/v1/farm-vaults',
         { 
           name: vaultName, 
           cropCycleId: selectedCycle.id, 

@@ -123,7 +123,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
       if (typeof navigator !== "undefined" && !navigator.onLine) {
         enqueueOfflineAction({
           type: "deposit",
-          endpoint: `http://localhost:3001/api/v1/farm-vaults/${vault.id}/deposit`,
+          endpoint: `/api/v1/farm-vaults/${vault.id}/deposit`,
           payload: { amount: i128Value },
         });
         onSuccess?.();
@@ -136,7 +136,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
       toastId = toast.loading('Deposit pending — awaiting confirmation...', { autoClose: false });
 
       await axios.post(
-        `http://localhost:3001/api/v1/farm-vaults/${vault.id}/deposit`,
+        `/api/v1/farm-vaults/${vault.id}/deposit`,
         { amount: i128Value },
         { headers: { Authorization: `Bearer ${token}` } },
       );
@@ -146,7 +146,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
       onDepositSuccess?.(vault.id, Number(amount));
       onClose();
       setAmount("");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Deposit failed:", err);
       const parsed = parseStellarError(err);
       // update toast to error with parsed message
@@ -232,7 +232,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
             <div className="group relative">
                <Input
                 value={amount}
-                onChange={(e: any) => {
+                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   setAmount(e.target.value);
                   setError(null);
                 }}

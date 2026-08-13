@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 
-const WS_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:5000';
+const WS_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '') || '';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

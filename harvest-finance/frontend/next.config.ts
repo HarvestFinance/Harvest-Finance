@@ -1,4 +1,5 @@
 // Simplified Next.js config without next-intl plugin
+/// <reference types="node" />
 import type { NextConfig } from "next";
 import withPWA from "next-pwa";
 
@@ -31,7 +32,7 @@ export default withPWA({
   runtimeCaching: [
     {
       // Next/static + build assets
-      urlPattern: ({ request }) => {
+      urlPattern: ({ request }: { request: Request }) => {
         const url = new URL(request.url);
         return (
           url.pathname.startsWith("/_next/static") ||
@@ -53,7 +54,7 @@ export default withPWA({
     },
     {
       // Offline vault list: cache the last successful response.
-      urlPattern: ({ url }) => {
+      urlPattern: ({ url }: { url: URL }) => {
         const pathname = url.pathname;
         return (
           pathname.startsWith("/api/v1/") &&

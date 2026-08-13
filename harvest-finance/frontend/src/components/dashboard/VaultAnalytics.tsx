@@ -18,7 +18,7 @@ import {
 import { Card, CardHeader, CardBody } from '@/components/ui';
 
 interface VaultAnalyticsProps {
-  data: any[];
+  data: Record<string, unknown>[];
   title: string;
   type?: 'line' | 'bar' | 'area';
 }

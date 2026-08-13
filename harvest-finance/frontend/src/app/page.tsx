@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { ThemeToggle } from "@/components/ui";
+import Image from 'next/image';
 
 // Dynamically import WorldMap to avoid SSR issues
 const WorldMap = dynamic(() => import("@/components/ui/WorldMap/WorldMap"), {
@@ -394,10 +395,11 @@ export default function Home() {
                     whileHover={{ y: -4 }}
                   >
                     <div className="relative h-40 w-full mb-4 overflow-hidden rounded-xl">
-                      <img
+                      <Image
                         src={`/images/farmer${index + 1}.jpg`}
                         alt={feature.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                       <div className="absolute bottom-0 left-0 right-0 bg-black/40 text-white p-2 text-xs font-semibold">
                         {feature.title}

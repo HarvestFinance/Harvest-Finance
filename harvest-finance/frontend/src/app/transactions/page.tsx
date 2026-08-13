@@ -47,8 +47,8 @@ export default function TransactionsPage() {
     
     setIsExporting(format);
     try {
-      const response = await axios.get(
-        `http://localhost:3001/api/v1/export/users/${user.id}/transactions`,
+       const response = await axios.get(
+        `/api/v1/export/users/${user.id}/transactions`,
         {
           params: { format },
           headers: { Authorization: `Bearer ${token}` },

@@ -21,6 +21,7 @@ import {
   Inline,
   ErrorState,
 } from '@/components/ui';
+import type { ErrorStateProps } from '@/components/ui/ErrorState/ErrorState';
 
 /**
  * Components Demo Page
@@ -432,7 +433,7 @@ export default function ComponentsDemoPage() {
                   <Stack gap="md">
                     {/* Inline */}
                     <div>
-                      <p className="text-xs text-gray-500 mb-2 font-mono">variant="inline"</p>
+                      <p className="text-xs text-gray-500 mb-2 font-mono">variant=&quot;inline&quot;</p>
                       <ErrorState variant="inline" />
                     </div>
 
@@ -442,8 +443,8 @@ export default function ComponentsDemoPage() {
                         (v) => (
                           <div key={v} className="rounded-xl border border-gray-100 dark:border-white/10 overflow-hidden">
                             <p className="text-xs text-gray-500 font-mono px-3 pt-2 pb-1 bg-gray-50 dark:bg-white/5 border-b border-gray-100 dark:border-white/10">
-                              variant="{v}"
-                            </p>
+                               variant=&quot;{v}&quot;
+                             </p>
                             <ErrorState variant={v} />
                           </div>
                         )
@@ -481,7 +482,7 @@ export default function ComponentsDemoPage() {
                   {triggeredVariant && (
                     <div className="mt-4">
                       <ErrorState
-                        variant={triggeredVariant as any}
+                        variant={triggeredVariant as ErrorStateProps['variant']}
                         onAction={() => setTriggeredVariant(null)}
                         onSecondaryAction={() => setTriggeredVariant(null)}
                       />

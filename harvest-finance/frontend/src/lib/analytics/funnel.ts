@@ -1,6 +1,6 @@
 import axios from '@/lib/api-client';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? '/api/v1';
 const SESSION_KEY = 'hf-funnel-session-id';
 
 function getSessionId(): string {

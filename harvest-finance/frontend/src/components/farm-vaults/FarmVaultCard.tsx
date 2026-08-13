@@ -19,7 +19,7 @@ import {
 import { useAuthStore } from "@/lib/stores/auth-store";
 import axios from "@/lib/api-client";
 
-const iconMap: Record<string, any> = {
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Sprout,
   Wheat,
   Coffee,
@@ -30,7 +30,7 @@ export function FarmVaultCard({
   vault,
   onUpdate,
 }: {
-  vault: any;
+  vault: Record<string, unknown>;
   onUpdate: () => void;
 }) {
   const { token } = useAuthStore();
@@ -59,7 +59,7 @@ export function FarmVaultCard({
     setIsDepositing(true);
     try {
       await axios.post(
-        `http://localhost:3001/api/v1/farm-vaults/${vault.id}/deposit`,
+        `/api/v1/farm-vaults/${vault.id}/deposit`,
         { amount: parseFloat(depositAmount) },
         { headers: { Authorization: `Bearer ${token}` } },
       );

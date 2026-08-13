@@ -33,19 +33,19 @@ describe('StellarAuth Component', () => {
     jest.clearAllMocks();
 
     mockFreighter = createMockFreighter();
-    (window as any).freighter = mockFreighter;
+    (window as Record<string, unknown>).freighter = mockFreighter;
 
     mockUseAuthStore.mockReturnValue({
       stellarLogin: mockStellarLogin,
       isLoading: false,
       error: null,
       clearError: jest.fn(),
-    } as any);
+    } as unknown);
 
     mockStellarLogin.mockResolvedValue(undefined);
 
     // Ensure window.freighter is restored for each test (some tests delete it)
-    (window as any).freighter = mockFreighter;
+    (window as Record<string, unknown>).freighter = mockFreighter;
 
     mockedAxios.post.mockResolvedValue({
       data: {
@@ -85,7 +85,7 @@ describe('StellarAuth Component', () => {
         isLoading: true,
         error: null,
         clearError: jest.fn(),
-      } as any);
+      } as unknown);
 
       renderComponent();
       
@@ -100,7 +100,7 @@ describe('StellarAuth Component', () => {
         isLoading: false,
         error: 'Authentication failed',
         clearError: jest.fn(),
-      } as any);
+      } as unknown);
 
       renderComponent();
       
@@ -202,7 +202,7 @@ describe('StellarAuth Component', () => {
         isLoading: true,
         error: null,
         clearError: jest.fn(),
-      } as any);
+      } as unknown);
 
       renderComponent();
       
@@ -335,7 +335,7 @@ describe('StellarAuth Component', () => {
         isLoading: false,
         error: 'Authentication failed',
         clearError: jest.fn(),
-      } as any);
+      } as unknown);
 
       renderComponent();
       

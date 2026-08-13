@@ -25,7 +25,7 @@ interface UseVaultRealtimeOptions {
   targetVaultId?: string;
 }
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '') || window.location.origin;
 
 export function useVaultRealtime({
   vaultIds = [],
@@ -39,6 +39,8 @@ export function useVaultRealtime({
   const [activities, setActivities] = useState<VaultActivityEvent[]>([]);
   const [latestEvent, setLatestEvent] = useState<VaultActivityEvent | null>(null);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
 
   const addActivity = useCallback(
     (event: VaultActivityEvent) => {
@@ -67,6 +69,7 @@ export function useVaultRealtime({
       setIsConnected(true);
       setConnectionError(null);
       reconnectAttemptsRef.current = 0;
+      setReconnectAttempts(0);
       // Subscribe to specific vaults
       vaultIds.forEach((id) => socket.emit('subscribe:vault', id));
       // Subscribe to target vault if provided
@@ -84,6 +87,7 @@ export function useVaultRealtime({
 
     socket.on('reconnect', (attempt) => {
       reconnectAttemptsRef.current = attempt;
+      setReconnectAttempts(attempt);
       setConnectionError(null);
       // Re-subscribe on reconnect
       if (targetVaultId) {
@@ -93,6 +97,7 @@ export function useVaultRealtime({
 
     socket.on('reconnect_attempt', (attempt) => {
       reconnectAttemptsRef.current = attempt;
+      setReconnectAttempts(attempt);
     });
 
     socket.on('reconnect_error', (error) => {
@@ -148,7 +153,7 @@ export function useVaultRealtime({
     latestEvent,
     isPaused,
     connectionError,
-    reconnectAttempts: reconnectAttemptsRef.current,
+    reconnectAttempts,
     togglePause,
     subscribeToVault,
     unsubscribeFromVault,

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { searchHelp, getAllArticles, Article } from '../../../lib/help-search';
+import { searchHelp, getAllArticles, Article } from '@/lib/help-search';
 
 const NO_RESULTS_KEY = 'help_no_results';
 
@@ -37,11 +37,13 @@ export default function HelpPage() {
 
   useEffect(() => {
     if (!query) {
-      setResults(null);
+      const resetResults = () => setResults(null);
+      resetResults();
       return;
     }
     const r = searchHelp(query, 20);
-    setResults(r);
+    const applyResults = () => setResults(r);
+    applyResults();
     if (r.length === 0) recordNoResults(query);
   }, [query]);
 
@@ -70,7 +72,7 @@ export default function HelpPage() {
         <div>
           <h2>Search results</h2>
           {results.length === 0 ? (
-            <p>No results found for "{query}"</p>
+            <p>No results found for &quot;{query}&quot;</p>
           ) : (
             results.map(a => <ArticleCard key={a.id} article={a} />)
           )}
@@ -95,7 +97,8 @@ function ArticleCard({ article }: { article: Article }) {
   const [helpful, setHelpful] = useState<boolean | undefined>(undefined);
 
   useEffect(() => {
-    setHelpful(getHelpful(article.id));
+    const load = () => setHelpful(getHelpful(article.id));
+    load();
   }, [article.id]);
 
   return (
@@ -124,7 +127,7 @@ function ArticleCard({ article }: { article: Article }) {
           No
         </button>
         {helpful === true && <span style={{ marginLeft: 8 }}>Thanks — helpful</span>}
-        {helpful === false && <span style={{ marginLeft: 8 }}>Thanks — we'll improve</span>}
+        {helpful === false && <span style={{ marginLeft: 8 }}>Thanks &mdash; we&apos;ll improve</span>}
       </div>
     </div>
   );

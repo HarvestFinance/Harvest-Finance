@@ -194,15 +194,20 @@ function getMarkerColor(activity?: string): string {
 }
 
 // Background particles component
+function seededRandom(seed: number): number {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
 const BackgroundParticles: React.FC<{ count?: number }> = ({ count = 30 }) => {
   const particles = useMemo(() => {
     return Array.from({ length: count }, (_, i) => ({
       id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: Math.random() * 3 + 1,
-      duration: Math.random() * 20 + 10,
-      delay: Math.random() * 10,
+      x: seededRandom(i * 1) * 100,
+      y: seededRandom(i * 7) * 100,
+      size: seededRandom(i * 13) * 3 + 1,
+      duration: seededRandom(i * 17) * 20 + 10,
+      delay: seededRandom(i * 23) * 10,
     }));
   }, [count]);
 
@@ -247,7 +252,10 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
+    const timer = window.setTimeout(() => {
+      setIsMounted(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   // Handle SSR and client-side rendering
