@@ -42,8 +42,8 @@ export const MilestoneConfetti: React.FC<MilestoneConfettiProps> = ({
 
   useEffect(() => {
     if (trigger) {
-      const particles = generateParticles(30);
-      setParticles(particles);
+      const initParticles = () => generateParticles(30);
+      setParticles(initParticles());
       const timer = setTimeout(() => {
         setParticles([]);
         onComplete?.();
