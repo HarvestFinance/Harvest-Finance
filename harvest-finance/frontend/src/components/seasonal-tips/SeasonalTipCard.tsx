@@ -27,11 +27,17 @@ import {
 function TipIcon({
   iconName,
   className,
+  ariaLabel,
 }: {
   iconName: string | null;
   className?: string;
+  ariaLabel?: string;
 }) {
-  const props = { className: className ?? 'w-5 h-5' };
+  const props = {
+    className: className ?? 'w-5 h-5',
+    'aria-label': ariaLabel,
+    role: ariaLabel ? 'img' : undefined,
+  };
   switch (iconName) {
     case 'sprout':
       return <Sprout {...props} />;
@@ -125,7 +131,10 @@ export function SeasonalTipCard({ tip, index = 0, compact = false }: SeasonalTip
                   : 'bg-harvest-green-50 dark:bg-[rgba(74,222,128,0.08)] text-harvest-green-600 dark:text-harvest-green-400 border border-harvest-green-100 dark:border-[rgba(74,222,128,0.2)]',
               )}
             >
-              <TipIcon iconName={tip.iconName} />
+              <TipIcon
+                iconName={tip.iconName}
+                ariaLabel={tip.iconName ? `${tip.iconName} illustration` : 'Tip illustration'}
+              />
             </div>
           }
           className="pb-2"
