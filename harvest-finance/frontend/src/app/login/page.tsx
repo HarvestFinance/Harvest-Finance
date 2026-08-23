@@ -11,6 +11,7 @@ import { EyeIcon, EyeSlashIcon } from '@/components/icons';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { loginSchema, type LoginFormData } from '@/lib/validations/auth';
 import { ErrorState } from '@/components/ui';
+import { pushRoute, routes } from '@/lib/routes';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,7 +33,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.push('/');
+      pushRoute(router, routes.home());
     }
   }, [isAuthenticated, router]);
 
@@ -185,7 +186,7 @@ export default function LoginPage() {
         </form>
       ) : (
         <StellarAuth 
-          onSuccess={() => router.push('/')}
+          onSuccess={() => pushRoute(router, routes.home())}
           onError={(errorMessage) => {
             // Error is handled by the store
           }}

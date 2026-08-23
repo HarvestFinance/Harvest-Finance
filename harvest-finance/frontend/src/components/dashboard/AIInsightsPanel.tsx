@@ -105,9 +105,10 @@ export function AIInsightsPanel({
     if (!isOnline) return;
     
     try {
-      const response = await fetch('/api/v1/ai-assistant/recommend');
-      if (response.ok) {
-        const freshRecs: AIRecommendation[] = await response.json();
+      const { apiRequest } = await import('@/lib/api/client');
+      const result = await apiRequest<AIRecommendation[]>('/api/v1/ai-assistant/recommend');
+      if (result.ok) {
+        const freshRecs = result.data;
         const now = new Date().toISOString();
         const recsWithMeta = freshRecs.map(r => ({ ...r, syncedAt: now }));
         await db.aiRecommendations.bulkPut(recsWithMeta);

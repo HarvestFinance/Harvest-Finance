@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { Notification, NotificationType } from '@/types/notification';
 import { cn } from '@/components/ui';
-import { formatDistanceToNow } from 'date-fns';
+import { formatRelativeTime } from '@/lib/datetime';
 
 interface NotificationItemProps {
   notification: Notification;
@@ -44,7 +44,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   onRead 
 }) => {
   const icon = getNotificationIcon(notification.type);
-  const timeAgo = formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true });
+  const timeAgo = formatRelativeTime(notification.createdAt);
 
   return (
     <motion.div

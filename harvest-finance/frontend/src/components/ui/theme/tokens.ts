@@ -216,3 +216,63 @@ export const theme = {
 };
 
 export type Theme = typeof theme;
+
+const flattenColorScale = (
+  prefix: string,
+  scale: Record<string, string>,
+): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(scale).map(([key, value]) => [
+      key === 'DEFAULT' ? `--${prefix}` : `--${prefix}-${key}`,
+      value,
+    ]),
+  )
+
+export const cssVariableMap: Record<string, string> = {
+  ...flattenColorScale('color-primary', colors.primary),
+  ...flattenColorScale('color-secondary', colors.secondary),
+  ...flattenColorScale('color-gray', colors.gray),
+  '--color-success': colors.success.DEFAULT,
+  '--color-success-light': colors.success.light,
+  '--color-success-dark': colors.success.dark,
+  '--color-warning': colors.warning.DEFAULT,
+  '--color-warning-light': colors.warning.light,
+  '--color-warning-dark': colors.warning.dark,
+  '--color-error': colors.error.DEFAULT,
+  '--color-error-light': colors.error.light,
+  '--color-error-dark': colors.error.dark,
+  '--color-info': colors.info.DEFAULT,
+  '--color-info-light': colors.info.light,
+  '--color-info-dark': colors.info.dark,
+  '--color-background': colors.background.primary,
+  '--color-background-secondary': colors.background.secondary,
+  '--color-background-muted': colors.background.muted,
+  '--color-border': colors.border.DEFAULT,
+  '--color-border-light': colors.border.light,
+  '--color-border-dark': colors.border.dark,
+  '--space-xs': spacing.xs,
+  '--space-sm': spacing.sm,
+  '--space-md': spacing.md,
+  '--space-lg': spacing.lg,
+  '--space-xl': spacing.xl,
+  '--radius-sm': borderRadius.sm,
+  '--radius-md': borderRadius.md,
+  '--radius-lg': borderRadius.lg,
+  '--shadow-md': shadows.md,
+  '--z-modal': zIndex.modal,
+  '--z-modal-backdrop': zIndex.modalBackdrop,
+}
+
+export const cssVariableDeclarations = Object.entries(cssVariableMap)
+  .map(([name, value]) => `${name}: ${value};`)
+  .join('\n  ')
+
+export const chartTokens = {
+  primary: colors.primary[600],
+  primarySoft: colors.primary[400],
+  grid: colors.gray[200],
+  axis: colors.gray[400],
+  tooltipBg: colors.gray[900],
+  tooltipFg: colors.background.primary,
+  areaFill: 'var(--color-primary-600, #16a34a)',
+}

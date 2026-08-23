@@ -14,6 +14,7 @@ import {
 import { Badge, Button, Card, CardBody } from '@/components/ui';
 
 import { AIInsightsPanel } from '@/components/dashboard/AIInsightsPanel';
+import { FeatureFlag } from '@/components/providers/FeatureFlag';
 import { MobileDashboardLayout } from '@/components/dashboard/MobileDashboardLayout';
 import { MobileVaultCard } from '@/components/dashboard/MobileVaultCard';
 import { TransactionList } from '@/components/dashboard/TransactionList';
@@ -140,7 +141,9 @@ export default function MobileDashboardPage() {
           </div>
         </div>
 
-        <AIInsightsPanel isOnline={isOnline} maxItems={3} showFilters />
+        <FeatureFlag flag="aiAssistant">
+          <AIInsightsPanel isOnline={isOnline} maxItems={3} showFilters />
+        </FeatureFlag>
 
         <TransactionList maxItems={5} />
 

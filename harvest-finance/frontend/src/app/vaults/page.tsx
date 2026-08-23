@@ -1,89 +1,25 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from '@/lib/i18n';
-import { Container, Section, Button, Inline, Stack, cn, VaultCardSkeleton, VaultTableRowSkeleton } from "@/components/ui";
-import { DepositModal } from "@/components/dashboard/DepositModal";
+import { Container, Section, cn, VaultCardSkeleton, VaultTableRowSkeleton, ErrorState, EmptyState } from "@/components/ui";
+import { usePublicVaultsQuery } from "@/features/vault/hooks";
+import { MOCK_PUBLIC_VAULTS } from "@/features/vault/mocks";
+import { DepositModal } from "@/features/vault/components/DepositModal";
 import { MilestoneConfetti } from "@/components/dashboard/MilestoneConfetti";
 import { ProgressBar } from "@/components/dashboard/ProgressBar";
-import { VaultCard } from "@/components/dashboard/VaultCard";
-import { VaultTable } from "@/components/dashboard/VaultTable";
-import { WithdrawModal } from "@/components/dashboard/WithdrawModal";
+import { VaultCard } from "@/features/vault/components/VaultCard";
+import { VaultTable } from "@/features/vault/components/VaultTable";
+import { WithdrawModal } from "@/features/vault/components/WithdrawModal";
 import { Footer } from "@/components/landing/Footer";
 import { Header } from "@/components/landing/Header";
-import { useQuery } from "@tanstack/react-query";
-import apiClient from "@/lib/api-client";
 import { useMilestones } from "@/hooks/useMilestones";
 import { calculateProgress, getAchievedMilestones } from "@/lib/milestones";
 import { formatCurrency, formatPercentage } from "@/lib/vault-utils";
 import { Vault } from "@/types/vault";
 import { Coins, Leaf, Shield, Zap, LayoutGrid, List } from "lucide-react";
 
-const MOCK_VAULTS: Vault[] = [
-  {
-    id: "1",
-    name: "Stellar USDC Yield",
-    asset: "USDC",
-    apy: 8.5,
-    tvl: 12400000,
-    riskLevel: "Low",
-    balance: "1250.00",
-    walletBalance: "5000.00",
-    iconName: "Coins",
-    seasonalTarget: 5000,
-    strategyType: "Audited",
-    totalAssets: 12400000,
-    totalShares: 11800000,
-    shares: 1190,
-  },
-  {
-    id: "2",
-    name: "XLM Alpha Vault",
-    asset: "XLM",
-    apy: 12.2,
-    tvl: 8100000,
-    riskLevel: "Medium",
-    balance: "0.00",
-    walletBalance: "12,450.00",
-    iconName: "Zap",
-    seasonalTarget: 10000,
-    strategyType: "Community",
-    totalAssets: 8100000,
-    totalShares: 7900000,
-  },
-  {
-    id: "3",
-    name: "Eco-Farm Governance",
-    asset: "HRVST",
-    apy: 24.5,
-    tvl: 4200000,
-    riskLevel: "Low",
-    balance: "450.00",
-    walletBalance: "1,200.00",
-    iconName: "Leaf",
-    seasonalTarget: 2000,
-    strategyType: "Audited",
-    totalAssets: 4200000,
-    totalShares: 4050000,
-    shares: 433,
-  },
-  {
-    id: "4",
-    name: "Stable-Harvest Plus",
-    asset: "yUSDC",
-    apy: 6.8,
-    tvl: 25900000,
-    riskLevel: "Low",
-    balance: "10000.00",
-    walletBalance: "2500.00",
-    iconName: "Shield",
-    seasonalTarget: 20000,
-    strategyType: "Experimental",
-    totalAssets: 25900000,
-    totalShares: 25500000,
-    shares: 9845,
-  },
-];
+const MOCK_VAULTS = MOCK_PUBLIC_VAULTS;
 
 const getVaultIcon = (iconName: string | undefined) => {
   switch (iconName) {
@@ -149,14 +85,7 @@ export default function VaultsPage() {
     },
   );
 
-  const { data: vaults = [], isLoading } = useQuery<Vault[]>({
-    queryKey: ["vaults"],
-    queryFn: async () => {
-      const response = await apiClient.get("/api/v1/vaults/public");
-      return response.data;
-    },
-    initialData: MOCK_VAULTS,
-  });
+  const { data: vaults = MOCK_VAULTS, isLoading, isError, refetch } = usePublicVaultsQuery();
 
   const vault1Milestones = useMilestones({
     vaultId: "1",
@@ -271,7 +200,15 @@ export default function VaultsPage() {
               </div>
             </div>
 
-            {viewMode === 'grid' ? (
+            {isError ? (
+              <ErrorState
+                variant="inline"
+                title="Unable to load vaults"
+                onAction={() => { void refetch() }}
+              />
+            ) : !isLoading && vaultsWithBalances.length === 0 ? (
+              <EmptyState variant="no-vaults" />
+            ) : viewMode === 'grid' ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {isLoading
                   ? Array.from({ length: 4 }).map((_, i) => <VaultCardSkeleton key={i} />)

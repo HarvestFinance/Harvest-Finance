@@ -10,6 +10,7 @@ import { PasswordStrength } from '@/components/auth/PasswordStrength';
 import { EyeIcon, EyeSlashIcon } from '@/components/icons';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { signupSchema, type SignupFormData, type UserRole, type WalletType } from '@/lib/validations/auth';
+import { pushRoute, routes } from '@/lib/routes';
 
 const roles: { value: UserRole; label: string; icon: string; description: string }[] = [
   { value: 'farmer', label: 'Farmer', icon: 'FM', description: 'Manage crops, orders, and financing requests.' },
@@ -44,7 +45,7 @@ export default function SignupPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.push('/');
+      pushRoute(router, routes.home());
     }
   }, [isAuthenticated, router]);
 

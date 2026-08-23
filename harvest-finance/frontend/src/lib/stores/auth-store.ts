@@ -71,7 +71,7 @@ function applyUserLocale(userId: string) {
     if (currentCookie !== savedLocale) {
       document.cookie = `NEXT_LOCALE=${savedLocale}; path=/; max-age=31536000; SameSite=Lax`;
       localStorage.setItem('NEXT_LOCALE', savedLocale);
-      window.location.reload();
+      window.dispatchEvent(new CustomEvent('harvest-locale-change', { detail: savedLocale }));
     }
   }
 }

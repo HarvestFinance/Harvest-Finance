@@ -1,9 +1,12 @@
+'use client'
+
 import React from 'react';
 import Link from 'next/link';
 import { useTranslation } from '@/lib/i18n';
 import { Button, Container, Inline, ThemeToggle } from '@/components/ui';
 import { Leaf, Menu } from 'lucide-react';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
+import { routes } from '@/lib/routes';
 
 export const Header = () => {
   const { t } = useTranslation();
@@ -23,20 +26,22 @@ export const Header = () => {
             <Link href="#benefits" className="text-sm font-medium text-zinc-600 hover:text-harvest-green-600 dark:text-zinc-400 dark:hover:text-harvest-green-400 transition-colors">
               {t('landing.header.benefits')}
             </Link>
-            <Link href="/community" className="text-sm font-medium text-zinc-600 hover:text-harvest-green-600 dark:text-zinc-400 dark:hover:text-harvest-green-400 transition-colors">
+            <Link href={routes.community()} className="text-sm font-medium text-zinc-600 hover:text-harvest-green-600 dark:text-zinc-400 dark:hover:text-harvest-green-400 transition-colors">
               Community
             </Link>
-            <Link href="/marketplace" className="text-sm font-medium text-zinc-600 hover:text-harvest-green-600 dark:text-zinc-400 dark:hover:text-harvest-green-400 transition-colors">
+            <Link href={routes.marketplace()} className="text-sm font-medium text-zinc-600 hover:text-harvest-green-600 dark:text-zinc-400 dark:hover:text-harvest-green-400 transition-colors">
               Marketplace
             </Link>
           </nav>
 
           <Inline className="hidden md:flex">
             <ThemeToggle />
-            <Button variant="outline" className="border-harvest-green-200 text-harvest-green-700 hover:bg-harvest-green-50">
-              {t('landing.header.login')}
-            </Button>
-            <Link href="/vaults">
+            <Link href={routes.login()}>
+              <Button variant="outline" className="border-harvest-green-200 text-harvest-green-700 hover:bg-harvest-green-50">
+                {t('landing.header.login')}
+              </Button>
+            </Link>
+            <Link href={routes.vaults()}>
               <Button className="bg-harvest-green-600 hover:bg-harvest-green-700 text-white">
                 {t('landing.header.launch_app')}
               </Button>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import {
   Card,
   CardHeader,
@@ -20,7 +20,8 @@ import {
   CircleHelp,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/stores/auth-store";
-import axios from "@/lib/api-client";
+import { useFarmVaultsQuery } from "@/features/vault/hooks";
+import { LoadingState, ErrorState } from "@/components/ui";
 import { CreateVaultModal } from "@/components/farm-vaults/CreateVaultModal";
 import { FarmVaultCard } from "@/components/farm-vaults/FarmVaultCard";
 import { VaultAnalytics } from "@/components/dashboard/VaultAnalytics";
@@ -71,48 +72,25 @@ const mockFarmVaults = [
 ];
 
 export default function FarmVaultsPage() {
-  const { user, token } = useAuthStore();
-  const [vaults, setVaults] = useState<Record<string, unknown>[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuthStore();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [selectedVault, setSelectedVault] = useState<Record<string, unknown> | null>(null);
+  const [selectedVault, setSelectedVault] = useState<(typeof mockFarmVaults)[number] | null>(null);
   const [isDepositOpen, setIsDepositOpen] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
+  const { data: queriedVaults, isLoading, isError, refetch } = useFarmVaultsQuery<typeof mockFarmVaults>(Boolean(user));
+  const vaults = queriedVaults && queriedVaults.length > 0 ? queriedVaults : mockFarmVaults;
 
-  const fetchVaults = useCallback(async () => {
-    if (!user) return;
-    try {
-      const response = await axios.get(
-        "/api/v1/farm-vaults",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-      if (response.data && response.data.length > 0) {
-        const vData = response.data;
-        setVaults(vData);
-        if (!selectedVault) setSelectedVault(vData[0]);
-      } else {
-        setVaults([]);
-      }
-    } catch (error) {
-      console.warn(
-        "Backend not available or failed to fetch vaults, using mocks:",
-        error,
-      );
-      setVaults(mockFarmVaults);
-      setSelectedVault(mockFarmVaults[0]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user, token, selectedVault]);
-
-  useEffect(() => {
-    void fetchVaults();
+  React.useEffect(() => {
     const timer = setTimeout(() => setShowAlert(true), 1000);
     return () => clearTimeout(timer);
-  }, [fetchVaults]);
+  }, []);
+
+  React.useEffect(() => {
+    if (!selectedVault && vaults.length > 0) {
+      setSelectedVault(vaults[0]);
+    }
+  }, [selectedVault, vaults]);
 
   const activeVault = selectedVault || (vaults.length > 0 ? vaults[0] : null);
 
@@ -154,14 +132,9 @@ export default function FarmVaultsPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-20">
-          <div className="flex flex-col items-center gap-4">
-            <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-harvest-green-600" />
-            <p className="animate-pulse font-medium text-gray-500">
-              Growing your dashboard...
-            </p>
-          </div>
-        </div>
+        <LoadingState title="Growing your dashboard..." />
+      ) : isError && (!queriedVaults || queriedVaults.length === 0) ? (
+        <ErrorState variant="inline" title="Unable to load farm vaults" onAction={() => { void refetch() }} />
       ) : vaults.length > 0 ? (
         <div className="grid grid-cols-1 gap-8 xl:grid-cols-3">
           <div className="space-y-8 xl:col-span-2">
@@ -362,7 +335,7 @@ export default function FarmVaultsPage() {
       <CreateVaultModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={fetchVaults}
+        onSuccess={() => { void refetch() }}
       />
 
       {activeVault && (
@@ -371,13 +344,13 @@ export default function FarmVaultsPage() {
             isOpen={isDepositOpen}
             onClose={() => setIsDepositOpen(false)}
             vault={activeVault}
-            onSuccess={fetchVaults}
+            onSuccess={() => { void refetch() }}
           />
           <WithdrawModal
             isOpen={isWithdrawOpen}
             onClose={() => setIsWithdrawOpen(false)}
             vault={activeVault}
-            onSuccess={fetchVaults}
+            onSuccess={() => { void refetch() }}
           />
         </>
       )}

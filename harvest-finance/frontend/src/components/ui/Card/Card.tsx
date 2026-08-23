@@ -1,7 +1,62 @@
 'use client';
 
+import { cva, type VariantProps } from 'class-variance-authority';
 import React, { forwardRef } from 'react';
 import { CardProps, CardHeaderProps, CardBodyProps, CardFooterProps, cn } from '../types';
+
+export const cardVariants = cva(
+  [
+    'bg-white rounded-xl',
+    'dark:bg-[#162a1a]',
+    'transition-all duration-200 ease-out',
+    'focus-within:ring-2 focus-within:ring-harvest-green-500 focus-within:ring-offset-2',
+  ].join(' '),
+  {
+    variants: {
+      variant: {
+        default: [
+          'border border-gray-200 shadow-sm',
+          'hover:shadow-md hover:border-gray-300',
+          'dark:border-[rgba(141,187,85,0.15)] dark:hover:border-[rgba(141,187,85,0.28)]',
+        ].join(' '),
+        elevated: 'shadow-lg hover:shadow-xl hover:-translate-y-0.5',
+        outlined: [
+          'border-2 border-gray-200',
+          'hover:border-harvest-green-300 hover:shadow-md',
+          'dark:border-[rgba(141,187,85,0.2)] dark:hover:border-harvest-green-500',
+        ].join(' '),
+        flat: [
+          'bg-gray-50',
+          'hover:bg-gray-100',
+          'dark:bg-[#1a3020] dark:hover:bg-[#1f3826]',
+        ].join(' '),
+      },
+      padding: {
+        none: '',
+        sm: 'p-3',
+        md: 'p-4',
+        lg: 'p-6',
+        xl: 'p-8',
+      },
+      hoverable: {
+        true: 'transform transition-transform duration-200',
+        false: '',
+      },
+      clickable: {
+        true: 'cursor-pointer hover:border-harvest-green-300 active:scale-[0.99]',
+        false: '',
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
+      padding: 'md',
+      hoverable: false,
+      clickable: false,
+    },
+  },
+)
+
+export type CardVariantProps = VariantProps<typeof cardVariants>
 
 /**
  * HarvestCard - A versatile card component with multiple variants and subcomponents
@@ -37,54 +92,6 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
     },
     ref
   ) => {
-    // Base styles
-    const baseStyles = cn(
-      'bg-white rounded-xl',
-      'dark:bg-[#162a1a]',
-      'transition-all duration-200 ease-out',
-      'focus-within:ring-2 focus-within:ring-harvest-green-500 focus-within:ring-offset-2'
-    );
-
-    // Variant-specific styles
-    const variantStyles: Record<string, string> = {
-      default: cn(
-        'border border-gray-200 shadow-sm',
-        'hover:shadow-md hover:border-gray-300',
-        'dark:border-[rgba(141,187,85,0.15)] dark:hover:border-[rgba(141,187,85,0.28)]'
-      ),
-      elevated: cn(
-        'shadow-lg hover:shadow-xl',
-        'hover:-translate-y-0.5'
-      ),
-      outlined: cn(
-        'border-2 border-gray-200',
-        'hover:border-harvest-green-300 hover:shadow-md',
-        'dark:border-[rgba(141,187,85,0.2)] dark:hover:border-harvest-green-500'
-      ),
-      flat: cn(
-        'bg-gray-50',
-        'hover:bg-gray-100',
-        'dark:bg-[#1a3020] dark:hover:bg-[#1f3826]'
-      ),
-    };
-
-    // Padding styles
-    const paddingStyles: Record<string, string> = {
-      none: '',
-      sm: 'p-3',
-      md: 'p-4',
-      lg: 'p-6',
-      xl: 'p-8',
-    };
-
-    // Interactive styles
-    const interactiveStyles = cn(
-      clickable && 'cursor-pointer hover:border-harvest-green-300 active:scale-[0.99]',
-      hoverable && 'transform transition-transform duration-200'
-    );
-
-    const isInteractive = clickable || hoverable;
-
     return (
       <div
         ref={ref}
@@ -103,10 +110,7 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
         }
         data-testid={testId}
         className={cn(
-          baseStyles,
-          variantStyles[variant],
-          paddingStyles[padding],
-          interactiveStyles,
+          cardVariants({ variant, padding, hoverable, clickable }),
           className
         )}
         {...props}

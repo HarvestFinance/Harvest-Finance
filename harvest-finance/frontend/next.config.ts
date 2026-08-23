@@ -1,7 +1,10 @@
-// Simplified Next.js config without next-intl plugin
-/// <reference types="node" />
 import type { NextConfig } from "next";
 import withPWA from "next-pwa";
+import bundleAnalyzer from "@next/bundle-analyzer";
+
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === "true",
+});
 
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -21,17 +24,13 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
 };
 
-export default withPWA({
+const withPwa = withPWA({
   dest: "public",
   disable: process.env.NODE_ENV === "development",
   register: true,
   skipWaiting: true,
-  // We already register our own SW in ServiceWorkerRegistration.
-  // But next-pwa will still generate/update /public/sw.js.
-  // (acceptance criteria: caches + offline fallback)
   runtimeCaching: [
     {
-      // Next/static + build assets
       urlPattern: ({ request }: { request: Request }) => {
         const url = new URL(request.url);
         return (
@@ -53,7 +52,18 @@ export default withPWA({
       },
     },
     {
-      // Offline vault list: cache the last successful response.
+      urlPattern: ({ request, url }: { request: Request; url: URL }) =>
+        request.method === "GET" && url.pathname.startsWith("/api/"),
+      handler: "StaleWhileRevalidate",
+      options: {
+        cacheName: "harvest-api-readonly",
+        expiration: {
+          maxEntries: 128,
+          maxAgeSeconds: 60 * 60 * 24,
+        },
+      },
+    },
+    {
       urlPattern: ({ url }: { url: URL }) => {
         const pathname = url.pathname;
         return (
@@ -72,12 +82,9 @@ export default withPWA({
       },
     },
   ],
-
-  // Offline fallback page.
-  // next-pwa will ensure this gets used for navigation requests.
-  // (We also keep a manual SW already present; this config is the source of truth.)
   fallbacks: {
     document: "/offline.html",
   },
 });
 
+export default withBundleAnalyzer(withPwa(nextConfig));

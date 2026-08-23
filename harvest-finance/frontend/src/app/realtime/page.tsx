@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/stores/auth-store';
+import { pushRoute, routes } from '@/lib/routes';
 import { useRealtimeAnalytics } from '@/hooks/useRealtimeAnalytics';
 import { FarmerKPIPanel } from '@/components/realtime/FarmerKPIPanel';
 import { AlertBanner } from '@/components/realtime/AlertBanner';
@@ -14,7 +15,7 @@ export default function FarmerRealtimePage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!user) router.push('/login');
+    if (!user) pushRoute(router, routes.login());
   }, [user, router]);
 
   const { connected, farmerMetrics, alerts, dismissAlert } = useRealtimeAnalytics({
