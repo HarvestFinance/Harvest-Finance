@@ -1,32 +1,24 @@
-import axios from 'axios';
-import type { WeatherSummary } from '@/types/weather';
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+import { apiRequestOrThrow } from './client'
+import type { WeatherSummary } from '@/types/weather'
 
 type WeatherLookupParams = {
-  token?: string | null;
-  latitude?: number;
-  longitude?: number;
-  location?: string;
-};
+  token?: string | null
+  latitude?: number
+  longitude?: number
+  location?: string
+  signal?: AbortSignal
+}
 
 export async function getWeatherSummary(
   params: WeatherLookupParams,
 ): Promise<WeatherSummary> {
-  const { token, latitude, longitude, location } = params;
+  const { token, latitude, longitude, location, signal } = params
 
-  const response = await axios.get<WeatherSummary>(
-    `${API_BASE_URL}/farm-intelligence/weather`,
-    {
-      params: {
-        latitude,
-        longitude,
-        location,
-      },
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    },
-  );
-
-  return response.data;
+  return apiRequestOrThrow<WeatherSummary>('/farm-intelligence/weather', {
+    method: 'GET',
+    target: 'backend',
+    params: { latitude, longitude, location },
+    auth: token ?? true,
+    signal,
+  })
 }

@@ -15,6 +15,7 @@ import {
 import { Badge, Card, CardBody } from '@/components/ui';
 import { useOfflineData } from '@/hooks/useOfflineData';
 import { TransactionData } from '@/lib/db';
+import { formatRelativeTime } from '@/lib/datetime';
 
 interface TransactionListProps {
   maxItems?: number;
@@ -48,18 +49,7 @@ export function TransactionList({ maxItems = 10, showHeader = true, onTransactio
 
   const displayedTx = showAll ? transactions : transactions.slice(0, maxItems);
 
-  const formatTime = (dateString: string): string => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    return date.toLocaleDateString();
-  };
+  const formatTime = (dateString: string): string => formatRelativeTime(dateString);
 
   const formatAmount = (amount: number, type: string): string => {
     const prefix = type === 'deposit' || type === 'reward' ? '+' : '-';

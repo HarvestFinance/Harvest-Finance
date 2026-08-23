@@ -4,8 +4,6 @@ import React from "react";
 import { VaultOverview } from "@/components/dashboard/VaultOverview";
 import { TrendingUp, Wallet, ArrowRight, Activity, ShieldCheck, Zap, ArrowUpRight } from "lucide-react";
 import { Card, CardBody, Button, Badge, cn, DashboardSkeleton } from "@/components/ui";
-import { useQuery } from "@tanstack/react-query";
-import apiClient from "@/lib/api-client";
 import {
     AreaChart,
     Area,

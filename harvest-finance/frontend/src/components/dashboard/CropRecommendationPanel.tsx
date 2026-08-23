@@ -10,6 +10,7 @@ import {
   CardHeader,
   Input,
 } from "@/components/ui";
+import { apiRequestOrThrow } from "@/lib/api/client";
 import { Bot, Leaf, MapPin, Sprout, Waves } from "lucide-react";
 
 interface CropRecommendation {
@@ -73,19 +74,7 @@ export function CropRecommendationPanel({
     setError(null);
 
     try {
-      const response = await fetch("/api/v1/farm-intelligence/recommendations", {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.error || "Unable to generate a recommendation right now.",
-        );
-      }
-
+      const data = await apiRequestOrThrow("/api/v1/farm-intelligence/recommendations")
       setResult(data);
     } catch (err) {
       setError(

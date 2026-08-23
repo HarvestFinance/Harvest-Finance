@@ -11,14 +11,15 @@ import {
   Sprout,
   Code2,
 } from "lucide-react";
+import { routes } from "@/lib/routes";
 
 export const dashboardNavItems = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Portfolio", href: "/portfolio", icon: Wallet },
-  { label: "Farm Vaults", href: "/dashboard/farm-vaults", icon: Sprout },
-  { label: "Soroban Signing", href: "/dashboard/soroban-signing", icon: Code2 },
-  { label: "Transactions", href: "/transactions", icon: ArrowRightLeft },
-  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "Dashboard", href: routes.dashboard(), icon: LayoutDashboard },
+  { label: "Portfolio", href: routes.portfolio(), icon: Wallet },
+  { label: "Farm Vaults", href: routes.farmVaults(), icon: Sprout },
+  { label: "Soroban Signing", href: routes.sorobanSigning(), icon: Code2 },
+  { label: "Transactions", href: routes.transactions(), icon: ArrowRightLeft },
+  { label: "Settings", href: routes.settings(), icon: Settings },
 ];
 
 export function Sidebar() {

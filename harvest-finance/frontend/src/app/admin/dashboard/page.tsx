@@ -25,6 +25,8 @@ import { UserActivity } from '@/components/Admin/UserActivity';
 import { AnalyticsCharts } from '@/components/Admin/AnalyticsCharts';
 import { LayoutDashboard, ShieldCheck, RefreshCw, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { pushRoute, routes } from '@/lib/routes';
+import { Can } from '@/components/auth/Can';
 
 export default function AdminDashboardPage() {
   const { user, token } = useAuthStore();
@@ -105,7 +107,7 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     if (!user || user.role?.toString().toLowerCase() !== 'admin') {
-      router.push('/dashboard');
+      pushRoute(router, routes.dashboard());
       return;
     }
     void fetchData();
@@ -172,7 +174,7 @@ export default function AdminDashboardPage() {
               <AlertCircle className="w-12 h-12 text-red-600 dark:text-red-400" />
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">Access Denied</h2>
               <p className="text-center text-gray-600 dark:text-gray-300">{error}</p>
-              <Button onClick={() => router.push('/dashboard')}>Back to Dashboard</Button>
+              <Button onClick={() => pushRoute(router, routes.dashboard())}>Back to Dashboard</Button>
             </Stack>
           </CardBody>
         </Card>
@@ -181,6 +183,7 @@ export default function AdminDashboardPage() {
   }
 
   return (
+    <Can role="admin" fallback={null}>
     <Container size="xl" className="py-8">
       <Stack gap="xl">
         {/* Header */}
@@ -328,5 +331,6 @@ export default function AdminDashboardPage() {
         </form>
       </Modal>
     </Container>
+    </Can>
   );
 }

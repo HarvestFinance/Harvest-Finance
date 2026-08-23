@@ -15,7 +15,8 @@ import {
   BarChart
 } from 'recharts';
 import { Card, CardHeader, CardBody, Tooltip } from '@/components/ui';
-import { format } from 'date-fns';
+import { formatChartTick } from '@/lib/datetime';
+import { apiRequestOrThrow } from '@/lib/api/client';
 import { Info } from 'lucide-react';
 import { getTermTooltip } from '@/lib/defi-terms';
 
@@ -58,13 +59,8 @@ export const YieldAnalyticsPanel: React.FC<YieldAnalyticsPanelProps> = ({
         ? `/api/v1/yield-analytics/contract/${contractId}?days=${timeRange}`
         : `/api/v1/yield-analytics?days=${timeRange}`;
       
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('Failed to fetch yield analytics');
-      }
-      
-      const data = await response.json();
-      setAnalyticsData(data.items || []);
+      const data = await apiRequestOrThrow<{ items?: typeof analyticsData }>(url)
+      setAnalyticsData(data.items || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -74,12 +70,7 @@ export const YieldAnalyticsPanel: React.FC<YieldAnalyticsPanelProps> = ({
 
   const fetchCurrentApys = useCallback(async () => {
     try {
-      const response = await fetch('/api/v1/yield-analytics/current-apy');
-      if (!response.ok) {
-        throw new Error('Failed to fetch current APYs');
-      }
-      
-      const data = await response.json();
+      const data = await apiRequestOrThrow<typeof currentApys>('/api/v1/yield-analytics/current-apy')
       setCurrentApys(data || []);
     } catch (err) {
       console.error('Error fetching current APYs:', err);
@@ -93,7 +84,7 @@ export const YieldAnalyticsPanel: React.FC<YieldAnalyticsPanelProps> = ({
 
   const processChartData = () => {
     return analyticsData.map(item => ({
-      date: format(new Date(item.date), 'MMM dd'),
+      date: formatChartTick(item.date),
       fullDate: item.date,
       sevenDayApy: item.sevenDayApy || 0,
       dailyApy: item.dailyApy || 0,

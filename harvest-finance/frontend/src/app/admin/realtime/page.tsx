@@ -3,6 +3,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/stores/auth-store';
+import { pushRoute, routes } from '@/lib/routes';
+import { Can } from '@/components/auth/Can';
 import { useRealtimeAnalytics, type PlatformMetrics } from '@/hooks/useRealtimeAnalytics';
 import { LivePlatformMetrics } from '@/components/realtime/LivePlatformMetrics';
 import { AlertBanner } from '@/components/realtime/AlertBanner';
@@ -26,7 +28,7 @@ export default function AdminRealtimePage() {
 
   useEffect(() => {
     if (!user || user.role?.toString().toLowerCase() !== 'admin') {
-      router.push('/dashboard');
+      pushRoute(router, routes.dashboard());
     }
   }, [user, router]);
 
@@ -38,6 +40,7 @@ export default function AdminRealtimePage() {
   }, [platformMetrics]);
 
   return (
+    <Can role="admin" fallback={null}>
     <Container size="xl" className="py-8">
       <Stack gap="xl">
         {/* Header */}
@@ -63,5 +66,6 @@ export default function AdminRealtimePage() {
         />
       </Stack>
     </Container>
+    </Can>
   );
 }

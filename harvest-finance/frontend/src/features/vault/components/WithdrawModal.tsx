@@ -28,8 +28,7 @@ import {
   Loader2,
   ArrowRight
 } from "lucide-react";
-import axios from "@/lib/api-client";
-import { useAuthStore } from "@/lib/stores/auth-store";
+import { useWithdrawMutation } from '@/features/vault/hooks';
 import { enqueueOfflineAction } from "@/lib/offline-support";
 import { toast } from 'react-toastify';
 
@@ -58,7 +57,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
   onSuccess,
 }) => {
   const { t } = useTranslation();
-  const { token } = useAuthStore();
+  const withdrawMutation = useWithdrawMutation();
   const [amount, setAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
@@ -121,11 +120,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
       }
       toastId = toast.loading('Withdrawal pending — awaiting confirmation...', { autoClose: false });
 
-      await axios.post(
-        `/api/v1/farm-vaults/${vault!.id}/withdraw`,
-        { amount: i128Amount },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      await withdrawMutation.mutateAsync({ vaultId: vault!.id, amount: i128Amount });
 
       if (toastId) toast.update(toastId, { render: 'Withdrawal confirmed', type: 'success', isLoading: false, autoClose: 5000 });
       onSuccess?.();

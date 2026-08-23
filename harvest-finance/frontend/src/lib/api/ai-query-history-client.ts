@@ -1,51 +1,43 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
+import { apiRequestOrThrow } from './client'
 
 export interface QueryHistoryItem {
-  id: string;
-  query: string;
-  response: string;
-  vaultContext: Record<string, unknown> | null;
-  seasonalData: Record<string, unknown> | null;
-  createdAt: string;
+  id: string
+  query: string
+  response: string
+  vaultContext: Record<string, unknown> | null
+  seasonalData: Record<string, unknown> | null
+  createdAt: string
 }
 
-function getAuthHeaders(): HeadersInit {
-  const token =
-    typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
-
-export async function fetchQueryHistory(search?: string): Promise<QueryHistoryItem[]> {
-  const params = new URLSearchParams();
-  if (search) params.set('search', search);
-  const queryString = params.toString();
-  const res = await fetch(`${API_BASE}/ai-query-history${queryString ? `?${queryString}` : ''}`, { headers: getAuthHeaders() });
-  if (!res.ok) throw new Error('Failed to fetch query history');
-  return res.json();
+export async function fetchQueryHistory(
+  search?: string,
+  signal?: AbortSignal,
+): Promise<QueryHistoryItem[]> {
+  return apiRequestOrThrow<QueryHistoryItem[]>('/api/ai-query-history', {
+    method: 'GET',
+    params: { search },
+    signal,
+  })
 }
 
 export async function saveQueryHistory(payload: {
-  query: string;
-  response: string;
-  vaultContext?: Record<string, unknown>;
-  seasonalData?: Record<string, unknown>;
+  query: string
+  response: string
+  vaultContext?: Record<string, unknown>
+  seasonalData?: Record<string, unknown>
+  signal?: AbortSignal
 }): Promise<QueryHistoryItem> {
-  const res = await fetch(`${API_BASE}/ai-query-history`, {
+  const { signal, ...body } = payload
+  return apiRequestOrThrow<QueryHistoryItem>('/api/ai-query-history', {
     method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) throw new Error('Failed to save query history');
-  return res.json();
+    body,
+    signal,
+  })
 }
 
-export async function deleteQueryHistory(id: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/ai-query-history/${id}`, {
+export async function deleteQueryHistory(id: string, signal?: AbortSignal): Promise<void> {
+  await apiRequestOrThrow<void>(`/api/ai-query-history/${id}`, {
     method: 'DELETE',
-    headers: getAuthHeaders(),
-  });
-  if (!res.ok) throw new Error('Failed to delete history item');
+    signal,
+  })
 }

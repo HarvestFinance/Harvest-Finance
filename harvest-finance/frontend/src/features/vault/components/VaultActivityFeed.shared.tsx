@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { formatDistanceToNow } from "date-fns";
+import { formatRelativeTime } from "@/lib/datetime";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -99,9 +99,7 @@ const ActivityItem = React.forwardRef<HTMLDivElement, ActivityItemProps>(({ even
             {event.vaultName}
           </p>
           <span className="flex-shrink-0 whitespace-nowrap text-xs text-gray-400 dark:text-gray-500">
-            {formatDistanceToNow(new Date(event.timestamp), {
-              addSuffix: true,
-            })}
+            {formatRelativeTime(event.timestamp)}
           </span>
         </div>
         <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">

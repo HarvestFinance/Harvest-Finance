@@ -10,7 +10,10 @@
     "lint": "next lint",
     "test": "jest --testPathIgnorePatterns=src/lib/__tests__/milestones.test.ts",
     "test:watch": "jest --watch --testPathIgnorePatterns=src/lib/__tests__/milestones.test.ts",
-    "test:vitest": "vitest run src/lib/__tests__/milestones.test.ts"
+    "test:vitest": "vitest run src/lib/__tests__/milestones.test.ts",
+    "analyze": "cross-env ANALYZE=true next build",
+    "check:budget": "node scripts/check-bundle-budget.mjs",
+    "msw:init": "msw init public --save"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -23,6 +26,7 @@
     "@tanstack/react-query-devtools": "^5.100.5",
     "@stellar/stellar-sdk": "^15.0.1",
     "axios": "^1.13.5",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "d3-geo": "^3.1.1",
     "date-fns": "^4.1.0",
@@ -55,6 +59,7 @@
     ,"fuse.js": "^6.6.2"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^15.5.9",
     "@jest/types": "^30.3.0",
     "@pkgr/core": "^0.3.5",
     "@tailwindcss/postcss": "^4",
@@ -73,13 +78,20 @@
     "@types/react-dom": "^19",
     "@vitest/ui": "^4.1.2",
     "eslint": "^9",
+    "cross-env": "^7.0.3",
     "eslint-config-next": "16.1.6",
     "jest": "^30.3.0",
+    "msw": "^2.11.6",
     "jest-environment-jsdom": "^30.3.0",
     "jsdom": "^29.0.1",
     "tailwindcss": "^4",
     "ts-jest": "^29.4.6",
     "typescript": "^5",
     "vitest": "^4.1.2"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }

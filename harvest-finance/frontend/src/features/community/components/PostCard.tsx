@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Heart, MessageSquare, Share2, MoreHorizontal, ThumbsUp, Lightbulb } from 'lucide-react';
 import { Card, CardBody, Badge, Button } from '@/components/ui';
 import { cn } from '@/components/ui';
+import { formatDate } from '@/lib/datetime';
 
 export interface Post {
   id: string;
@@ -55,7 +56,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onCommentClick
                 {post.author.firstName} {post.author.lastName}
               </p>
               <p className="text-xs text-gray-500 dark:text-zinc-400">
-                {new Date(post.createdAt).toLocaleDateString()}
+                {formatDate(post.createdAt)}
               </p>
             </div>
           </div>

@@ -28,12 +28,11 @@ import {
 } from "lucide-react";
 import { parseStellarError } from "@/lib/errors/stellar-errors";
 import { enqueueOfflineAction } from "@/lib/offline-support";
-import { useAuthStore } from "@/lib/stores/auth-store";
 import { toI128, calculateEstimatedShares } from "@/lib/soroban-i128";
 import { getTermTooltip } from "@/lib/defi-terms";
 import { useTransactionValidation } from "@/hooks/useTransactionValidation";
-import axios from "@/lib/api-client";
 import { toast } from 'react-toastify';
+import { useDepositMutation } from '@/features/vault/hooks';
 
 interface DepositModalVault {
   id: string;
@@ -64,7 +63,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
   onDepositSuccess,
 }) => {
   const { t } = useTranslation();
-  const { token } = useAuthStore();
+  const depositMutation = useDepositMutation();
   const [amount, setAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
@@ -135,11 +134,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
 
       toastId = toast.loading('Deposit pending — awaiting confirmation...', { autoClose: false });
 
-      await axios.post(
-        `/api/v1/farm-vaults/${vault.id}/deposit`,
-        { amount: i128Value },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      await depositMutation.mutateAsync({ vaultId: vault.id, amount: i128Value });
       if (toastId) toast.update(toastId, { render: 'Deposit confirmed', type: 'success', isLoading: false, autoClose: 5000 });
 
       onSuccess?.();
