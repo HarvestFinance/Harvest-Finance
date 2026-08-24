@@ -5,15 +5,23 @@
   "author": "",
   "private": true,
   "license": "UNLICENSED",
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "bash scripts/eslint-fix-soft.sh"
+    ]
+  },
   "scripts": {
     "build": "nest build || true",
     "type-check": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "typecheck:baseline": "npx tsc --noEmit 2>&1 | grep -oE '^src/[^ ]+\\.ts\\([0-9]+,[0-9]+\\): error TS[0-9]+' | sed -E 's/\\([0-9]+,[0-9]+\\)//' | LC_ALL=C sort -u > tsc-baseline.txt || true",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "lint:baseline": "npx eslint --format json \"src/**/*.ts\" 2>/dev/null | node scripts/eslint-signatures.js > eslint-baseline.txt || true",
     "test": "jest --testPathIgnorePatterns=src/stellar/tests",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
@@ -26,7 +34,8 @@
     "migration:revert": "npm run typeorm -- migration:revert -d src/database/data-source.ts",
     "seed": "ts-node -r tsconfig-paths/register src/database/seed/seed.cli.ts seed",
     "seed:clear": "ts-node -r tsconfig-paths/register src/database/seed/seed.cli.ts clear",
-    "seed:reset": "ts-node -r tsconfig-paths/register src/database/seed/seed.cli.ts reset"
+    "seed:reset": "ts-node -r tsconfig-paths/register src/database/seed/seed.cli.ts reset",
+    "docs": "compodoc -p tsconfig.json -d documentation"
   },
   "dependencies": {
     "@apollo/server": "^5.5.1",
@@ -99,6 +108,7 @@
     "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
+    "@compodoc/compodoc": "^1.1.30",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
     "@faker-js/faker": "^9.9.0",

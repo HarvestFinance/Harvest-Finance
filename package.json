@@ -1,8 +1,16 @@
 {
+  "name": "harvest-finance-monorepo",
+  "private": true,
+  "description": "Developer tooling for the Harvest Finance monorepo (git hooks). Application code lives in harvest-finance/backend and harvest-finance/frontend.",
+  "scripts": {
+    "prepare": "husky"
+  },
   "dependencies": {
     "daisyui": "^5.5.19"
   },
   "devDependencies": {
-    "@faker-js/faker": "^8.0.2"
+    "@faker-js/faker": "^8.0.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.0"
   }
 }

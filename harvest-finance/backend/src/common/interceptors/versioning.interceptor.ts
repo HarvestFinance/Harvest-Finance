@@ -25,6 +25,26 @@ import {
 } from '../config/versioning.config';
 import { CustomLoggerService } from '../../logger/custom-logger.service';
 
+/**
+ * Runs for every request and mirrors the URI-versioning contract defined in
+ * `versioning.config.ts` / `docs/api/versioning.md`:
+ *
+ * 1. Extracts the requested version from the `/api/v{N}` URL prefix.
+ *    Header-based version selection is not supported — request headers are
+ *    never consulted.
+ * 2. Rejects versions that are not in `VERSIONING_CONFIG.supported` with a
+ *    404 listing the supported versions.
+ * 3. Stamps every versioned response with `X-API-Version: v{N}`.
+ * 4. For deprecated versions (entries in `VERSIONING_CONFIG.deprecated`)
+ *    adds, on top of `X-API-Version`:
+ *    - `Deprecation: true` — deprecation flag.
+ *    - `Sunset: <HTTP-date>` — removal date, only when a sunset `Date` is
+ *      configured; omitted entirely when the configured date is `null`.
+ *    - `Warning: 299 - "..."` — human-readable pointer at the current
+ *      version, including the sunset date or `TBD` when unset.
+ *    Current (non-deprecated) versions therefore never receive
+ *    `Deprecation`, `Sunset`, or `Warning` headers.
+ */
 @Injectable()
 export class VersioningInterceptor implements NestInterceptor {
   constructor(private logger: CustomLoggerService) {}

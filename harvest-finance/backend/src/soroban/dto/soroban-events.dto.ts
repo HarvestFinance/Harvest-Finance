@@ -74,18 +74,100 @@ export class QuerySorobanEventsDto {
 }
 
 export class SorobanEventDto {
-  @ApiProperty() id: string;
-  @ApiProperty() eventId: string;
-  @ApiProperty({ enum: SorobanEventType }) type: SorobanEventType;
-  @ApiProperty({ nullable: true }) contractId: string | null;
-  @ApiProperty() ledger: number;
-  @ApiProperty() ledgerClosedAt: Date;
-  @ApiProperty({ nullable: true }) transactionHash: string | null;
-  @ApiProperty() pagingToken: string;
-  @ApiProperty({ type: [String] }) topics: string[];
-  @ApiProperty({ required: false, nullable: true }) value: unknown;
-  @ApiProperty() inSuccessfulContractCall: boolean;
-  @ApiProperty() indexedAt: Date;
+  /** Internal database identifier of the indexed event. */
+  @ApiProperty({
+    example: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d',
+    description: 'Internal identifier of the indexed event',
+  })
+  id: string;
+
+  /**
+   * Soroban event identifier as reported by the RPC (contract-generated
+   * topic hash combined with ledger coordinates).
+   */
+  @ApiProperty({
+    example: 'AAAAEgAAAAMzNDAwMDAAAAAAAAAAAAAAeNDI1NjAwMDA',
+    description: 'Stellar RPC event identifier',
+  })
+  eventId: string;
+
+  @ApiProperty({
+    enum: SorobanEventType,
+    example: SorobanEventType.CONTRACT,
+    description: 'Contract event classification used for filtering',
+  })
+  type: SorobanEventType;
+
+  /** Contract that emitted the event, as a C-address. */
+  @ApiProperty({
+    nullable: true,
+    example: 'CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE',
+    description: 'Soroban contract ID (C-address) that emitted the event',
+  })
+  contractId: string | null;
+
+  @ApiProperty({
+    example: 456789,
+    description: 'Ledger sequence in which the event was emitted',
+  })
+  ledger: number;
+
+  @ApiProperty({
+    example: '2026-08-24T10:15:00.000Z',
+    description: 'ISO 8601 UTC close time of the ledger containing the event',
+    type: String,
+    format: 'date-time',
+  })
+  ledgerClosedAt: Date;
+
+  @ApiProperty({
+    nullable: true,
+    example: '4c1143892809f6e622b07541604a8b75c3dbb9fa64dfbc8813a30eb6a58a74e5',
+    description: 'Hash of the transaction that emitted the event',
+  })
+  transactionHash: string | null;
+
+  /** Horizon-style cursor used to resume paginated queries. */
+  @ApiProperty({
+    example: '456789-3',
+    description: 'Paging token for resuming iteration at this event',
+  })
+  pagingToken: string;
+
+  /** Contract-declared topic values identifying the event kind. */
+  @ApiProperty({
+    type: [String],
+    example: ['deposit', 'AAAABQ=='],
+    description: 'Event topics as emitted by the contract',
+  })
+  topics: string[];
+
+  /** Decoded event payload; shape depends on the contract and event type. */
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    example: {
+      vault_id: '550e8400-e29b-41d4-a716-446655440000',
+      amount: '100',
+    },
+    description:
+      'Decoded event payload. Structure depends on the emitting contract.',
+  })
+  value: unknown;
+
+  @ApiProperty({
+    example: true,
+    description: 'Whether the wrapping transaction succeeded',
+  })
+  inSuccessfulContractCall: boolean;
+
+  @ApiProperty({
+    example: '2026-08-24T10:16:30.000Z',
+    description: 'ISO 8601 UTC timestamp at which this record was indexed',
+    type: String,
+    format: 'date-time',
+  })
+  indexedAt: Date;
 }
 
 export class SorobanEventPageDto {

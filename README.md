@@ -566,6 +566,19 @@ AuthModule, UsersModule, VaultsModule, FarmIntelligenceModule, ExportModule, Far
 
 ---
 
+## 📚 Documentation Index
+
+| Topic | Document |
+|-------|----------|
+| System architecture & component diagram | [`docs/architecture.md`](docs/architecture.md) · [`docs/architecture-diagram.md`](docs/architecture-diagram.md) |
+| Architecture decision records | [`docs/adr/`](docs/adr/) |
+| API reference & versioning policy | [`docs/api/README.md`](docs/api/README.md) · [`docs/api/versioning.md`](docs/api/versioning.md) |
+| Rate limits | [`docs/rate-limits.md`](docs/rate-limits.md) |
+| Health checks / metrics / logging | [`docs/health-checks.md`](docs/health-checks.md) · [`docs/metrics.md`](docs/metrics.md) · [`docs/logging.md`](docs/logging.md) |
+| Deployment, rollback & scaling runbook | [`docs/deployment-runbook.md`](docs/deployment-runbook.md) |
+| Contributing guide | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
+| Backend generated code docs (Compodoc) | `cd harvest-finance/backend && npm run docs` → `documentation/index.html` |
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

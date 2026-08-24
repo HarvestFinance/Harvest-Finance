@@ -115,6 +115,14 @@ const ERROR_MESSAGE_MAP: Record<SorobanErrorCode, string> = {
     'The extend footprint TTL operation is malformed.',
 };
 
+/**
+ * Maps a raw code string to its canonical {@link SorobanErrorCode} alias.
+ *
+ * Keys are the *normalized* (see {@link normalizeErrorCode}) forms of every
+ * known spelling — both full Stellar result codes (`tx_bad_seq`) and their
+ * short aliases (`bad_seq`) — so callers can pass codes from Horizon
+ * responses, RPC payloads, or SDK exceptions without pre-cleaning them.
+ */
 const KNOWN_ERROR_CODE_MAP: Readonly<Record<string, SorobanErrorCode>> = {
   timeout: SorobanErrorCode.TIMEOUT,
   tx_failed: SorobanErrorCode.TX_FAILED,
@@ -160,9 +168,67 @@ const JSON_RPC_ERROR_CODE_MAP: Readonly<Record<number, SorobanErrorCode>> = {
   [-32603]: SorobanErrorCode.RPC_INTERNAL_ERROR,
 };
 
+/**
+ * Node.js/OS-level codes that indicate the request never completed due to a
+ * transient network condition; matched against `exception.code`.
+ */
 const NETWORK_TIMEOUT_CODES = new Set(['ECONNABORTED', 'ETIMEDOUT']);
+
+/**
+ * Error-message matching pattern (last-resort classification).
+ *
+ * Soroban host errors surface from the Stellar SDK as free-text messages of
+ * the form `HostError(category, reason)` — e.g.
+ * `HostError(Auth, Missing value)` — rather than structured result codes.
+ * When none of the structured probes in {@link resolveStructuredErrorCode}
+ * match, this regex extracts the category and reason from the raw message so
+ * the filter can still map the failure to a meaningful `SorobanErrorCode`
+ * instead of an opaque HTTP 500.
+ *
+ * Capture groups:
+ * - group 1 — error category (e.g. `Auth`, `Storage`, `Input`)
+ * - group 2 — optional reason detail (e.g. `Missing value`, `Limit exceeded`)
+ *
+ * Both captures are passed through {@link normalizeErrorCode}, then checked
+ * in this order inside `resolveHostDiagnosticErrorCode`:
+ *   1. category `auth`                        → HOST_AUTH
+ *   2. category `storage` + reason
+ *      `missing_value`                        → HOST_STORAGE_MISSING_VALUE
+ *   3. reason `invalid_input`                 → HOST_INVALID_INPUT
+ *   4. reason `limit_exceeded`                → HOST_RESOURCE_LIMIT_EXCEEDED
+ *   5. anything else                          → INVOKE_HOST_FUNCTION_TRAPPED
+ *
+ * Limitations: only the FIRST `HostError(...)` occurrence in a message is
+ * considered (`String.exec` semantics), and unrecognized categories/reasons
+ * collapse into the generic "contract execution failed" code. Matching is
+ * purely diagnostic — it changes which mapped message/status is returned,
+ * never the underlying exception behavior.
+ */
 const HOST_ERROR_PATTERN = /\bHostError\(([^,)]+)(?:,\s*([^)]+))?\)/;
 
+/**
+ * Global exception filter that translates unhandled Stellar/Soroban failures
+ * into consistent, client-actionable HTTP error responses.
+ *
+ * Why matching is required: Stellar SDK and Horizon/RPC surfaces report the
+ * same underlying failure in several shapes — structured
+ * `{ extras: { result_codes } }` payloads, JSON-RPC numeric codes, OS-level
+ * network codes, XDR result objects, or free-text `HostError(...)` messages.
+ * Without normalization every shape would surface as an anonymous 500.
+ *
+ * Behavior:
+ * - HttpException instances are re-emitted unchanged (standard NestJS wins).
+ * - Otherwise the exception is classified via {@link resolveSorobanErrorCode}
+ *   (structured probes first, message regex as last resort) and answered with
+ *   `ERROR_MAP[code]` status + a friendly `ERROR_MESSAGE_MAP` message under
+ *   `error: 'SorobanContractError'`. Raw messages are included in the
+ *   `details` field only when NODE_ENV === 'development'.
+ * - Unclassifiable errors fall through to a generic 500 response.
+ *
+ * Note on ordering: this filter is registered after HttpExceptionFilter and
+ * ThrottlerExceptionFilter in main.ts; NestJS gives the FIRST matching global
+ * filter priority, so HttpExceptions are handled before this filter sees them.
+ */
 @Catch()
 export class SorobanExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(SorobanExceptionFilter.name);
@@ -214,6 +280,17 @@ export class SorobanExceptionFilter implements ExceptionFilter {
     });
   }
 
+  /**
+   * Resolves a {@link SorobanErrorCode} for any non-HttpException error.
+   *
+   * Strategy, in order:
+   * 1. Structured probes ({@link resolveStructuredErrorCode}) — deterministic
+   *    result codes / numeric codes read from well-known payload fields.
+   * 2. Free-text fallback — the {@link HOST_ERROR_PATTERN} regex applied to
+   *    the exception message for Soroban host diagnostics.
+   * `undefined` means "not a Soroban failure"; the filter then falls back to
+   * the generic HTTP 500 response.
+   */
   private resolveSorobanErrorCode(
     exception: unknown,
   ): SorobanErrorCode | undefined {
@@ -225,6 +302,30 @@ export class SorobanExceptionFilter implements ExceptionFilter {
     return this.resolveHostDiagnosticErrorCode(this.getErrorMessage(exception));
   }
 
+  /**
+   * Attempts every structured source of an error code, in strict precedence
+   * order (first non-undefined result wins). Ordering matters because more
+   * specific signals must beat generic ones:
+   *
+   *  1. Horizon `result_codes` — tried on `response.data.extras.result_codes`,
+   *     then `extras.result_codes` / `result_codes` / `resultCodes` directly
+   *     on the exception. Within a result-codes object the transaction code
+   *     is authoritative unless it is `TX_FAILED`, in which case the first
+   *     known operation code takes precedence.
+   *  2. JSON-RPC error codes (-32600 … -32603) from the response/error body.
+   *  3. Network-level codes (ECONNABORTED/ETIMEDOUT) → TIMEOUT.
+   *  4. RPC HTTP status — but ONLY when the payload has Stellar-RPC shape
+   *     (`hash`, `latestLedger`, `errorResultXdr`, or `errorResult`), so
+   *     arbitrary HTTP errors are not misread as Soroban outcomes.
+   *     `try_again_later` → TRY_AGAIN_LATER; generic `error`/`failed` →
+   *     TX_FAILED.
+   *  5. Known string aliases from `response.error.code`,
+   *     `responseData.errorCode`, `errorCode`, `resultCode`,
+   *     `transactionResultCode`.
+   *  6. A parsed XDR `errorResult` object (reads its result switch name).
+   *  7. Mere presence of `errorResultXdr` → TX_FAILED (a rejected
+   *     transaction whose exact code we could not decode).
+   */
   private resolveStructuredErrorCode(
     exception: unknown,
   ): SorobanErrorCode | undefined {
@@ -457,6 +558,11 @@ function hasStellarRpcResponseShape(source: unknown): boolean {
   );
 }
 
+/**
+ * Normalizes any error-code spelling to a lowercase snake_case token so the
+ * {@link KNOWN_ERROR_CODE_MAP} lookups are tolerant of formatting variants:
+ * `TxBadSeq`, `tx-bad-seq`, and `TX_BAD_SEQ` all normalize to `tx_bad_seq`.
+ */
 function normalizeErrorCode(value: string): string {
   return value
     .trim()
