@@ -10,6 +10,15 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { IndexerState } from '../../database/entities/indexer-state.entity';
+import { ContractVersionRegistry } from '../parsers/contract-version-registry';
+import { EventParserFactory } from '../parsers/event-parser.factory';
+import { HeapMonitorService } from '../../observability/heap-monitor.service';
+
+const mockHeapMonitor = {
+  snapshot: jest.fn().mockReturnValue({ heapUsedMB: 50, heapTotalMB: 100, externalMB: 5, rssMB: 120, heapUsedPercent: 50 }),
+  checkGrowth: jest.fn(),
+  monitor: jest.fn().mockImplementation((_ctx: string, fn: () => Promise<any>) => fn()),
+};
 
 describe('SorobanIndexerService - Filter handling', () => {
   let module: TestingModule;
@@ -94,6 +103,9 @@ describe('SorobanIndexerService - Filter handling', () => {
         { provide: ConfigService, useValue: mockConfig },
         { provide: 'CACHE_MANAGER', useValue: mockCache },
         { provide: DataSource, useValue: { transaction: jest.fn().mockImplementation(async (cb: any) => cb({})) } },
+        { provide: ContractVersionRegistry, useValue: { resolveVersion: jest.fn().mockReturnValue('v1') } },
+        { provide: EventParserFactory, useValue: { parse: jest.fn().mockReturnValue({}) } },
+        { provide: HeapMonitorService, useValue: mockHeapMonitor },
       ],
     }).compile();
 

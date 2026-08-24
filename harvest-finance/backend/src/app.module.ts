@@ -8,6 +8,9 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { createKeyv } from '@keyv/redis';
+import { Keyv } from 'keyv';
+import { CacheableMemory } from 'cacheable';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { buildThrottlerOptions } from './common/config/throttler.config';
@@ -102,9 +105,11 @@ import { SecurityEvent } from './database/entities/security-event.entity';
 import { CreateVaultApyHistory1700000000017 } from './database/migrations/1700000000017-CreateVaultApyHistory';
 import { CreateSessionsAndOAuthLinks1700000000022 } from './database/migrations/1700000000022-CreateSessionsAndOAuthLinks';
 import { AddRefreshTokenRotation1700000000022 } from './database/migrations/1700000000022-AddRefreshTokenRotation';
+import { AddPerformanceIndexes1700000000024 } from './database/migrations/1700000000024-AddPerformanceIndexes';
 import { DomainEventsModule } from './domain-events';
 import { DomainEventHandlersModule } from './common/events';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { QueuesModule } from './queues/queues.module';
 
 @Module({
   imports: [
@@ -126,6 +131,27 @@ import { WebhooksModule } from './webhooks/webhooks.module';
         username: configService.get<string>('DB_USER'),
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME'),
+        // ── Connection pool ────────────────────────────────────────────────
+        extra: {
+          max: parseInt(configService.get<string>('DB_POOL_MAX') || '20', 10),
+          min: parseInt(configService.get<string>('DB_POOL_MIN') || '2', 10),
+          idleTimeoutMillis: parseInt(
+            configService.get<string>('DB_IDLE_TIMEOUT_MS') || '30000',
+            10,
+          ),
+          connectionTimeoutMillis: parseInt(
+            configService.get<string>('DB_CONNECT_TIMEOUT_MS') || '5000',
+            10,
+          ),
+          query_timeout: parseInt(
+            configService.get<string>('DB_QUERY_TIMEOUT_MS') || '30000',
+            10,
+          ),
+          statement_timeout: parseInt(
+            configService.get<string>('DB_STATEMENT_TIMEOUT_MS') || '30000',
+            10,
+          ),
+        },
         entities: [
           User,
           UserOAuthLink,
@@ -184,6 +210,7 @@ YieldAnalytics,
           CreateSessionsAndOAuthLinks1700000000022,
           CreateCustodialWallets1700000000021,
           AddRefreshTokenRotation1700000000022,
+          AddPerformanceIndexes1700000000024,
         ],
         synchronize: false,
         migrationsRun: false,
@@ -196,7 +223,27 @@ YieldAnalytics,
       autoSchemaFile: true,
       playground: true,
     }),
-    CacheModule.register({ isGlobal: true, ttl: 600, max: 100 }),
+    CacheModule.registerAsync({
+      isGlobal: true,
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const redisUrl = configService.get<string>('REDIS_URL');
+        if (redisUrl) {
+          // Use Redis as the cache store when REDIS_URL is configured.
+          return {
+            stores: [
+              new Keyv({
+                store: new CacheableMemory({ ttl: 60_000, lruSize: 5000 }),
+              }),
+              createKeyv(redisUrl),
+            ],
+          };
+        }
+        // Fall back to in-memory cache for local dev when Redis is not available.
+        return { ttl: 600, max: 100 };
+      },
+    }),
     ScheduleModule.forRoot(),
     CommonModule,
     AuthModule,
@@ -224,6 +271,7 @@ YieldAnalytics,
     StateSyncModule,
     WebhooksModule,
     DomainEventHandlersModule,
+    QueuesModule,
   ],
   controllers: [AppController],
   providers: [

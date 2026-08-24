@@ -43,41 +43,11 @@ export class ExportController {
     @Request() req: any,
     @Res() res: Response,
   ) {
-    // Check authorization: user can only export their own data, admins can export anyone
     if (req.user.id !== userId && req.user.role !== UserRole.ADMIN) {
       throw new ForbiddenException('You can only export your own vault data');
     }
-
     const data = await this.exportService.getTransactionData(userId);
-
-    if (format === 'excel') {
-      const buffer = await this.exportService.generateExcel(data);
-      res.setHeader(
-        'Content-Type',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      );
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename=vault_export_${userId}_${Date.now()}.xlsx`,
-      );
-      return res.send(buffer);
-    } else if (format === 'pdf') {
-      const buffer = await this.exportService.generatePdf(data);
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename=vault_export_${userId}_${Date.now()}.pdf`,
-      );
-      return res.send(buffer);
-    } else {
-      const csv = await this.exportService.generateCsv(data);
-      res.setHeader('Content-Type', 'text/csv');
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename=vault_export_${userId}_${Date.now()}.csv`,
-      );
-      return res.send(csv);
-    }
+    return this.sendExport(res, data, format, `vault_export_${userId}`);
   }
 
   /**
@@ -93,43 +63,11 @@ export class ExportController {
     @Request() req: any,
     @Res() res: Response,
   ) {
-    // Check authorization: user can only export their own data, admins can export anyone
     if (req.user.id !== userId && req.user.role !== UserRole.ADMIN) {
-      throw new ForbiddenException(
-        'You can only export your own transaction history',
-      );
+      throw new ForbiddenException('You can only export your own transaction history');
     }
-
     const data = await this.exportService.getTransactionData(userId);
-
-    if (format === 'excel') {
-      const buffer = await this.exportService.generateExcel(data);
-      res.setHeader(
-        'Content-Type',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      );
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename=transactions_${userId}_${Date.now()}.xlsx`,
-      );
-      return res.send(buffer);
-    } else if (format === 'pdf') {
-      const buffer = await this.exportService.generatePdf(data);
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename=transactions_${userId}_${Date.now()}.pdf`,
-      );
-      return res.send(buffer);
-    } else {
-      const csv = await this.exportService.generateCsv(data);
-      res.setHeader('Content-Type', 'text/csv');
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename=transactions_${userId}_${Date.now()}.csv`,
-      );
-      return res.send(csv);
-    }
+    return this.sendExport(res, data, format, `transactions_${userId}`);
   }
 
   /**
@@ -144,41 +82,11 @@ export class ExportController {
     @Request() req: any,
     @Res() res: Response,
   ) {
-    // Check admin role
     if (req.user.role !== UserRole.ADMIN) {
       throw new ForbiddenException('Only admins can export all vault data');
     }
-
     const data = await this.exportService.getTransactionData();
-
-    if (format === 'excel') {
-      const buffer = await this.exportService.generateExcel(data);
-      res.setHeader(
-        'Content-Type',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      );
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename=admin_vault_export_${Date.now()}.xlsx`,
-      );
-      return res.send(buffer);
-    } else if (format === 'pdf') {
-      const buffer = await this.exportService.generatePdf(data);
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename=admin_vault_export_${Date.now()}.pdf`,
-      );
-      return res.send(buffer);
-    } else {
-      const csv = await this.exportService.generateCsv(data);
-      res.setHeader('Content-Type', 'text/csv');
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename=admin_vault_export_${Date.now()}.csv`,
-      );
-      return res.send(csv);
-    }
+    return this.sendExport(res, data, format, `admin_vault_export`);
   }
 
   /**
@@ -193,40 +101,50 @@ export class ExportController {
     @Request() req: any,
     @Res() res: Response,
   ) {
-    // Check admin role
     if (req.user.role !== UserRole.ADMIN) {
       throw new ForbiddenException('Only admins can export all transactions');
     }
-
     const data = await this.exportService.getTransactionData();
+    return this.sendExport(res, data, format, `admin_transactions`);
+  }
+
+  // ── Private helpers ────────────────────────────────────────────────────────
+
+  /**
+   * Stream or buffer a file response based on format.
+   * CSV and Excel are streamed to avoid peak-RAM spikes.
+   * PDF is buffered because PDFKit does not expose a true pipe-friendly stream.
+   */
+  private async sendExport(
+    res: Response,
+    data: import('../export/export.service').TransactionExportData[],
+    format: 'csv' | 'excel' | 'pdf',
+    basename: string,
+  ): Promise<void> {
+    const ts = Date.now();
+
+    if (format === 'csv') {
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename=${basename}_${ts}.csv`);
+      const stream = this.exportService.streamCsv(data);
+      stream.pipe(res);
+      return;
+    }
 
     if (format === 'excel') {
-      const buffer = await this.exportService.generateExcel(data);
       res.setHeader(
         'Content-Type',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       );
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename=admin_transactions_${Date.now()}.xlsx`,
-      );
-      return res.send(buffer);
-    } else if (format === 'pdf') {
-      const buffer = await this.exportService.generatePdf(data);
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename=admin_transactions_${Date.now()}.pdf`,
-      );
-      return res.send(buffer);
-    } else {
-      const csv = await this.exportService.generateCsv(data);
-      res.setHeader('Content-Type', 'text/csv');
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename=admin_transactions_${Date.now()}.csv`,
-      );
-      return res.send(csv);
+      res.setHeader('Content-Disposition', `attachment; filename=${basename}_${ts}.xlsx`);
+      await this.exportService.streamExcel(data, res);
+      return;
     }
+
+    // PDF — buffered (PDFKit streams via pipe but we need to call res.send for NestJS compat)
+    const buffer = await this.exportService.generatePdf(data);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=${basename}_${ts}.pdf`);
+    res.send(buffer);
   }
 }
