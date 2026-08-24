@@ -7,6 +7,9 @@ import { SorobanEvent } from '../database/entities/soroban-event.entity';
 import { IndexerState } from '../database/entities/indexer-state.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import axios from 'axios';
+import { ContractVersionRegistry } from './parsers/contract-version-registry';
+import { EventParserFactory } from './parsers/event-parser.factory';
+import { HeapMonitorService } from '../observability/heap-monitor.service';
 
 jest.mock('axios');
 
@@ -126,6 +129,22 @@ describe('SorobanIndexerService - Error Handling', () => {
         {
           provide: DataSource,
           useValue: mockDataSource,
+        },
+        {
+          provide: ContractVersionRegistry,
+          useValue: { resolveVersion: jest.fn().mockReturnValue('v1') },
+        },
+        {
+          provide: EventParserFactory,
+          useValue: { parse: jest.fn().mockReturnValue({}) },
+        },
+        {
+          provide: HeapMonitorService,
+          useValue: {
+            snapshot: jest.fn().mockReturnValue({ heapUsedMB: 50, heapTotalMB: 100, externalMB: 5, rssMB: 120, heapUsedPercent: 50 }),
+            checkGrowth: jest.fn(),
+            monitor: jest.fn().mockImplementation((_ctx: string, fn: () => Promise<any>) => fn()),
+          },
         },
       ],
     }).compile();

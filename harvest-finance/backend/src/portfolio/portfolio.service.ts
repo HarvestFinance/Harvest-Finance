@@ -1,7 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { StrKey } from '@stellar/stellar-sdk';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { StellarService } from '../stellar/services/stellar.service';
 import { Deposit, DepositStatus } from '../database/entities/deposit.entity';
 import { Vault } from '../database/entities/vault.entity';
@@ -12,6 +14,10 @@ import {
   StellarAccountSnapshotDto,
   VaultHoldingDto,
 } from './dto/portfolio.dto';
+
+/** Cache TTL constants */
+const PORTFOLIO_TTL_MS = 60_000;       // 60 s – balances change on each deposit
+const ACCOUNT_SNAPSHOT_TTL_MS = 30_000; // 30 s – Stellar balances are near-real-time
 
 @Injectable()
 export class PortfolioService {
@@ -25,12 +31,17 @@ export class PortfolioService {
     private readonly vaultRepository: Repository<Vault>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
   async buildPortfolio(
     userId: string,
     stellarAddresses: string[],
   ): Promise<PortfolioResponseDto> {
+    const cacheKey = `portfolio:${userId}:${stellarAddresses.sort().join(',')}`;
+    const cached = await this.cacheManager.get<PortfolioResponseDto>(cacheKey);
+    if (cached) return cached;
+
     const uniqueAddresses = Array.from(
       new Set((stellarAddresses ?? []).filter(Boolean)),
     );
@@ -51,7 +62,7 @@ export class PortfolioService {
 
     const { vaults, totalVaultBalance } = await this.getVaultHoldings(userId);
 
-    return {
+    const result: PortfolioResponseDto = {
       userId,
       generatedAt: new Date().toISOString(),
       accounts: accountSnapshots,
@@ -59,6 +70,16 @@ export class PortfolioService {
       vaults,
       totalVaultBalance,
     };
+
+    await this.cacheManager.set(cacheKey, result, PORTFOLIO_TTL_MS);
+    return result;
+  }
+
+  /** Invalidate cached portfolio for a user (call after deposit/withdrawal). */
+  async invalidatePortfolioCache(userId: string): Promise<void> {
+    // We cannot enumerate all address combinations, so we use a simple
+    // pattern: invalidate the no-address variant (most common dashboard call).
+    await this.cacheManager.del(`portfolio:${userId}:`);
   }
 
   private async snapshotAccount(
@@ -73,9 +94,15 @@ export class PortfolioService {
       };
     }
 
+    const cacheKey = `portfolio:account:${publicKey}`;
+    const cached = await this.cacheManager.get<StellarAccountSnapshotDto>(cacheKey);
+    if (cached) return cached;
+
     try {
       const balances = await this.stellarService.getAccountBalances(publicKey);
-      return { publicKey, exists: true, balances };
+      const snapshot: StellarAccountSnapshotDto = { publicKey, exists: true, balances };
+      await this.cacheManager.set(cacheKey, snapshot, ACCOUNT_SNAPSHOT_TTL_MS);
+      return snapshot;
     } catch (err: any) {
       this.logger.warn(
         `Failed to load Stellar account ${publicKey}: ${err?.message ?? 'unknown'}`,

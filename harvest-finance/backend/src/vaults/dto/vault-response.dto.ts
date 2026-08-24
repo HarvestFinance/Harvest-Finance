@@ -1,3 +1,47 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { VaultType, VaultStatus } from '../../database/entities/vault.entity';
+import { CompoundingFrequency } from '../../database/entities/strategy.entity';
+
+export class VaultResponseDto {
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  id: string;
+
+  @ApiProperty({ example: 'user-uuid' })
+  ownerId: string;
+
+  @ApiProperty({ enum: VaultType })
+  type: VaultType;
+
+  @ApiProperty({ enum: VaultStatus })
+  status: VaultStatus;
+
+  @ApiProperty({ example: 'My Harvest Vault' })
+  vaultName: string;
+
+  @ApiProperty({ example: 'A vault for crop production financing', required: false })
+  description: string | null;
+
+  @ApiProperty({ example: 'HVF' })
+  symbol: string;
+
+  @ApiProperty({ example: 'XLM/USDC' })
+  assetPair: string;
+
+  @ApiProperty({ example: 10000.5 })
+  totalDeposits: number;
+
+  @ApiProperty({ example: 50000.0 })
+  maxCapacity: number;
+
+  @ApiProperty({ example: 40000.0 })
+  availableCapacity: number;
+
+  @ApiProperty({ example: 20.0 })
+  utilizationPercentage: number;
+
+  @ApiProperty({ example: 5.5 })
+  interestRate: number;
+
   @ApiProperty({
     example: 5.65,
     description: 'Annual Percentage Rate (APR)',

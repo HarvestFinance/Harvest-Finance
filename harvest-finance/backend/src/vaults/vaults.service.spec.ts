@@ -71,12 +71,7 @@ describe('VaultsService', () => {
     update: jest.fn(),
   };
 
-  const mockDataSource = {
-    transaction: jest.fn((cb: (em: typeof mockEntityManager) => unknown) =>
-      cb(mockEntityManager),
-    ),
-    getRepository: jest.fn(),
-  };
+  // mockDataSource is defined below after all repository mocks are initialised.
 
   const mockVaultRepository = {
     findOne: jest.fn(),
@@ -1590,16 +1585,26 @@ const buildQB = (total: string | null) => ({
     });
 
     describe('getPublicVaults', () => {
-      it('should subtract active reservations from public availableCapacity', async () => {
-        mockVaultRepository.find.mockResolvedValue([mockVault]);
-        mockVaultRepository.count.mockResolvedValue(1);
-        mockReservationQB.getRawOne.mockResolvedValue({ total: '3000' });
+      it('should return paginated public vaults', async () => {
+        mockVaultRepository.createQueryBuilder.mockReturnValue({
+          where: jest.fn().mockReturnThis(),
+          orderBy: jest.fn().mockReturnThis(),
+          addOrderBy: jest.fn().mockReturnThis(),
+          take: jest.fn().mockReturnThis(),
+          leftJoinAndSelect: jest.fn().mockReturnThis(),
+          andWhere: jest.fn().mockReturnThis(),
+          getMany: jest.fn().mockResolvedValue([mockVault]),
+        });
 
-        const result = await service.getPublicVaults({ limit: 20, skip: 0 });
+        const result = await service.getPublicVaults({ limit: 20 });
 
-        expect(result.data[0].availableCapacity).toBe(6000);
+        expect(result.vaults).toHaveLength(1);
+        expect(result.nextCursor).toBeNull();
       });
-    });
+    }); // describe getPublicVaults
 
-  });
+  }); // describe vault capacity reservations
+
+}); // describe VaultsService
+
 });

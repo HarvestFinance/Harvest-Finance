@@ -7,6 +7,15 @@ import { IndexerState } from '../../database/entities/indexer-state.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { DataSource } from 'typeorm';
 import axios from 'axios';
+import { ContractVersionRegistry } from '../parsers/contract-version-registry';
+import { EventParserFactory } from '../parsers/event-parser.factory';
+import { HeapMonitorService } from '../../observability/heap-monitor.service';
+
+const mockHeapMonitor = {
+  snapshot: jest.fn().mockReturnValue({ heapUsedMB: 50, heapTotalMB: 100, externalMB: 5, rssMB: 120, heapUsedPercent: 50 }),
+  checkGrowth: jest.fn(),
+  monitor: jest.fn().mockImplementation((_ctx: string, fn: () => Promise<any>) => fn()),
+};
 
 jest.mock('axios');
 
@@ -134,6 +143,9 @@ describe('SorobanIndexerService - Cursor Persistence', () => {
             transaction: jest.fn().mockImplementation(async (cb: any) => cb(mockQueryRunner.manager)),
           },
         },
+        { provide: ContractVersionRegistry, useValue: { resolveVersion: jest.fn().mockReturnValue('v1') } },
+        { provide: EventParserFactory, useValue: { parse: jest.fn().mockReturnValue({}) } },
+        { provide: HeapMonitorService, useValue: mockHeapMonitor },
       ],
     }).compile();
 
@@ -227,6 +239,9 @@ describe('SorobanIndexerService - Cursor Persistence', () => {
           },
           { provide: CACHE_MANAGER, useValue: mockCacheManager },
           { provide: DataSource, useValue: { transaction: jest.fn().mockImplementation(async (cb: any) => cb(mockQueryRunner.manager)) } },
+          { provide: ContractVersionRegistry, useValue: { resolveVersion: jest.fn().mockReturnValue('v1') } },
+          { provide: EventParserFactory, useValue: { parse: jest.fn().mockReturnValue({}) } },
+          { provide: HeapMonitorService, useValue: mockHeapMonitor },
         ],
       }).compile();
 

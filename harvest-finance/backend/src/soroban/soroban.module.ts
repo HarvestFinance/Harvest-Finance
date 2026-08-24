@@ -11,6 +11,7 @@ import { SorobanController } from './soroban.controller';
 import { SorobanIndexerService } from './soroban-indexer.service';
 import { ContractVersionRegistry } from './parsers/contract-version-registry';
 import { EventParserFactory } from './parsers/event-parser.factory';
+import { ObservabilityModule } from '../observability/observability.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { EventParserFactory } from './parsers/event-parser.factory';
     TypeOrmModule.forFeature([SorobanEvent, IndexerState]),
     AuthModule,
     CommonModule,
+    ObservabilityModule,
     CacheModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (config: ConfigService) => ({

@@ -18,6 +18,7 @@ import {
 } from './dto/soroban-events.dto';
 import { ContractVersionRegistry } from './parsers/contract-version-registry';
 import { EventParserFactory } from './parsers/event-parser.factory';
+import { HeapMonitorService } from '../observability/heap-monitor.service';
 
 interface RpcContractEvent {
   id: string;
@@ -62,6 +63,7 @@ export class SorobanIndexerService implements OnModuleInit {
     private readonly dataSource: DataSource,
     private readonly versionRegistry: ContractVersionRegistry,
     private readonly parserFactory: EventParserFactory,
+    private readonly heapMonitor: HeapMonitorService,
   ) {
     this.enabled =
       this.config.get<string>('SOROBAN_INDEXER_ENABLED', 'false') === 'true';
@@ -93,7 +95,10 @@ export class SorobanIndexerService implements OnModuleInit {
 
     this.http = axios.create({
       baseURL: this.rpcUrl,
-      timeout: 15_000,
+      timeout: parseInt(
+        this.config.get<string>('SOROBAN_RPC_TIMEOUT_MS', '15000'),
+        10,
+      ),
       headers: { 'Content-Type': 'application/json' },
     });
   }
@@ -159,7 +164,10 @@ export class SorobanIndexerService implements OnModuleInit {
     if (!this.enabled || this.running) return;
     this.running = true;
     try {
-      const result = await this.runOnce();
+      const result = await this.heapMonitor.monitor(
+        'SorobanIndexer.pollEvents',
+        () => this.runOnce(),
+      );
       if (result.saved > 0) {
         this.logger.log(
           `Indexed ${result.saved} Soroban events (lastLedger=${this.lastIndexedLedger}, latest=${result.latestLedger})`,
@@ -204,15 +212,21 @@ export class SorobanIndexerService implements OnModuleInit {
 
     let saved = 0;
     try {
-      // Insert events (idempotent — orIgnore on unique event_id).
-      const result = await queryRunner.manager
-        .createQueryBuilder()
-        .insert()
-        .into(SorobanEvent)
-        .values(entities as any)
-        .orIgnore()
-        .execute();
-      saved = result.identifiers.filter((id) => id !== undefined).length;
+      // ── Chunked bulk insert ───────────────────────────────────────────────
+      // PostgreSQL has a limit of 65 535 bound parameters per statement.
+      // Chunk into batches of 200 rows (well within limits for ~30 columns).
+      const CHUNK_SIZE = 200;
+      for (let i = 0; i < entities.length; i += CHUNK_SIZE) {
+        const chunk = entities.slice(i, i + CHUNK_SIZE);
+        const result = await queryRunner.manager
+          .createQueryBuilder()
+          .insert()
+          .into(SorobanEvent)
+          .values(chunk as any)
+          .orIgnore()
+          .execute();
+        saved += result.identifiers.filter((id) => id !== undefined).length;
+      }
 
       // Upsert the cursor position.
       await queryRunner.manager.save(IndexerState, {
