@@ -67,6 +67,7 @@ import { CreateCustodialWallets1700000000021 } from './migrations/1700000000021-
 import { AddDepositorConcentrationThreshold1700000000022 } from './migrations/1700000000022-AddDepositorConcentrationThreshold';
 import { AddPhoneAndNotificationPreferencesToUsers1700000000022 } from './migrations/1700000000022-AddPhoneAndNotificationPreferencesToUsers';
 import { AddRefreshTokenRotation1700000000022 } from './migrations/1700000000022-AddRefreshTokenRotation';
+import { AddMigrationSecurityEventType1700000000024 } from './migrations/1700000000024-AddMigrationSecurityEventType';
 import { CreateSessionsAndOAuthLinks1700000000022 } from './migrations/1700000000022-CreateSessionsAndOAuthLinks';
 import { AddEmailVerificationToUsers1700000000023 } from './migrations/1700000000023-AddEmailVerificationToUsers';
 
@@ -152,6 +153,7 @@ const options: DataSourceOptions = {
     AddPhoneAndNotificationPreferencesToUsers1700000000022,
     CreateSessionsAndOAuthLinks1700000000022,
     AddRefreshTokenRotation1700000000022,
+    AddMigrationSecurityEventType1700000000024,
     AddEmailVerificationToUsers1700000000023,
   ],
 

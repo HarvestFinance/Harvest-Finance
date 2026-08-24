@@ -5,7 +5,10 @@ import { ethers } from 'ethers';
 import { Repository } from 'typeorm';
 import { User } from '../../database/entities/user.entity';
 import {
+  AdapterHealth,
   ChainAdapter,
+  ChainDeposit,
+  ChainVault,
   ChainYield,
 } from '../interfaces/chain-adapter.interface';
 
@@ -23,6 +26,33 @@ export class PolygonYieldAdapter implements ChainAdapter {
     private readonly users: Repository<User>,
     private readonly config: ConfigService,
   ) {}
+
+  async getVaults(): Promise<ChainVault[]> {
+    return this.parseVaultConfigs(this.config.get<string>('POLYGON_VAULT_CONFIGS')).map((vault) => ({ id: vault.vaultAddress, name: vault.name, assetCode: vault.assetCode, apr: vault.apr, tvl: null }));
+  }
+
+  async getDeposits(userId?: string): Promise<ChainDeposit[]> {
+    if (!userId) return [];
+    return (await this.getYieldsForUser(userId)).map((position) => ({ vaultId: position.positionId, owner: userId, amount: position.principal, assetCode: position.asset.code }));
+  }
+
+  async getAPY(vaultId?: string): Promise<number | null> { return (await this.getVaults()).find((vault) => vault.id === vaultId)?.apr ?? null; }
+
+  async getTVL(_vaultId?: string): Promise<string> { return '0'; }
+
+  supportsChain(chain: string): boolean { return chain.toLowerCase() === this.chain; }
+
+  async healthCheck(): Promise<AdapterHealth> {
+    const checkedAt = new Date().toISOString();
+    if (!this.config.get<string>('POLYGON_RPC_URL')) return { chain: this.chain, status: 'offline', checkedAt, message: 'POLYGON_RPC_URL is not configured' };
+    try {
+      const provider = new ethers.JsonRpcProvider(this.config.get<string>('POLYGON_RPC_URL'));
+      await provider.getBlockNumber();
+      return { chain: this.chain, status: 'healthy', checkedAt };
+    } catch (error) {
+      return { chain: this.chain, status: 'offline', checkedAt, message: error instanceof Error ? error.message : 'RPC health check failed' };
+    }
+  }
 
   async getYieldsForUser(userId: string): Promise<ChainYield[]> {
     try {

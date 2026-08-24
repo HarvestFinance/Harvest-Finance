@@ -8,6 +8,7 @@ export const DomainEventNames = {
   WITHDRAWAL_INITIATED: 'vault.withdrawal.initiated',
   VAULT_PAUSED: 'vault.paused',
   PAYMENT_RECEIVED: 'stellar.payment.received',
+  MIGRATION_CREATED: 'migration.created',
 } as const;
 
 export type DomainEventName =

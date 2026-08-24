@@ -5,11 +5,17 @@ import {
   GetSecretValueCommand,
 } from '@aws-sdk/client-secrets-manager';
 import axios from 'axios';
+import { Keypair } from '@stellar/stellar-sdk';
 
 @Injectable()
 export class SecretsService implements OnModuleInit {
   private readonly logger = new Logger(SecretsService.name);
   private awsClient: SecretsManagerClient | null = null;
+  private stellarKeyRotation: {
+    active: string;
+    previous?: string;
+    transitionEndsAt?: Date;
+  } | null = null;
 
   constructor(private readonly configService: ConfigService) {}
 
@@ -43,6 +49,46 @@ export class SecretsService implements OnModuleInit {
 
     // Default fallback to environment variables
     return this.configService.get<string>(key);
+  }
+
+  async rotateStellarSigningKey(
+    nextKey: string,
+    transitionHours = 24,
+  ): Promise<{ transitionEndsAt: string }> {
+    if (!nextKey.trim()) throw new Error('A Stellar signing key is required');
+    Keypair.fromSecret(nextKey);
+    const current =
+      this.stellarKeyRotation?.active ||
+      (await this.getSecret('STELLAR_SIGNING_KEY'));
+    const transitionEndsAt = new Date(
+      Date.now() + Math.max(0, transitionHours) * 60 * 60 * 1000,
+    );
+    this.stellarKeyRotation = {
+      active: nextKey,
+      previous: current || undefined,
+      transitionEndsAt,
+    };
+    return { transitionEndsAt: transitionEndsAt.toISOString() };
+  }
+
+  async signWithStellarKeys(payload: string): Promise<string[]> {
+    const keys = await this.getActiveStellarKeys();
+    return keys.map((secret) =>
+      Keypair.fromSecret(secret).sign(Buffer.from(payload)).toString('base64'),
+    );
+  }
+
+  private async getActiveStellarKeys(): Promise<string[]> {
+    if (!this.stellarKeyRotation) {
+      const active = await this.getSecret('STELLAR_SIGNING_KEY');
+      if (!active) throw new Error('STELLAR_SIGNING_KEY is not configured');
+      return [active];
+    }
+    const { active, previous, transitionEndsAt } = this.stellarKeyRotation;
+    if (previous && transitionEndsAt && transitionEndsAt > new Date()) {
+      return [active, previous];
+    }
+    return [active];
   }
 
   private async getAwsSecret(key: string): Promise<string> {

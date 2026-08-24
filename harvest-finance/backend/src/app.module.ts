@@ -102,6 +102,7 @@ import { SecurityEvent } from './database/entities/security-event.entity';
 import { CreateVaultApyHistory1700000000017 } from './database/migrations/1700000000017-CreateVaultApyHistory';
 import { CreateSessionsAndOAuthLinks1700000000022 } from './database/migrations/1700000000022-CreateSessionsAndOAuthLinks';
 import { AddRefreshTokenRotation1700000000022 } from './database/migrations/1700000000022-AddRefreshTokenRotation';
+import { AddMigrationSecurityEventType1700000000024 } from './database/migrations/1700000000024-AddMigrationSecurityEventType';
 import { DomainEventsModule } from './domain-events';
 import { DomainEventHandlersModule } from './common/events';
 import { WebhooksModule } from './webhooks/webhooks.module';
@@ -149,6 +150,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
           SorobanEvent,
           IndexerState,
 YieldAnalytics,
+      SecurityEvent,
            VaultReservation,
            CustodialWallet,
            VaultApproval,
@@ -184,6 +186,7 @@ YieldAnalytics,
           CreateSessionsAndOAuthLinks1700000000022,
           CreateCustodialWallets1700000000021,
           AddRefreshTokenRotation1700000000022,
+          AddMigrationSecurityEventType1700000000024,
         ],
         synchronize: false,
         migrationsRun: false,
@@ -203,6 +206,7 @@ YieldAnalytics,
     UsersModule,
     VaultsModule,
     HealthModule,
+    MultiChainModule,
     OrdersModule,
     VerificationModule,
     DatabaseModule,
