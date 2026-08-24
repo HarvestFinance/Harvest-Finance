@@ -16,12 +16,14 @@ describe('MultiChainService', () => {
     const adapters: ChainAdapter[] = [
       {
         chain: 'stellar',
+        getVaults: jest.fn(), getDeposits: jest.fn(), getAPY: jest.fn(), getTVL: jest.fn(), supportsChain: jest.fn(), healthCheck: jest.fn(),
         getYieldsForUser: jest
           .fn()
           .mockResolvedValue([makeYield('stellar', 'v1')]),
       },
       {
         chain: 'ethereum',
+        getVaults: jest.fn(), getDeposits: jest.fn(), getAPY: jest.fn(), getTVL: jest.fn(), supportsChain: jest.fn(), healthCheck: jest.fn(),
         getYieldsForUser: jest
           .fn()
           .mockResolvedValue([makeYield('ethereum', '0xabc')]),
@@ -45,12 +47,14 @@ describe('MultiChainService', () => {
     const adapters: ChainAdapter[] = [
       {
         chain: 'stellar',
+        getVaults: jest.fn(), getDeposits: jest.fn(), getAPY: jest.fn(), getTVL: jest.fn(), supportsChain: jest.fn(), healthCheck: jest.fn(),
         getYieldsForUser: jest
           .fn()
           .mockResolvedValue([makeYield('stellar', 'v1')]),
       },
       {
         chain: 'ethereum',
+        getVaults: jest.fn(), getDeposits: jest.fn(), getAPY: jest.fn(), getTVL: jest.fn(), supportsChain: jest.fn(), healthCheck: jest.fn(),
         getYieldsForUser: jest.fn().mockRejectedValue(new Error('RPC down')),
       },
     ];

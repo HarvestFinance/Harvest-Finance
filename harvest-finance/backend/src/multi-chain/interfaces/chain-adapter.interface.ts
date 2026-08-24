@@ -36,6 +36,31 @@ export interface ChainYield {
   metadata?: Record<string, unknown>;
 }
 
+export interface ChainVault {
+  id: string;
+  name: string;
+  assetCode: string;
+  apr: number | null;
+  tvl: string | null;
+}
+
+export interface ChainDeposit {
+  vaultId: string;
+  owner: string;
+  amount: string;
+  assetCode: string;
+}
+
+export type AdapterHealthStatus = 'healthy' | 'degraded' | 'offline';
+
+export interface AdapterHealth {
+  chain: string;
+  status: AdapterHealthStatus;
+  checkedAt: string;
+  latencyMs?: number;
+  message?: string;
+}
+
 /**
  * Implemented once per supported chain. Bring up a new chain by writing one
  * of these and registering it in the `CHAIN_ADAPTERS` provider array.
@@ -43,6 +68,18 @@ export interface ChainYield {
 export interface ChainAdapter {
   /** Lower-case identifier — must match `ChainYield.chain`. */
   readonly chain: string;
+
+  getVaults(): Promise<ChainVault[]>;
+
+  getDeposits(userId?: string): Promise<ChainDeposit[]>;
+
+  getAPY(vaultId?: string): Promise<number | null>;
+
+  getTVL(vaultId?: string): Promise<string>;
+
+  supportsChain(chain: string): boolean;
+
+  healthCheck(): Promise<AdapterHealth>;
 
   /**
    * Fetch yield-bearing positions held by a user on this chain. Should

@@ -9,4 +9,5 @@ export { DepositConfirmedEvent } from './events/deposit-confirmed.event';
 export { WithdrawalInitiatedEvent } from './events/withdrawal-initiated.event';
 export { VaultPausedEvent } from './events/vault-paused.event';
 export { PaymentReceivedEvent } from './events/payment-received.event';
+export { MigrationCreatedEvent } from './events/migration-created.event';
 export { DomainEventsModule } from './domain-events.module';

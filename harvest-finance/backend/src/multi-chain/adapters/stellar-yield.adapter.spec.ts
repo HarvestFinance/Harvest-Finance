@@ -127,4 +127,13 @@ describe('StellarYieldAdapter', () => {
     const result = await adapter.getYieldsForUser('user-2');
     expect(result).toEqual([]);
   });
+
+  it('returns [] when the indexed response is malformed', async () => {
+    const adapter = new StellarYieldAdapter(
+      buildDeposits([{ vaultId: '', principal: 'not-a-number' }]),
+      buildVaults([]),
+    );
+
+    expect(await adapter.getYieldsForUser('user-malformed')).toEqual([]);
+  });
 });

@@ -18,6 +18,7 @@ export enum SecurityEventType {
   ALL_SESSIONS_REVOKED = 'ALL_SESSIONS_REVOKED',
   /** User account was locked after too many failed login attempts. */
   ACCOUNT_LOCKED = 'ACCOUNT_LOCKED',
+  MIGRATION_CREATED = 'MIGRATION_CREATED',
 }
 
 /**
