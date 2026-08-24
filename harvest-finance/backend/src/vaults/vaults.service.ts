@@ -4,9 +4,12 @@ import {
   BadRequestException,
   UnauthorizedException,
   ForbiddenException,
+  Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { Vault, VaultStatus } from '../database/entities/vault.entity';
 import { Deposit, DepositStatus } from '../database/entities/deposit.entity';
 import { DepositEvent, DepositEventType } from '../database/entities/deposit-event.entity';
@@ -77,6 +80,7 @@ export class VaultsService {
     private readonly feesService: FeesService,
     private readonly eventEmitter: EventEmitter2,
     private authService: AuthService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
   /**
@@ -664,24 +668,143 @@ export class VaultsService {
     return result?.total ? parseFloat(result.total) : 0;
   }
 
-  async getUserVaults(userId: string): Promise<VaultResponseDto[]> {
-    const vaults = await this.vaultRepository.find({
-      where: { ownerId: userId },
-      relations: ['deposits'],
-      order: { createdAt: 'DESC' },
-    });
+  async getUserVaults(
+    userId: string,
+    opts: { cursor?: string; limit?: number; includeDeposits?: boolean } = {},
+  ): Promise<{ vaults: VaultResponseDto[]; nextCursor: string | null }> {
+    const limit = Math.min(opts.limit ?? 20, 100);
+    const includeDeposits = opts.includeDeposits ?? false;
 
-    return vaults.map((vault) => this.mapVaultToResponse(vault));
+    const qb = this.vaultRepository
+      .createQueryBuilder('vault')
+      .where('vault.ownerId = :userId', { userId })
+      .orderBy('vault.createdAt', 'DESC')
+      .addOrderBy('vault.id', 'DESC')
+      .take(limit + 1); // fetch one extra to determine if there is a next page
+
+    if (includeDeposits) {
+      qb.leftJoinAndSelect('vault.deposits', 'deposits');
+    }
+
+    if (opts.cursor) {
+      // Cursor is base64-encoded JSON: { createdAt: ISO string, id: string }
+      const decoded = JSON.parse(Buffer.from(opts.cursor, 'base64url').toString());
+      qb.andWhere(
+        '(vault.createdAt < :cur OR (vault.createdAt = :cur AND vault.id < :curId))',
+        { cur: decoded.createdAt, curId: decoded.id },
+      );
+    }
+
+    const rows = await qb.getMany();
+    const hasMore = rows.length > limit;
+    const vaults = rows.slice(0, limit);
+
+    let nextCursor: string | null = null;
+    if (hasMore) {
+      const last = vaults[vaults.length - 1];
+      nextCursor = Buffer.from(
+        JSON.stringify({ createdAt: last.createdAt.toISOString(), id: last.id }),
+      ).toString('base64url');
+    }
+
+    return {
+      vaults: vaults.map((v) => this.mapVaultToResponse(v)),
+      nextCursor,
+    };
   }
 
-  async getPublicVaults(): Promise<VaultResponseDto[]> {
-    const vaults = await this.vaultRepository.find({
-      where: { isPublic: true },
-      relations: ['deposits'],
-      order: { createdAt: 'DESC' },
-    });
+  async getPublicVaults(
+    opts: { cursor?: string; limit?: number; includeDeposits?: boolean } = {},
+  ): Promise<{ vaults: VaultResponseDto[]; nextCursor: string | null }> {
+    const limit = Math.min(opts.limit ?? 20, 100);
+    const includeDeposits = opts.includeDeposits ?? false;
 
-    return vaults.map((vault) => this.mapVaultToResponse(vault));
+    // Cache key includes cursor + limit so each page is independently cached.
+    const cacheKey = `vaults:public:${limit}:${opts.cursor ?? 'start'}`;
+    // Only cache the first page (no cursor) and pages that don't include deposits.
+    const cacheable = !opts.cursor && !includeDeposits;
+
+    if (cacheable) {
+      const cached = await this.cacheManager.get<{
+        vaults: VaultResponseDto[];
+        nextCursor: string | null;
+      }>(cacheKey);
+      if (cached) return cached;
+    }
+
+    const qb = this.vaultRepository
+      .createQueryBuilder('vault')
+      .where('vault.isPublic = :pub', { pub: true })
+      .orderBy('vault.createdAt', 'DESC')
+      .addOrderBy('vault.id', 'DESC')
+      .take(limit + 1);
+
+    if (includeDeposits) {
+      qb.leftJoinAndSelect('vault.deposits', 'deposits');
+    }
+
+    if (opts.cursor) {
+      const decoded = JSON.parse(Buffer.from(opts.cursor, 'base64url').toString());
+      qb.andWhere(
+        '(vault.createdAt < :cur OR (vault.createdAt = :cur AND vault.id < :curId))',
+        { cur: decoded.createdAt, curId: decoded.id },
+      );
+    }
+
+    const rows = await qb.getMany();
+    const hasMore = rows.length > limit;
+    const vaults = rows.slice(0, limit);
+
+    let nextCursor: string | null = null;
+    if (hasMore) {
+      const last = vaults[vaults.length - 1];
+      nextCursor = Buffer.from(
+        JSON.stringify({ createdAt: last.createdAt.toISOString(), id: last.id }),
+      ).toString('base64url');
+    }
+
+    const result = {
+      vaults: vaults.map((v) => this.mapVaultToResponse(v)),
+      nextCursor,
+    };
+
+    if (cacheable) {
+      await this.cacheManager.set(cacheKey, result, 60_000); // 60-second TTL
+    }
+
+    return result;
+  }
+
+  /**
+   * Invalidate the public vaults list cache.
+   * Call this whenever a vault is created, updated, or status changes.
+   */
+  async invalidatePublicVaultCache(): Promise<void> {
+    // Invalidate the first page (the most common cache hit).
+    await this.cacheManager.del('vaults:public:20:start');
+    // Also invalidate common alternative page sizes.
+    for (const sz of [10, 50, 100]) {
+      await this.cacheManager.del(`vaults:public:${sz}:start`);
+    }
+  }
+
+  /**
+   * GET /vaults/bulk
+   * Returns vault summary + on-chain balance + APY for a set of vault IDs in
+   * a single database round-trip — eliminates N+1 requests from the dashboard.
+   */
+  async getVaultsBulk(vaultIds: string[]): Promise<VaultResponseDto[]> {
+    if (vaultIds.length === 0) return [];
+    if (vaultIds.length > 50) {
+      throw new BadRequestException('Bulk endpoint supports at most 50 vault IDs per request');
+    }
+
+    const vaults = await this.vaultRepository
+      .createQueryBuilder('vault')
+      .where('vault.id IN (:...ids)', { ids: vaultIds })
+      .getMany();
+
+    return vaults.map((v) => this.mapVaultToResponse(v));
   }
 
   async getVaultsMetadata(): Promise<any[]> {
@@ -862,10 +985,19 @@ export class VaultsService {
       new WithdrawalConfirmedEvent(
         confirmedWithdrawal.id,
         userId,
-        title: 'Withdrawal Confirmed',
-        message: `Your withdrawal of ${amount} from vault ${vault.vaultName} has been confirmed.`,
-        type: NotificationType.WITHDRAWAL,
-      });
+        vaultId,
+        amount,
+        vault.vaultName,
+      ),
+    );
+
+    await this.notificationsService.create({
+      userId,
+      title: 'Withdrawal Confirmed',
+      message: `Your withdrawal of ${amount} from vault ${vault.vaultName} has been confirmed.`,
+      type: NotificationType.WITHDRAWAL,
+      adminOnly: false,
+    });
 
       return {
         withdrawal: result.withdrawal,
@@ -921,6 +1053,10 @@ export class VaultsService {
     vaultId?: string,
     timeRange: string = '30d',
   ): Promise<any[]> {
+    const cacheKey = `vaults:apy-history:${vaultId ?? 'all'}:${timeRange}`;
+    const cached = await this.cacheManager.get<any[]>(cacheKey);
+    if (cached) return cached;
+
     const now = new Date();
     let daysBack = 30;
 
@@ -953,6 +1089,7 @@ export class VaultsService {
 
     const rows = await query.getMany();
 
+    let result: any[];
     if (rows.length === 0) {
       // Fallback: If no real data exists, generate some mock data so charts aren't blank
       const dataPoints: { date: string; apy: number; vaultId: string }[] = [];
@@ -967,15 +1104,18 @@ export class VaultsService {
           vaultId: vaultId || 'all',
         });
       }
-
-      return dataPoints;
+      result = dataPoints;
+    } else {
+      result = rows.map((row) => ({
+        date: row.snapshotDate.toISOString().split('T')[0],
+        apy: Number(row.apy),
+        vaultId: row.vaultId,
+      }));
     }
 
-    return rows.map((row) => ({
-      date: row.snapshotDate.toISOString().split('T')[0],
-      apy: Number(row.apy),
-      vaultId: row.vaultId,
-    }));
+    // Cache for 5 minutes — APY history changes infrequently.
+    await this.cacheManager.set(cacheKey, result, 300_000);
+    return result;
   }
 
   async updateVaultMultiSignatureConfig(

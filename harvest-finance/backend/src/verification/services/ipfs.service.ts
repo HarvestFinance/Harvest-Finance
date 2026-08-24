@@ -1,6 +1,8 @@
 import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
+import { getExternalTimeouts } from '../../common/config/external-timeouts.config';
+import { getExternalTimeouts } from '../../common/config/external-timeouts.config';
 
 export interface IpfsUploadResult {
   hash: string;
@@ -44,7 +46,7 @@ export class IpfsService {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
-          timeout: 30000,
+          timeout: getExternalTimeouts().ipfsUpload,
         },
       );
 
@@ -92,7 +94,7 @@ export class IpfsService {
         {},
         {
           responseType: 'arraybuffer',
-          timeout: 30000,
+          timeout: getExternalTimeouts().ipfsCat,
         },
       );
 

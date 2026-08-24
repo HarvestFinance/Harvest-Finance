@@ -11,7 +11,10 @@ import {
   Request,
   HttpCode,
   HttpStatus,
+  Res,
+  ParseArrayPipe,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -19,6 +22,7 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { VaultsService } from './vaults.service';
@@ -277,18 +281,119 @@ export class VaultsController {
 
   @Get('my-vaults')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get all vaults for authenticated user' })
+  @ApiOperation({ summary: 'Get all vaults for authenticated user (cursor paginated)' })
+  @ApiQuery({ name: 'cursor', required: false, description: 'Opaque cursor from previous response' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Page size (1–100, default 20)' })
+  @ApiQuery({ name: 'include', required: false, description: 'Comma-separated relations to include (e.g. deposits)' })
   @ApiResponse({
     status: 200,
     description: 'User vaults retrieved successfully',
-    type: [VaultResponseDto],
   })
   @ApiResponse({
     status: 401,
     description: 'Unauthorized - Invalid or missing token',
   })
-  async getMyVaults(@Request() req: any): Promise<VaultResponseDto[]> {
-    return this.vaultsService.getUserVaults(req.user.id);
+  async getMyVaults(
+    @Request() req: any,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: number,
+    @Query('include') include?: string,
+  ): Promise<{ vaults: VaultResponseDto[]; nextCursor: string | null }> {
+    const includeDeposits = include?.split(',').includes('deposits') ?? false;
+    return this.vaultsService.getUserVaults(req.user.id, {
+      cursor,
+      limit: limit ? Number(limit) : undefined,
+      includeDeposits,
+    });
+  }
+
+  @Get('public')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get all public vaults (cursor paginated)' })
+  @ApiQuery({ name: 'cursor', required: false, description: 'Opaque cursor from previous response' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Page size (1–100, default 20)' })
+  @ApiQuery({ name: 'include', required: false, description: 'Comma-separated relations to include (e.g. deposits)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Public vaults retrieved successfully',
+  })
+  async getPublicVaults(
+    @Res({ passthrough: true }) res: Response,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: number,
+    @Query('include') include?: string,
+  ): Promise<{ vaults: VaultResponseDto[]; nextCursor: string | null }> {
+    const includeDeposits = include?.split(',').includes('deposits') ?? false;
+    // CDN-friendly cache headers on the first page (no cursor).
+    // Downstream proxies / CDN may cache for 60 s; browser revalidates after 30 s.
+    if (!cursor) {
+      res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=30');
+    }
+    return this.vaultsService.getPublicVaults({
+      cursor,
+      limit: limit ? Number(limit) : undefined,
+      includeDeposits,
+    });
+  }
+
+  @Get('bulk')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get vault summary + APY for multiple vault IDs (≤50) in a single round-trip',
+  })
+  @ApiQuery({
+    name: 'ids',
+    required: true,
+    description: 'Comma-separated vault UUIDs (max 50)',
+    example: 'id1,id2,id3',
+  })
+  @ApiResponse({ status: 200, description: 'Bulk vault data returned', type: [VaultResponseDto] })
+  @ApiResponse({ status: 400, description: 'Too many IDs or invalid format' })
+  async getVaultsBulk(
+    @Res({ passthrough: true }) res: Response,
+    @Query('ids') ids: string,
+  ): Promise<VaultResponseDto[]> {
+    const vaultIds = ids
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    // Short-lived CDN cache – dashboard polls this frequently.
+    res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=15');
+    return this.vaultsService.getVaultsBulk(vaultIds);
+  }
+
+  @Get('metadata')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get vault metadata (names, symbols, asset pairs)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Vault metadata retrieved successfully',
+  })
+  async getVaultsMetadata(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<any[]> {
+    // Metadata is mostly static — 5-minute CDN cache is safe.
+    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=60');
+    return this.vaultsService.getVaultsMetadata();
+  }
+
+  @Get('apy-history')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get APY history for vaults' })
+  @ApiQuery({ name: 'vaultId', required: false })
+  @ApiQuery({ name: 'timeRange', required: false, enum: ['7d', '30d', '90d', 'all'] })
+  @ApiResponse({
+    status: 200,
+    description: 'APY history retrieved successfully',
+  })
+  async getApyHistory(
+    @Res({ passthrough: true }) res: Response,
+    @Query('vaultId') vaultId?: string,
+    @Query('timeRange') timeRange: string = '30d',
+  ): Promise<any[]> {
+    // APY history is pre-aggregated; a 5-minute CDN cache is safe.
+    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=60');
+    return this.vaultsService.getApyHistory(vaultId, timeRange);
   }
 
   @Get(':vaultId')
@@ -299,58 +404,14 @@ export class VaultsController {
     description: 'Vault ID (UUID)',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Vault retrieved successfully',
-    type: VaultResponseDto,
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid or missing token',
-  })
+  @ApiResponse({ status: 200, description: 'Vault retrieved successfully', type: VaultResponseDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
   @ApiResponse({ status: 404, description: 'Vault not found' })
   async getVaultById(
     @Param('vaultId') vaultId: string,
   ): Promise<VaultResponseDto> {
     const vault = await this.vaultsService.getVaultById(vaultId);
     return this.vaultsService.mapVaultToResponse(vault);
-  }
-
-  @Get('public')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get all public vaults' })
-  @ApiResponse({
-    status: 200,
-    description: 'Public vaults retrieved successfully',
-    type: [VaultResponseDto],
-  })
-  async getPublicVaults(): Promise<VaultResponseDto[]> {
-    return this.vaultsService.getPublicVaults();
-  }
-
-  @Get('metadata')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get vault metadata (names, symbols, asset pairs)' })
-  @ApiResponse({
-    status: 200,
-    description: 'Vault metadata retrieved successfully',
-  })
-  async getVaultsMetadata(): Promise<any[]> {
-    return this.vaultsService.getVaultsMetadata();
-  }
-
-  @Get('apy-history')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get APY history for vaults' })
-  @ApiResponse({
-    status: 200,
-    description: 'APY history retrieved successfully',
-  })
-  async getApyHistory(
-    @Query('vaultId') vaultId?: string,
-    @Query('timeRange') timeRange: string = '30d',
-  ): Promise<any[]> {
-    return this.vaultsService.getApyHistory(vaultId, timeRange);
   }
 
   @Get(':vaultId/score-breakdown')

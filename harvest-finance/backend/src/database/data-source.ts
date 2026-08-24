@@ -69,6 +69,7 @@ import { AddPhoneAndNotificationPreferencesToUsers1700000000022 } from './migrat
 import { AddRefreshTokenRotation1700000000022 } from './migrations/1700000000022-AddRefreshTokenRotation';
 import { CreateSessionsAndOAuthLinks1700000000022 } from './migrations/1700000000022-CreateSessionsAndOAuthLinks';
 import { AddEmailVerificationToUsers1700000000023 } from './migrations/1700000000023-AddEmailVerificationToUsers';
+import { AddPerformanceIndexes1700000000024 } from './migrations/1700000000024-AddPerformanceIndexes';
 
 // Load environment variables
 config();
@@ -89,6 +90,27 @@ const options: DataSourceOptions = {
   username: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || 'password',
   database: process.env.DB_NAME || 'harvest_finance',
+
+  // ── Connection pool settings ────────────────────────────────────────────────
+  // Tuned for production workloads; override via environment variables so each
+  // environment (dev / staging / prod) can scale independently.
+  extra: {
+    // Maximum number of clients in the pool. Default: 10.
+    // Set DB_POOL_MAX to at least (2 * CPU cores) on the DB host. Typical
+    // production starting point is 20–50 depending on available connections.
+    max: parseInt(process.env.DB_POOL_MAX || '20', 10),
+    // Minimum number of idle connections kept warm.
+    min: parseInt(process.env.DB_POOL_MIN || '2', 10),
+    // How long (ms) a client can sit idle in the pool before being released.
+    idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT_MS || '30000', 10),
+    // How long (ms) to wait for a new connection before throwing an error.
+    connectionTimeoutMillis: parseInt(process.env.DB_CONNECT_TIMEOUT_MS || '5000', 10),
+    // Maximum lifetime of a pooled connection (ms). Rotates stale connections.
+    maxLifetimeSeconds: parseInt(process.env.DB_POOL_MAX_LIFETIME_S || '1800', 10),
+    // Allow TypeORM to retry a failed query once (transient network blip).
+    query_timeout: parseInt(process.env.DB_QUERY_TIMEOUT_MS || '30000', 10),
+    statement_timeout: parseInt(process.env.DB_STATEMENT_TIMEOUT_MS || '30000', 10),
+  },
 
   entities: [
     User,
@@ -153,6 +175,7 @@ const options: DataSourceOptions = {
     CreateSessionsAndOAuthLinks1700000000022,
     AddRefreshTokenRotation1700000000022,
     AddEmailVerificationToUsers1700000000023,
+    AddPerformanceIndexes1700000000024,
   ],
 
   // synchronize must remain false in all non-test environments.

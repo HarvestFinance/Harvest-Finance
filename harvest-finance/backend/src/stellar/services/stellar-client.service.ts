@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import * as https from 'https';
 import * as StellarSdk from 'stellar-sdk';
 import { CircuitBreaker, CircuitBreakerOpenError, CircuitBreakerStateChange } from '../utils/circuit-breaker';
 import { retry } from '../../common/utils/retry';
@@ -43,11 +44,33 @@ export class StellarClientService implements OnModuleInit, OnModuleDestroy {
   ) {
     const network = this.configService.get<string>('STELLAR_NETWORK', 'testnet');
 
+    // ── HTTP agent pooling ───────────────────────────────────────────────────
+    // Reuse TCP connections to Horizon instead of opening a new socket per
+    // request. keepAlive + maxSockets prevent connection churn under load.
+    const horizonAgent = new https.Agent({
+      keepAlive: true,
+      maxSockets: parseInt(
+        this.configService.get<string>('STELLAR_HTTP_MAX_SOCKETS') || '25',
+        10,
+      ),
+      maxFreeSockets: 10,
+      timeout: parseInt(
+        this.configService.get<string>('STELLAR_HTTP_TIMEOUT_MS') || '30000',
+        10,
+      ),
+    });
+
     if (network === 'mainnet') {
-      this.server = new StellarSdk.Horizon.Server('https://horizon.stellar.org');
+      this.server = new StellarSdk.Horizon.Server(
+        'https://horizon.stellar.org',
+        { allowHttp: false, appName: 'harvest-finance', httpAgent: horizonAgent } as any,
+      );
       this.networkPassphrase = StellarSdk.Networks.PUBLIC;
     } else {
-      this.server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org');
+      this.server = new StellarSdk.Horizon.Server(
+        'https://horizon-testnet.stellar.org',
+        { allowHttp: false, appName: 'harvest-finance', httpAgent: horizonAgent } as any,
+      );
       this.networkPassphrase = StellarSdk.Networks.TESTNET;
     }
 

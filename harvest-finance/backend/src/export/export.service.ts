@@ -115,7 +115,29 @@ export class ExportService {
   }
 
   /**
-   * Generate CSV from transaction data
+   * Generate CSV as a Node.js Readable stream.
+   * Use streamCsv() for HTTP responses to avoid buffering the full file in RAM.
+   * The legacy generateCsv() is kept for backward-compat and queue-based jobs.
+   */
+  streamCsv(data: TransactionExportData[]): Readable {
+    const passThrough = new Readable({ read() {} });
+
+    const csvStream = fastCsv.format({ headers: true });
+    csvStream.on('data', (chunk) => passThrough.push(chunk));
+    csvStream.on('end', () => passThrough.push(null));
+    csvStream.on('error', (err) => passThrough.destroy(err));
+
+    // Write rows asynchronously so the stream starts flowing immediately.
+    setImmediate(() => {
+      data.forEach((row) => csvStream.write(row));
+      csvStream.end();
+    });
+
+    return passThrough;
+  }
+
+  /**
+   * Generate CSV from transaction data (buffered string — kept for backward compat).
    */
   async generateCsv(data: TransactionExportData[]): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -140,9 +162,10 @@ export class ExportService {
   }
 
   /**
-   * Generate Excel buffer from transaction data
+   * Stream an Excel workbook directly to a writable stream (e.g. HTTP response).
+   * Avoids materialising the entire Buffer in RAM before sending.
    */
-  async generateExcel(data: TransactionExportData[]): Promise<Buffer> {
+  streamExcel(data: TransactionExportData[], writableStream: NodeJS.WritableStream): Promise<void> {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Transactions');
 
@@ -154,7 +177,6 @@ export class ExportService {
       { header: 'Status', key: 'status', width: 15 },
     ];
 
-    // Style the header
     worksheet.getRow(1).font = { bold: true };
     worksheet.getRow(1).fill = {
       type: 'pattern',
@@ -162,10 +184,26 @@ export class ExportService {
       fgColor: { argb: 'FFEEEEEE' },
     };
 
-    data.forEach((row) => {
-      worksheet.addRow(row);
-    });
+    data.forEach((row) => worksheet.addRow(row));
 
+    return workbook.xlsx.write(writableStream as any);
+  }
+
+  /**
+   * Generate Excel buffer from transaction data (for queue-based async jobs).
+   */
+  async generateExcel(data: TransactionExportData[]): Promise<Buffer> {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Transactions');
+    worksheet.columns = [
+      { header: 'Date', key: 'date', width: 25 },
+      { header: 'Transaction Type', key: 'type', width: 15 },
+      { header: 'Vault / Token', key: 'vault', width: 25 },
+      { header: 'Amount', key: 'amount', width: 15 },
+      { header: 'Status', key: 'status', width: 15 },
+    ];
+    worksheet.getRow(1).font = { bold: true };
+    data.forEach((row) => worksheet.addRow(row));
     const buffer = await workbook.xlsx.writeBuffer();
     return Buffer.from(buffer as ArrayBuffer);
   }

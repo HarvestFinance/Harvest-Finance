@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
+import { DataSource } from 'typeorm';
 import {
   User,
   UserOAuthLink,
@@ -10,6 +12,7 @@ import {
   Vault,
   VaultDeposit,
 } from './entities';
+import { ReadReplicaService } from './read-replica.service';
 
 /**
  * Database Module
@@ -19,6 +22,7 @@ import {
  */
 @Module({
   imports: [
+    ConfigModule,
     TypeOrmModule.forFeature([
       User,
       UserOAuthLink,
@@ -30,6 +34,14 @@ import {
       VaultDeposit,
     ]),
   ],
-  exports: [TypeOrmModule],
+  providers: [
+    {
+      provide: ReadReplicaService,
+      useFactory: (configService: any, dataSource: DataSource) =>
+        new ReadReplicaService(configService, dataSource),
+      inject: ['ConfigService', DataSource],
+    },
+  ],
+  exports: [TypeOrmModule, ReadReplicaService],
 })
 export class DatabaseModule {}

@@ -8,6 +8,7 @@ import { NestFactory, HttpAdapterHost } from '@nestjs/core';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { HttpAdapterHost } from '@nestjs/core';
+import compression from 'compression';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ThrottlerExceptionFilter } from './common/filters/throttler-exception.filter';
@@ -23,6 +24,11 @@ async function bootstrap() {
   });
   const customLogger = app.get(CustomLoggerService);
   app.useLogger(customLogger);
+
+  // ── Compression ────────────────────────────────────────────────────────────
+  // Negotiates Brotli (br) or Gzip depending on Accept-Encoding.
+  // threshold: 1 KB – don't compress tiny responses.
+  app.use(compression({ threshold: 1024 }));
 
   const httpAdapterHost = app.get(HttpAdapterHost);
 
