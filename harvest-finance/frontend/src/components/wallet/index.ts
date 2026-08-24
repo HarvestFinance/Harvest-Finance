@@ -1,4 +1,5 @@
-export { WalletButton } from './WalletButton';
-export { BalanceDisplay } from './BalanceDisplay';
-export { CustodialWalletBadge } from './CustodialWalletBadge';
-export { ExportKeyModal } from './ExportKeyModal';
+export { WalletButton } from '@/features/wallet/components/WalletButton'
+export { BalanceDisplay } from '@/features/wallet/components/BalanceDisplay'
+export { CustodialWalletBadge } from '@/features/wallet/components/CustodialWalletBadge'
+export { ExportKeyModal } from '@/features/wallet/components/ExportKeyModal'
+export { ClientWalletButton } from '@/features/wallet'

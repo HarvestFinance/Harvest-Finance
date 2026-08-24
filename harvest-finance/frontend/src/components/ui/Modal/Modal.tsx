@@ -1,5 +1,6 @@
 'use client';
 
+import { cva, type VariantProps } from 'class-variance-authority';
 import React, { forwardRef, useEffect, useCallback, useRef } from 'react';
 import { ModalProps, ModalHeaderProps, ModalBodyProps, ModalFooterProps, cn } from '../types';
 
@@ -53,9 +54,34 @@ const animationStyles = `
   }
 `;
 
-// ============================================
-// Modal Component
-// ============================================
+export const modalVariants = cva(
+  'relative w-full bg-white rounded-xl shadow-2xl dark:bg-[#162a1a] transform transition-all duration-200',
+  {
+    variants: {
+      size: {
+        xs: 'max-w-sm',
+        sm: 'max-w-md',
+        md: 'max-w-lg',
+        lg: 'max-w-2xl',
+        xl: 'max-w-4xl',
+        '2xl': 'max-w-6xl',
+        full: 'max-w-[calc(100vw-2rem)] max-h-[calc(100vh-2rem)]',
+      },
+      animation: {
+        fade: '',
+        scale: 'animate-modalScaleIn',
+        slide: 'animate-modalSlideUpIn',
+        none: '',
+      },
+    },
+    defaultVariants: {
+      size: 'md',
+      animation: 'scale',
+    },
+  },
+)
+
+export type ModalVariantProps = VariantProps<typeof modalVariants>
 
 const Modal = forwardRef<HTMLDivElement, ModalProps>(
   (
@@ -144,17 +170,6 @@ const Modal = forwardRef<HTMLDivElement, ModalProps>(
       [closeOnOverlayClick, onClose]
     );
 
-    // Size-specific styles
-    const sizeStyles: Record<string, string> = {
-      xs: 'max-w-sm',
-      sm: 'max-w-md',
-      md: 'max-w-lg',
-      lg: 'max-w-2xl',
-      xl: 'max-w-4xl',
-      '2xl': 'max-w-6xl',
-      full: 'max-w-[calc(100vw-2rem)] max-h-[calc(100vh-2rem)]',
-    };
-
     // Animation-specific styles
     const getAnimationStyles = (isEntering: boolean) => {
       const animationName = {
@@ -204,10 +219,7 @@ const Modal = forwardRef<HTMLDivElement, ModalProps>(
           <div
             ref={modalRef}
             className={cn(
-              'relative w-full bg-white rounded-xl shadow-2xl',
-              'dark:bg-[#162a1a]',
-              'transform transition-all duration-200',
-              sizeStyles[size],
+              modalVariants({ size, animation: animation === 'none' ? 'none' : animation === 'slide' ? 'slide' : 'scale' }),
               animation !== 'none' && animation !== 'fade' && 'animate-modalScaleIn',
               animation === 'slide' && 'animate-modalSlideUpIn'
             )}

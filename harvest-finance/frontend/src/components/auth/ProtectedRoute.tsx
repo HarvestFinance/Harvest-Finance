@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/stores/auth-store';
+import { pushRoute, routes } from '@/lib/routes';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -21,7 +22,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   useEffect(() => {
     if (!isChecking && !isAuthenticated) {
-      router.push('/login');
+      pushRoute(router, routes.login());
     }
   }, [isChecking, isAuthenticated, router]);
 

@@ -1,21 +1,82 @@
-'use client';
+'use client'
 
-import React, { forwardRef } from 'react';
-import { ButtonProps, cn } from '../types';
+import { cva, type VariantProps } from 'class-variance-authority'
+import React, { forwardRef } from 'react'
+import { ButtonProps, cn } from '../types'
 
-/**
- * HarvestButton - A versatile button component with multiple variants and states
- * 
- * @example
- * // Primary button
- * <Button variant="primary" onClick={handleClick}>Click Me</Button>
- * 
- * // Loading state
- * <Button variant="primary" isLoading>Processing...</Button>
- * 
- * // With icons
- * <Button leftIcon={<SaveIcon />} rightIcon={<ArrowRightIcon />}>Save & Continue</Button>
- */
+export const buttonVariants = cva(
+  [
+    'inline-flex items-center justify-center font-medium',
+    'transition-all duration-200 ease-out',
+    'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+    'disabled:opacity-50 disabled:cursor-not-allowed',
+    'select-none',
+  ].join(' '),
+  {
+    variants: {
+      variant: {
+        primary: [
+          'bg-harvest-green-600 text-white',
+          'hover:bg-harvest-green-700 active:bg-harvest-green-800',
+          'focus-visible:ring-harvest-green-500',
+          'shadow-sm hover:shadow-md active:shadow-sm',
+        ].join(' '),
+        secondary: [
+          'bg-harvest-green-100 text-harvest-green-800',
+          'hover:bg-harvest-green-200 active:bg-harvest-green-300',
+          'focus-visible:ring-harvest-green-500',
+          'dark:bg-harvest-green-900 dark:text-harvest-green-300',
+          'dark:hover:bg-harvest-green-800 dark:active:bg-harvest-green-700',
+        ].join(' '),
+        outline: [
+          'border-2 border-harvest-green-600 text-harvest-green-600',
+          'bg-transparent hover:bg-harvest-green-50 active:bg-harvest-green-100',
+          'focus-visible:ring-harvest-green-500',
+          'dark:border-harvest-green-500 dark:text-harvest-green-400',
+          'dark:hover:bg-harvest-green-900 dark:active:bg-harvest-green-800',
+        ].join(' '),
+        ghost: [
+          'text-harvest-green-700',
+          'hover:bg-harvest-green-100 active:bg-harvest-green-200',
+          'focus-visible:ring-harvest-green-500',
+          'dark:text-harvest-green-400',
+          'dark:hover:bg-harvest-green-900 dark:active:bg-harvest-green-800',
+        ].join(' '),
+        danger: [
+          'bg-red-600 text-white',
+          'hover:bg-red-700 active:bg-red-800',
+          'focus-visible:ring-red-500',
+          'shadow-sm hover:shadow-md active:shadow-sm',
+        ].join(' '),
+        success: [
+          'bg-emerald-600 text-white',
+          'hover:bg-emerald-700 active:bg-emerald-800',
+          'focus-visible:ring-emerald-500',
+          'shadow-sm hover:shadow-md active:shadow-sm',
+        ].join(' '),
+      },
+      size: {
+        xs: 'h-7 px-2.5 text-xs rounded-md gap-1',
+        sm: 'h-8 px-3 text-sm rounded-md gap-1.5',
+        md: 'h-10 px-4 text-sm rounded-lg gap-2',
+        lg: 'h-12 px-6 text-base rounded-lg gap-2.5',
+        xl: 'h-14 px-8 text-lg rounded-xl gap-3',
+      },
+      fullWidth: {
+        true: 'w-full',
+        false: '',
+      },
+    },
+    defaultVariants: {
+      variant: 'primary',
+      size: 'md',
+      fullWidth: false,
+    },
+  },
+)
+
+export type ButtonVariantProps = VariantProps<typeof buttonVariants>
+
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
@@ -33,88 +94,9 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       'data-testid': testId,
       ...props
     },
-    ref
+    ref,
   ) => {
-    const isDisabledOrLoading = isDisabled || disabled || isLoading;
-
-    // Base styles applied to all buttons
-    const baseStyles = cn(
-      'inline-flex items-center justify-center font-medium',
-      'transition-all duration-200 ease-out',
-      'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-      'disabled:opacity-50 disabled:cursor-not-allowed',
-      'select-none'
-    );
-
-    // Variant-specific styles
-    const variantStyles: Record<string, string> = {
-      primary: cn(
-        'bg-harvest-green-600 text-white',
-        'hover:bg-harvest-green-700 active:bg-harvest-green-800',
-        'focus-visible:ring-harvest-green-500',
-        'shadow-sm hover:shadow-md active:shadow-sm'
-      ),
-      secondary: cn(
-        'bg-harvest-green-100 text-harvest-green-800',
-        'hover:bg-harvest-green-200 active:bg-harvest-green-300',
-        'focus-visible:ring-harvest-green-500',
-        'dark:bg-harvest-green-900 dark:text-harvest-green-300',
-        'dark:hover:bg-harvest-green-800 dark:active:bg-harvest-green-700'
-      ),
-      outline: cn(
-        'border-2 border-harvest-green-600 text-harvest-green-600',
-        'bg-transparent hover:bg-harvest-green-50 active:bg-harvest-green-100',
-        'focus-visible:ring-harvest-green-500',
-        'dark:border-harvest-green-500 dark:text-harvest-green-400',
-        'dark:hover:bg-harvest-green-900 dark:active:bg-harvest-green-800'
-      ),
-      ghost: cn(
-        'text-harvest-green-700',
-        'hover:bg-harvest-green-100 active:bg-harvest-green-200',
-        'focus-visible:ring-harvest-green-500',
-        'dark:text-harvest-green-400',
-        'dark:hover:bg-harvest-green-900 dark:active:bg-harvest-green-800'
-      ),
-      danger: cn(
-        'bg-red-600 text-white',
-        'hover:bg-red-700 active:bg-red-800',
-        'focus-visible:ring-red-500',
-        'shadow-sm hover:shadow-md active:shadow-sm'
-      ),
-      success: cn(
-        'bg-emerald-600 text-white',
-        'hover:bg-emerald-700 active:bg-emerald-800',
-        'focus-visible:ring-emerald-500',
-        'shadow-sm hover:shadow-md active:shadow-sm'
-      ),
-    };
-
-    // Size-specific styles
-    const sizeStyles: Record<string, string> = {
-      xs: cn(
-        'h-7 px-2.5 text-xs rounded-md gap-1',
-        leftIcon && rightIcon ? 'pl-2' : leftIcon ? 'pl-2' : rightIcon ? 'pr-2' : ''
-      ),
-      sm: cn(
-        'h-8 px-3 text-sm rounded-md gap-1.5',
-        leftIcon && rightIcon ? 'pl-2.5' : leftIcon ? 'pl-2.5' : rightIcon ? 'pr-2.5' : ''
-      ),
-      md: cn(
-        'h-10 px-4 text-sm rounded-lg gap-2',
-        leftIcon && rightIcon ? 'pl-3' : leftIcon ? 'pl-3' : rightIcon ? 'pr-3' : ''
-      ),
-      lg: cn(
-        'h-12 px-6 text-base rounded-lg gap-2.5',
-        leftIcon && rightIcon ? 'pl-4' : leftIcon ? 'pl-4' : rightIcon ? 'pr-4' : ''
-      ),
-      xl: cn(
-        'h-14 px-8 text-lg rounded-xl gap-3',
-        leftIcon && rightIcon ? 'pl-5' : leftIcon ? 'pl-5' : rightIcon ? 'pr-5' : ''
-      ),
-    };
-
-    // Full width modifier
-    const fullWidthStyle = fullWidth ? 'w-full' : '';
+    const isDisabledOrLoading = isDisabled || disabled || isLoading
 
     return (
       <button
@@ -122,13 +104,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         type={type}
         disabled={isDisabledOrLoading}
         data-testid={testId}
-        className={cn(
-          baseStyles,
-          variantStyles[variant],
-          sizeStyles[size],
-          fullWidthStyle,
-          className
-        )}
+        className={cn(buttonVariants({ variant, size, fullWidth }), className)}
         aria-disabled={isDisabledOrLoading}
         aria-busy={isLoading}
         {...props}
@@ -166,11 +142,11 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           </>
         )}
       </button>
-    );
-  }
-);
+    )
+  },
+)
 
-Button.displayName = 'Button';
+Button.displayName = 'Button'
 
-export { Button };
-export type { ButtonProps };
+export { Button }
+export type { ButtonProps }

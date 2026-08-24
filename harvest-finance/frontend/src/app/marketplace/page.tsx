@@ -7,6 +7,8 @@ import { Footer } from '@/components/landing/Footer';
 import { Container, Section, Button, Badge } from '@/components/ui';
 import { ListingCard, Listing } from '@/components/marketplace/ListingCard';
 import { CreateListingModal } from '@/components/marketplace/CreateListingModal';
+import { FeatureFlag } from '@/components/providers/FeatureFlag';
+import { EmptyState } from '@/components/ui';
 
 const MOCK_LISTINGS: Listing[] = [
   {
@@ -102,7 +104,7 @@ const SORT_OPTIONS = [
   { value: 'price_desc', label: 'Price: High to Low' },
 ];
 
-export default function MarketplacePage() {
+function MarketplacePage() {
   const [listings, setListings] = useState<Listing[]>(MOCK_LISTINGS);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('ALL');
@@ -257,4 +259,23 @@ export default function MarketplacePage() {
       )}
     </div>
   );
+}
+
+export default function MarketplacePageGate() {
+  return (
+    <FeatureFlag
+      flag="newMarketplace"
+      fallback={
+        <EmptyState
+          variant="custom"
+          title="New marketplace is experimental"
+          description="This experience is currently disabled by a feature flag."
+          ctaLabel="Go home"
+          ctaHref="/"
+        />
+      }
+    >
+      <MarketplacePage />
+    </FeatureFlag>
+  )
 }

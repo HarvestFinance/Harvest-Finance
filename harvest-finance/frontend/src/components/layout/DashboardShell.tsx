@@ -6,6 +6,7 @@ import { Menu, Search, User as UserIcon, X } from "lucide-react";
 import { NotificationCenter } from "@/components/Notification/NotificationCenter";
 import { Sidebar, dashboardNavItems } from "@/components/layout/Sidebar";
 import { ThemeToggle } from "@/components/ui";
+import { ClientWalletButton } from "@/features/wallet";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
@@ -80,6 +81,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
           <div className="flex items-center gap-4">
             <ThemeToggle />
+            <ClientWalletButton />
             <NotificationCenter />
             <div className="h-8 w-px bg-gray-200 dark:bg-[rgba(141,187,85,0.2)]" aria-hidden="true" />
             <button

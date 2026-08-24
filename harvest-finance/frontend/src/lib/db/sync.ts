@@ -1,5 +1,7 @@
 import { db, OfflineAction } from './index';
 import { useAuthStore } from '@/lib/stores/auth-store';
+import { apiRequest } from '@/lib/api/client';
+import type { HttpMethod } from '@/lib/api/types';
 
 export interface SyncResult {
   success: boolean;
@@ -166,20 +168,15 @@ class OfflineSyncManager {
     method: string,
     data?: unknown,
     headers?: Record<string, string>
-  ): Promise<Response> {
+  ): Promise<{ ok: boolean; status: number }> {
     const token = useAuthStore.getState().token;
-    
-    const defaultHeaders: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(headers ?? {}),
-    };
-
-    return fetch(`${API_BASE}${endpoint}`, {
-      method,
-      headers: defaultHeaders,
-      body: data ? JSON.stringify(data) : undefined,
+    const result = await apiRequest(endpoint, {
+      method: method as HttpMethod,
+      body: data,
+      headers,
+      auth: token ?? true,
     });
+    return { ok: result.ok, status: result.status };
   }
 
   async queueOfflineAction(

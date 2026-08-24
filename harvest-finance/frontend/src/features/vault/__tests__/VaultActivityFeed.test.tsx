@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { VaultActivityFeed, anonymizeAddress } from '../components/VaultActivityFeed';
+import { VaultActivityFeed, anonymizeAddress } from '../components/VaultActivityFeed.shared';
 import { useVaultRealtime } from '@/hooks/useVaultRealtime';
 
 // Mock the useVaultRealtime hook

@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { NextIntlClientProvider } from 'next-intl';
 import { cookies } from 'next/headers';
 import { MilestoneToastContainer } from "@/components/dashboard/MilestoneToast";
 import ReactToastProvider from '@/components/ui/ReactToastProvider';
@@ -9,6 +8,9 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import QueryProvider from "@/components/providers/QueryProvider";
 import { ServiceWorkerRegistration } from "@/components/layout/ServiceWorkerRegistration";
 import { ConnectionStatus } from "@/components/layout/ConnectionStatus";
+import { I18nRuntimeProvider } from "@/lib/i18n";
+import { MswProvider } from "@/components/providers/MswProvider";
+import { DesignTokenStyles } from "@/components/ui/theme/DesignTokenStyles";
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -75,20 +77,23 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <NextIntlClientProvider locale={locale} messages={messages}>
+        <DesignTokenStyles />
+        <I18nRuntimeProvider initialLocale={locale} initialMessages={messages}>
           <ThemeProvider>
-            <QueryProvider>
-              <ServiceWorkerRegistration />
-              <a href="#main-content" className="skip-link">
-                Skip to main content
-              </a>
-              {children}
-              <MilestoneToastContainer />
-              <ReactToastProvider />
-              <ConnectionStatus />
-            </QueryProvider>
+            <MswProvider>
+              <QueryProvider>
+                <ServiceWorkerRegistration />
+                <a href="#main-content" className="skip-link">
+                  Skip to main content
+                </a>
+                {children}
+                <MilestoneToastContainer />
+                <ReactToastProvider />
+                <ConnectionStatus />
+              </QueryProvider>
+            </MswProvider>
           </ThemeProvider>
-        </NextIntlClientProvider>
+        </I18nRuntimeProvider>
       </body>
     </html>
   );

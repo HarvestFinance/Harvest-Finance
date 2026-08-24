@@ -1,12 +1,4 @@
-import axios from 'axios';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
-
-const apiClient = axios.create({
-  baseURL: API_BASE,
-  headers: { 'Content-Type': 'application/json' },
-  timeout: 10000,
-});
+import { apiRequestOrThrow } from './client'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -91,45 +83,50 @@ export interface SubscribeParams {
 
 // ─── API functions ─────────────────────────────────────────────────────────────
 
-function authHeaders(token: string) {
-  return { Authorization: `Bearer ${token}` };
-}
-
 export async function fetchInsuranceRecommendations(
   token: string,
   params: RiskAssessmentParams,
+  signal?: AbortSignal,
 ): Promise<RecommendationsResponse> {
-  const { data } = await apiClient.get<RecommendationsResponse>(
-    '/api/insurance/recommendations',
-    { params, headers: authHeaders(token) },
-  );
-  return data;
+  return apiRequestOrThrow<RecommendationsResponse>('/api/insurance/recommendations', {
+    method: 'GET',
+    params: params as unknown as Record<string, string | number | boolean | undefined>,
+    auth: token,
+    signal,
+  })
 }
 
-export async function fetchInsurancePlans(token: string): Promise<InsurancePlan[]> {
-  const { data } = await apiClient.get<InsurancePlan[]>(
-    '/api/insurance/plans',
-    { headers: authHeaders(token) },
-  );
-  return data;
+export async function fetchInsurancePlans(
+  token: string,
+  signal?: AbortSignal,
+): Promise<InsurancePlan[]> {
+  return apiRequestOrThrow<InsurancePlan[]>('/api/insurance/plans', {
+    method: 'GET',
+    auth: token,
+    signal,
+  })
 }
 
-export async function fetchUserSubscriptions(token: string): Promise<InsuranceSubscription[]> {
-  const { data } = await apiClient.get<InsuranceSubscription[]>(
-    '/api/insurance/subscriptions',
-    { headers: authHeaders(token) },
-  );
-  return data;
+export async function fetchUserSubscriptions(
+  token: string,
+  signal?: AbortSignal,
+): Promise<InsuranceSubscription[]> {
+  return apiRequestOrThrow<InsuranceSubscription[]>('/api/insurance/subscriptions', {
+    method: 'GET',
+    auth: token,
+    signal,
+  })
 }
 
 export async function subscribeToInsurancePlan(
   token: string,
   params: SubscribeParams,
+  signal?: AbortSignal,
 ): Promise<InsuranceSubscription> {
-  const { data } = await apiClient.post<InsuranceSubscription>(
-    '/api/insurance/subscribe',
-    params,
-    { headers: authHeaders(token) },
-  );
-  return data;
+  return apiRequestOrThrow<InsuranceSubscription>('/api/insurance/subscribe', {
+    method: 'POST',
+    body: params,
+    auth: token,
+    signal,
+  })
 }

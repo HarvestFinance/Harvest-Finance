@@ -13,13 +13,21 @@ import {
   CardBody,
   Badge,
   ThemeToggle,
+  LoadingState,
+  ErrorState,
+  EmptyState,
 } from '@/components/ui';
 import { PortfolioOverview } from '@/components/portfolio/PortfolioOverview';
 import { TransactionTable } from '@/components/portfolio/TransactionTable';
 import { MOCK_STATS, MOCK_TRANSACTIONS } from '@/lib/mock-data';
+import { usePortfolioQuery } from '@/features/vault/hooks';
+import { routes } from '@/lib/routes';
 
 export default function PortfolioPage() {
   const { t } = useTranslation();
+  const { data, isLoading, isError, refetch } = usePortfolioQuery();
+  const stats = data?.stats ?? MOCK_STATS;
+  const transactions = data?.transactions ?? MOCK_TRANSACTIONS;
   return (
     <main className="min-h-screen bg-gray-50/50 dark:bg-[#0d1f12] pb-20">
       {/* Header / Navigation Overlay */}
@@ -27,7 +35,7 @@ export default function PortfolioPage() {
         <Container>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link href="/">
+              <Link href={routes.home()}>
                 <Button variant="ghost" size="sm" leftIcon={<ArrowLeft className="w-4 h-4" />}>
                   {t('portfolio.back')}
                 </Button>
@@ -38,7 +46,7 @@ export default function PortfolioPage() {
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <ThemeToggle />
-              <Link href="/dashboard" className="shrink-0">
+              <Link href={routes.dashboard()} className="shrink-0">
                 <Button variant="outline" size="sm" leftIcon={<LayoutDashboard className="w-4 h-4" />}>
                   {t('sidebar.dashboard')}
                 </Button>
@@ -89,7 +97,13 @@ export default function PortfolioPage() {
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('portfolio.overview_title')}</h2>
               <p className="text-gray-500 dark:text-gray-400">{t('portfolio.overview_desc')}</p>
             </div>
-            <PortfolioOverview stats={MOCK_STATS} />
+            {isLoading ? (
+              <LoadingState variant="card" title="Loading portfolio" />
+            ) : isError ? (
+              <ErrorState variant="inline" onAction={() => { void refetch() }} />
+            ) : (
+              <PortfolioOverview stats={stats} />
+            )}
           </Section>
 
           <Section paddingY="none">
@@ -97,7 +111,11 @@ export default function PortfolioPage() {
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('portfolio.transaction_history')}</h2>
               <p className="text-gray-500 dark:text-gray-400">{t('portfolio.transaction_desc')}</p>
             </div>
-            <TransactionTable transactions={MOCK_TRANSACTIONS} />
+            {transactions.length === 0 ? (
+              <EmptyState variant="no-deposits" />
+            ) : (
+              <TransactionTable transactions={transactions} />
+            )}
           </Section>
         </motion.div>
       </Container>
