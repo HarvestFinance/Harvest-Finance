@@ -39,7 +39,7 @@ Register a new user.
 ```json
 { "refresh_token": "<token>" }
 ```
-**Response:** `{ access_token }`
+**Response:** `{ access_token, refresh_token }` — both tokens rotate on every refresh; the previous refresh token is revoked.
 
 ### POST /auth/logout
 Requires Bearer token. Invalidates current session.

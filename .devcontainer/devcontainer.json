@@ -3,11 +3,12 @@
   "dockerComposeFile": "../docker-compose.yml",
   "service": "backend",
   "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
   "overrideCommand": false,
   "forwardPorts": [3000, 3001, 5432, 6379],
   "portsAttributes": {
-    "3001": { "label": "Backend API" },
     "3000": { "label": "Frontend" },
+    "3001": { "label": "Backend API" },
     "5432": { "label": "PostgreSQL" },
     "6379": { "label": "Redis" }
   },
@@ -34,6 +35,6 @@
       }
     }
   },
-  "postCreateCommand": "cd /workspaces/Harvest-Finance/harvest-finance/backend && npm install",
+  "postCreateCommand": "npm install && cd harvest-finance/backend && npm install && cd ../frontend && npm install",
   "remoteUser": "node"
 }

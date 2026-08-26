@@ -1,0 +1,18 @@
+# Pre-commit: auto-fix staged backend TypeScript, then block NEW lint/type errors.
+#
+# 1. lint-staged (configured in harvest-finance/backend/package.json) runs
+#    ESLint --fix on staged .ts/.tsx files under harvest-finance/backend/.
+#    It never blocks: the gates below decide what fails a commit.
+# 2. When backend TS files are staged, run two project-wide baseline-aware
+#    gates. Both fail ONLY when your change introduces an error that is not
+#    in the checked-in baselines, so existing debt doesn't block commits
+#    while new debt does:
+#      - tsc-gate.sh   vs harvest-finance/backend/tsc-baseline.txt
+#      - lint-gate.sh  vs harvest-finance/backend/eslint-baseline.txt
+
+npx lint-staged --cwd harvest-finance/backend || exit 1
+
+if git diff --cached --name-only --diff-filter=ACMR | grep -q '^harvest-finance/backend/.*\.tsx\?$'; then
+  bash harvest-finance/backend/scripts/tsc-gate.sh || exit 1
+  bash harvest-finance/backend/scripts/lint-gate.sh || exit 1
+fi

@@ -109,6 +109,17 @@ export class TokenResponseDto {
       'Token type — always "Bearer". Prefix the access_token with this value in the Authorization header.',
   })
   token_type: string;
+
+  /**
+   * New refresh token. Returned when the refresh flow rotates the refresh
+   * token; absent from responses that only re-issue an access token.
+   */
+  @ApiPropertyOptional({
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    description:
+      'Replacement refresh token issued by the rotation flow. Store it securely and use it for the next refresh call.',
+  })
+  refresh_token?: string;
 }
 
 /** Response shape returned after a successful logout. */

@@ -9,7 +9,11 @@ import {
   UpdateDateColumn,
   Index,
 } from 'typeorm';
-import { Strategy, CompoundingFrequency, COMPOUNDING_FREQUENCY_N } from './strategy.entity';
+import {
+  Strategy,
+  CompoundingFrequency,
+  COMPOUNDING_FREQUENCY_N,
+} from './strategy.entity';
 import { User } from './user.entity';
 import { Deposit } from './deposit.entity';
 import { VaultApproval } from './vault-approval.entity';
@@ -22,6 +26,54 @@ export enum VaultType {
   EMERGENCY_FUND = 'EMERGENCY_FUND',
 }
 
+/**
+ * Lifecycle states of a vault and the transitions the application performs.
+ *
+ * ## States
+ *
+ * | State           | Operational meaning                                                                 |
+ * |-----------------|-------------------------------------------------------------------------------------|
+ * | `ACTIVE`        | Open for deposits and withdrawals. Initial state on creation.                       |
+ * | `FULL_CAPACITY` | `totalDeposits >= maxCapacity`. Deposits are rejected; withdrawals still allowed.   |
+ * | `FROZEN`        | Temporarily locked by the owner/admin (e.g. during an incident). No deposits or withdrawals. |
+ * | `INACTIVE`      | Delisted/not operational. Not open for new business; set via admin update only.     |
+ * | `SUSPENDED`     | Administratively halted (e.g. compliance review). Set via admin update only.        |
+ *
+ * ## Observed transitions
+ *
+ * ```
+ *            create
+ *              │
+ *              ▼
+ *           ACTIVE ◄────────────┐
+ *  deposit fills capacity│       │ resumeVault()
+ *              │         │       │ withdraw frees space
+ *              ▼         │       │
+ *       FULL_CAPACITY ───┘       │ pauseVault()   ┌─────────────┐
+ *              │                 │   (ACTIVE →    │ FROZEN      │
+ *              │ withdraw frees  │    FROZEN)     └─────────────┘
+ *              └────────────────►└───────────────►(FROZEN ⇄ ACTIVE)
+ *
+ *  ACTIVE/FROZEN/FULL_CAPACITY/INACTIVE/SUSPENDED
+ *        ── admin update (UpdateVaultDto.status) → any status
+ * ```
+ *
+ * Enforced by code:
+ * - `ACTIVE → FULL_CAPACITY`: vaults.service sets this automatically when a
+ *   deposit pushes the vault to capacity.
+ * - `FULL_CAPACITY → ACTIVE`: automatic when a withdrawal frees capacity.
+ * - `ACTIVE → FROZEN` (`pauseVault`) and `FROZEN → ACTIVE`
+ *   (`resumeVault`): owner/admin actions; pausing an already-frozen vault is
+ *   rejected, resuming requires the FROZEN state.
+ *
+ * Important non-transitions / caveats:
+ * - Deposit/withdraw flows require `ACTIVE`; a FROZEN vault rejects both.
+ * - The generic admin update path (`Object.assign(vault, updateVaultDto)`)
+ *   can move a vault between ANY two statuses, including unusual ones such as
+ *   `SUSPENDED → ACTIVE`; there is no transition guard on that endpoint.
+ * - No code currently transitions a vault INTO `INACTIVE` or `SUSPENDED`
+ *   outside of the admin update, nor back out except via the same path.
+ */
 export enum VaultStatus {
   ACTIVE = 'ACTIVE',
   INACTIVE = 'INACTIVE',
@@ -167,8 +219,7 @@ export class Vault {
     if (apr === 0) return 0;
 
     const frequency =
-      this.strategy?.compoundingFrequency ??
-      CompoundingFrequency.DAILY;
+      this.strategy?.compoundingFrequency ?? CompoundingFrequency.DAILY;
 
     const n = COMPOUNDING_FREQUENCY_N[frequency];
     const decimalApr = apr / 100;
@@ -183,9 +234,7 @@ export class Vault {
   get utilizationPercentage(): number {
     if (Number(this.maxCapacity) === 0) return 0;
 
-    return (
-      (Number(this.totalDeposits) / Number(this.maxCapacity)) * 100
-    );
+    return (Number(this.totalDeposits) / Number(this.maxCapacity)) * 100;
   }
 
   get isFullCapacity(): boolean {
