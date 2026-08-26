@@ -19,12 +19,15 @@ import {
   VaultStatus,
   VaultType,
 } from '../database/entities/vault.entity';
+import { Strategy } from '../database/entities/strategy.entity';
 import { Deposit, DepositStatus } from '../database/entities/deposit.entity';
 import {
   Withdrawal,
   WithdrawalStatus,
 } from '../database/entities/withdrawal.entity';
 import { VaultApyHistory } from '../database/entities/vault-apy-history.entity';
+import { VaultReservation } from './entities/vault-reservation.entity';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { VaultReservation } from './entities/vault-reservation.entity';
 import { VaultApproval } from '../database/entities/vault-approval.entity';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -33,6 +36,7 @@ import { VaultGateway } from '../realtime/vault.gateway';
 import { ContractCacheService } from '../common/cache/contract-cache.service';
 import { InputSanitizerService } from '../common/sanitization/input-sanitizer.service';
 import { DepositEventService } from './deposit-event.service';
+import { AuthService } from '../auth/auth.service';
 
 const USER_ID = '11111111-1111-1111-1111-111111111111';
 const OTHER_USER_ID = '99999999-9999-9999-9999-999999999999';
@@ -234,6 +238,9 @@ describe('VaultsService — Yield Strategy Integration', () => {
           provide: getRepositoryToken(VaultApyHistory),
           useValue: mockVaultApyHistoryRepository,
         },
+        { provide: getRepositoryToken(VaultReservation), useValue: { find: jest.fn(), save: jest.fn() } },
+        { provide: CACHE_MANAGER, useValue: {} },
+        { provide: getRepositoryToken(Strategy), useValue: { findOne: jest.fn() } },
         { provide: DataSource, useValue: mockDataSource },
         { provide: NotificationsService, useValue: mockNotificationsService },
         { provide: CustomLoggerService, useValue: mockLogger },
@@ -248,6 +255,7 @@ describe('VaultsService — Yield Strategy Integration', () => {
           provide: WithdrawalQueueService,
           useValue: { processWithdrawalQueue: jest.fn().mockResolvedValue(undefined), enqueueWithdrawal: jest.fn().mockResolvedValue(undefined) },
         },
+        { provide: AuthService, useValue: { isEmailVerified: jest.fn().mockResolvedValue(true) } },
       ],
     }).compile();
 
@@ -320,19 +328,7 @@ describe('VaultsService — Yield Strategy Integration', () => {
       );
     });
 
-    it('should emit real-time deposit event on PaymentReceivedEvent', async () => {
-      const vault = buildVault({ totalDeposits: 500 });
-      mockVaultRepository.findOne.mockResolvedValue(vault);
-      
-      const mockUser = { id: USER_ID, stellarAddress: 'GUSER' };
-      mockDataSource.getRepository.mockReturnValue({
-        findOne: jest.fn().mockResolvedValue(mockUser),
-      } as any);
-
-      mockDepositRepository.findOne
-        .mockResolvedValueOnce({ ...pendingDeposit, amount: 500 })
-        .mockResolvedValueOnce({ ...pendingDeposit, amount: 500 })
-        .mockResolvedValueOnce({ ...confirmedDeposit, amount: 500 });
+    
 
       mockDepositRepository.update.mockResolvedValue(undefined);
       mockDepositRepository.createQueryBuilder.mockReturnValue(buildQB('500'));

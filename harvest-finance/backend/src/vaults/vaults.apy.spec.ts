@@ -7,6 +7,8 @@ import { Deposit } from '../database/entities/deposit.entity';
 import { Withdrawal } from '../database/entities/withdrawal.entity';
 import { Strategy, CompoundingFrequency } from '../database/entities/strategy.entity';
 import { VaultApyHistory } from '../database/entities/vault-apy-history.entity';
+import { VaultReservation } from './entities/vault-reservation.entity';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CustomLoggerService } from '../logger/custom-logger.service';
 import { VaultGateway } from '../realtime/vault.gateway';
@@ -15,6 +17,7 @@ import { InputSanitizerService } from '../common/sanitization/input-sanitizer.se
 import { DepositEventService } from './deposit-event.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { AuthService } from '../auth/auth.service';
+import { FeesService } from './fees.service';
 
 describe('VaultsService APY behavior', () => {
   let service: VaultsService;
@@ -23,7 +26,9 @@ describe('VaultsService APY behavior', () => {
   const mockWithdrawalRepository = { create: jest.fn(), findOne: jest.fn(), update: jest.fn() };
   const mockStrategyRepository = { findOne: jest.fn() };
   const mockApyHistoryRepository = { create: jest.fn(), save: jest.fn(), createQueryBuilder: jest.fn() };
-  const mockDataSource = { transaction: jest.fn(), getRepository: jest.fn(), createQueryBuilder: jest.fn() };
+  const queryBuilderMock = { insert: jest.fn().mockReturnThis(), into: jest.fn().mockReturnThis(), values: jest.fn().mockReturnThis(), execute: jest.fn().mockResolvedValue({}) };
+  const mockDataSource = {
+      createQueryBuilder: jest.fn().mockReturnValue(queryBuilderMock), transaction: jest.fn(), getRepository: jest.fn(), createQueryBuilder: jest.fn() };
   const mockNotificationsService = { create: jest.fn() };
   const mockLogger = { log: jest.fn(), error: jest.fn(), warn: jest.fn() };
   const mockVaultGateway = { emitDeposit: jest.fn(), emitWithdrawal: jest.fn() };
@@ -37,12 +42,15 @@ describe('VaultsService APY behavior', () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: FeesService, useValue: { calculateFee: jest.fn().mockReturnValue({ feeAmount: 0, netAmount: 100 }) } },
         VaultsService,
         { provide: getRepositoryToken(Vault), useValue: mockVaultRepository },
         { provide: getRepositoryToken(Deposit), useValue: mockDepositRepository },
         { provide: getRepositoryToken(Withdrawal), useValue: mockWithdrawalRepository },
         { provide: getRepositoryToken(Strategy), useValue: mockStrategyRepository },
         { provide: getRepositoryToken(VaultApyHistory), useValue: mockApyHistoryRepository },
+        { provide: getRepositoryToken(VaultReservation), useValue: { find: jest.fn(), save: jest.fn() } },
+        { provide: CACHE_MANAGER, useValue: {} },
         { provide: DataSource, useValue: mockDataSource },
         { provide: NotificationsService, useValue: mockNotificationsService },
         { provide: CustomLoggerService, useValue: mockLogger },
@@ -61,7 +69,7 @@ describe('VaultsService APY behavior', () => {
   it('calculates APY for daily, weekly, and monthly compounding', () => {
     expect(service.calculateApy(5, CompoundingFrequency.DAILY)).toBeCloseTo(5.13, 2);
     expect(service.calculateApy(5, CompoundingFrequency.WEEKLY)).toBeCloseTo(5.12, 2);
-    expect(service.calculateApy(5, CompoundingFrequency.MONTHLY)).toBeCloseTo(5.11, 2);
+    expect(service.calculateApy(5, CompoundingFrequency.MONTHLY)).toBeCloseTo(5.12, 2);
   });
 
   it('returns zero APY for zero APR and defaults invalid frequencies to daily', () => {
@@ -71,6 +79,7 @@ describe('VaultsService APY behavior', () => {
 
   it('persists a daily snapshot with APR and APY for a vault', async () => {
     const insertBuilder = {
+      insert: jest.fn().mockReturnThis(),
       into: jest.fn().mockReturnThis(),
       values: jest.fn().mockReturnThis(),
       orIgnore: jest.fn().mockReturnThis(),

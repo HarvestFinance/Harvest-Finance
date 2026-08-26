@@ -1,0 +1,34 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ *
+ * @format
+ */
+
+import type { InspectorProxyQueries } from "../inspector-proxy/InspectorProxy";
+import type { DevToolLauncher } from "../types/DevToolLauncher";
+import type { EventReporter } from "../types/EventReporter";
+import type { Experiments } from "../types/Experiments";
+import type { Logger } from "../types/Logger";
+import type { ReadonlyURL } from "../types/ReadonlyURL";
+import type { NextHandleFunction } from "connect";
+type Options = Readonly<{
+  serverBaseUrl: ReadonlyURL;
+  logger?: Logger;
+  toolLauncher: DevToolLauncher;
+  eventReporter?: EventReporter;
+  experiments: Experiments;
+  inspectorProxy: InspectorProxyQueries;
+}>;
+/**
+ * Open the debugger frontend for a given CDP target.
+ *
+ * @see https://chromedevtools.github.io/devtools-protocol/
+ */
+declare function openDebuggerMiddleware(
+  $$PARAM_0$$: Options,
+): NextHandleFunction;
+export default openDebuggerMiddleware;

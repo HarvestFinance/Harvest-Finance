@@ -12,6 +12,8 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { Vault, VaultStatus } from '../database/entities/vault.entity';
 import { Deposit, DepositStatus } from '../database/entities/deposit.entity';
+import { DepositCompletedEvent, WithdrawalConfirmedEvent } from '../domain-events';
+import { DomainEventNames } from '../domain-events/domain-event-names';
 import { DepositEvent, DepositEventType } from '../database/entities/deposit-event.entity';
 import { ExternalPaymentEventType } from './dto/external-payment-notification.dto';
 import {

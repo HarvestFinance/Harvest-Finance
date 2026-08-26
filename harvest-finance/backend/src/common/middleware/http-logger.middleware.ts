@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Request, Response, NextFunction } from 'express';
 import { pinoHttp } from 'pino-http';
 import { v4 as uuidv4 } from 'uuid';
+import { getTraceContext } from '../../observability/tracing.service';
 
 @Injectable()
 export class HttpLoggerMiddleware implements NestMiddleware {
@@ -22,7 +23,8 @@ export class HttpLoggerMiddleware implements NestMiddleware {
       },
       // Assign or forward a consistent Request ID
       genReqId: (req: Request) => {
-        return req.headers['x-request-id'] || uuidv4();
+        const traceCtx = getTraceContext();
+        return traceCtx?.requestId || req.headers['x-request-id'] || uuidv4();
       },
       // Custom formatting to meet exact field requirements
       customSuccessMessage: (req: Request, res: Response, responseTime: number) => {

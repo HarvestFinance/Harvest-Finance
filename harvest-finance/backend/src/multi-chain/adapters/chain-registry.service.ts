@@ -45,13 +45,27 @@ export class ChainRegistryService implements OnModuleInit {
     return [...this.adapters.values()];
   }
 
+  private refreshPromise: Promise<AdapterHealth[]> | null = null;
+
   async refreshHealth(): Promise<AdapterHealth[]> {
-    await Promise.all(
-      [...this.adapters.values()].map(async (adapter) => {
-        this.health.set(adapter.chain, await this.check(adapter));
-      }),
-    );
-    return this.getHealth();
+    if (this.refreshPromise) {
+      return this.refreshPromise;
+    }
+
+    this.refreshPromise = (async () => {
+      try {
+        await Promise.all(
+          [...this.adapters.values()].map(async (adapter) => {
+            this.health.set(adapter.chain, await this.check(adapter));
+          }),
+        );
+        return this.getHealth();
+      } finally {
+        this.refreshPromise = null;
+      }
+    })();
+
+    return this.refreshPromise;
   }
 
   getHealth(): AdapterHealth[] {

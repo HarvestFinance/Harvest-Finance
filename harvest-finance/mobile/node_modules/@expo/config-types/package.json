@@ -1,0 +1,49 @@
+{
+  "name": "@expo/config-types",
+  "version": "56.0.6",
+  "description": "Types for the Expo config object app.config.ts",
+  "types": "build/ExpoConfig.d.ts",
+  "main": "build/ExpoConfig.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/expo/expo.git",
+    "directory": "packages/@expo/config-types"
+  },
+  "keywords": [
+    "json",
+    "app.json",
+    "app.config.js",
+    "react-native",
+    "expo",
+    "react"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/expo/expo/issues"
+  },
+  "homepage": "https://github.com/expo/expo/tree/main/packages/@expo/config-types#readme",
+  "files": [
+    "build"
+  ],
+  "devDependencies": {
+    "chalk": "^4.1.2",
+    "commander": "^12.1.0",
+    "json-schema-to-typescript": "^15.0.0",
+    "prettier": "^3.8.3",
+    "semver": "^7.7.4",
+    "expo-module-scripts": "56.0.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "gitHead": "812dc007aefed0c432c0439fdfe05ee2f4f21da2",
+  "scripts": {
+    "build": "expo-module tsc",
+    "clean": "expo-module clean",
+    "generate": "node ./scripts/generate.js",
+    "lint": "expo-module lint",
+    "test": "expo-module test",
+    "typecheck": "expo-module typecheck",
+    "watch": "expo-module tsc --watch --preserveWatchOutput"
+  }
+}

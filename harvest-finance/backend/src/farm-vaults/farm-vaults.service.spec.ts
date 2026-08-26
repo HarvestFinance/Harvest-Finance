@@ -21,7 +21,7 @@ describe('FarmVaultsService - amount validation', () => {
     mockCropRepo = { findOne: jest.fn() };
     mockDataSource = {};
     mockGateway = { emitDeposit: jest.fn(), emitMilestone: jest.fn() };
-    mockAuthService = { isEmailVerified: jest.fn() };
+    mockAuthService = { isEmailVerified: jest.fn().mockResolvedValue(true) };
 
     service = new FarmVaultsService(
       mockVaultRepo,

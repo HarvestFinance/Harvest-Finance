@@ -13,6 +13,8 @@ import { WithdrawalQueueService } from './withdrawal-queue.service';
 import { Vault, VaultStatus, VaultType } from '../database/entities/vault.entity';
 import { Deposit, DepositStatus } from '../database/entities/deposit.entity';
 import { VaultApyHistory } from '../database/entities/vault-apy-history.entity';
+import { VaultReservation } from './entities/vault-reservation.entity';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import {
   Withdrawal,
   WithdrawalStatus,
@@ -218,6 +220,9 @@ const buildQB = (total: string | null) => ({
           provide: getRepositoryToken(VaultApyHistory),
           useValue: mockVaultApyHistoryRepository,
         },
+        { provide: getRepositoryToken(VaultReservation), useValue: { find: jest.fn(), save: jest.fn() } },
+        { provide: CACHE_MANAGER, useValue: {} },
+        { provide: getRepositoryToken(Strategy), useValue: mockStrategyRepository },
         { provide: DataSource, useValue: mockDataSource },
         { provide: NotificationsService, useValue: mockNotificationsService },
         { provide: CustomLoggerService, useValue: mockLogger },
@@ -231,6 +236,7 @@ const buildQB = (total: string | null) => ({
           provide: WithdrawalQueueService,
           useValue: { processWithdrawalQueue: jest.fn().mockResolvedValue(undefined), enqueueWithdrawal: jest.fn().mockResolvedValue(undefined) },
         },
+        { provide: AuthService, useValue: { isEmailVerified: jest.fn().mockResolvedValue(true) } },
       ],
     }).compile();
 

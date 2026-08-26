@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -9,6 +10,7 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
+import { CustodialWalletService } from '../wallets/custodial-wallet.service';
 import { CustomLoggerService } from '../logger/custom-logger.service';
 import { User, UserRole } from '../database/entities/user.entity';
 import { UserOAuthLink } from '../database/entities/user-oauth-link.entity';
@@ -51,9 +53,9 @@ describe('AuthService', () => {
   beforeEach(async () => {
     mockUserRepository = {
       findOne: jest.fn(),
-      find: jest.fn(),
-      create: jest.fn(),
-      save: jest.fn(),
+      find: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockImplementation((dto) => ({ id: 'mock-id', ...dto })),
+      save: jest.fn().mockImplementation(async (user) => user),
       update: jest.fn(),
     };
 
@@ -103,15 +105,15 @@ describe('AuthService', () => {
         },
         {
           provide: getRepositoryToken(UserOAuthLink),
-          useValue: { findOne: jest.fn(), save: jest.fn() },
+          useValue: { findOne: jest.fn(), save: jest.fn().mockImplementation(async (entity) => entity) },
         },
         {
           provide: getRepositoryToken(Session),
-          useValue: { find: jest.fn(), create: jest.fn(), save: jest.fn(), update: jest.fn() },
+          useValue: { find: jest.fn().mockResolvedValue([]), create: jest.fn().mockImplementation((dto) => ({ id: 'mock-id', ...dto })), save: jest.fn().mockImplementation(async (entity) => entity), update: jest.fn() },
         },
         {
           provide: getRepositoryToken(SecurityEvent),
-          useValue: { create: jest.fn(), save: jest.fn() },
+          useValue: { create: jest.fn().mockImplementation((dto) => ({ id: 'mock-id', ...dto })), save: jest.fn().mockImplementation(async (entity) => entity) },
         },
         {
           provide: JwtService,
@@ -130,7 +132,7 @@ describe('AuthService', () => {
           useValue: mockLogger,
         },
         {
-          provide: 'CustodialWalletService',
+          provide: CustodialWalletService,
           useValue: { createCustodialWallet: jest.fn() },
         },
       ],

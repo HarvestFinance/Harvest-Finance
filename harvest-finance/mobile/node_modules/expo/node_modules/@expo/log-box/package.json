@@ -1,0 +1,52 @@
+{
+  "name": "@expo/log-box",
+  "version": "56.0.13",
+  "main": "app/index.ts",
+  "dependencies": {
+    "@expo/dom-webview": "^56.0.5",
+    "anser": "^1.4.9",
+    "stacktrace-parser": "^0.1.10"
+  },
+  "devDependencies": {
+    "@expo/spawn-async": "^1.8.0",
+    "@types/react": "~19.2.0",
+    "@types/react-dom": "^19.1.7",
+    "glob": "^13.0.0",
+    "npm-run-all2": "^8.0.4",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.85.3",
+    "react-native-web": "^0.21.0",
+    "rimraf": "^6.1.2",
+    "typescript-plugin-css-modules": "^5.2.0",
+    "expo": "56.0.10",
+    "expo-module-scripts": "56.0.3",
+    "@expo/cli": "56.1.15"
+  },
+  "peerDependencies": {
+    "@expo/dom-webview": "^56.0.5",
+    "expo": "*",
+    "react": "*",
+    "react-native": "*"
+  },
+  "license": "MIT",
+  "author": "Expo",
+  "homepage": "https://github.com/expo/expo/tree/main/packages/@expo/log-box",
+  "description": "Error overlay for universal Expo apps.",
+  "gitHead": "b1e94a5c1c5b19472a42ca25752a3533699bc46a",
+  "scripts": {
+    "start": "expo start",
+    "lint": "expo-module lint",
+    "typecheck": "expo-module typecheck",
+    "clean": "run-p clean:lib clean:bundle",
+    "clean:lib": "rimraf build",
+    "clean:bundle": "rimraf dist",
+    "watch": "run-p watch:lib watch:bundle",
+    "watch:lib": "tsc -p tsconfig.lib.json --watch",
+    "watch:bundle": "node ./scripts/watch-bundle.mjs",
+    "build": "run-s build:lib build:bundle",
+    "build:lib": "tsc -p tsconfig.lib.json",
+    "build:bundle": "node ./scripts/build-bundle.mjs",
+    "export:web": "expo export -p web --no-minify"
+  }
+}

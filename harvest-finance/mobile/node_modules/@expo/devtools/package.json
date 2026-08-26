@@ -1,0 +1,65 @@
+{
+  "name": "@expo/devtools",
+  "version": "56.0.2",
+  "description": "DevTools plugin helpers for Expo",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./build/index.d.ts",
+      "default": "./build/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/expo/expo.git",
+    "directory": "packages/@expo/devtools"
+  },
+  "keywords": [
+    "expo",
+    "react-native",
+    "react",
+    "devtools",
+    "plugins",
+    "dev-plugins",
+    "cli-extensions"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/expo/expo/issues"
+  },
+  "homepage": "https://github.com/expo/expo/tree/main/packages/@expo/devtools#readme",
+  "files": [
+    "build"
+  ],
+  "dependencies": {
+    "chalk": "^4.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@types/react": "~19.2.0",
+    "ws": "^8.18.0",
+    "expo-module-scripts": "56.0.1"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-native": {
+      "optional": true
+    }
+  },
+  "gitHead": "d2109c94206280625a070242b0cb6e2500357c46",
+  "scripts": {
+    "build": "expo-module build",
+    "clean": "expo-module clean",
+    "lint": "expo-module lint",
+    "test": "expo-module test",
+    "typecheck": "expo-module typecheck"
+  }
+}

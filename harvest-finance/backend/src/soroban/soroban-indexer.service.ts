@@ -19,6 +19,8 @@ import {
 import { ContractVersionRegistry } from './parsers/contract-version-registry';
 import { EventParserFactory } from './parsers/event-parser.factory';
 import { HeapMonitorService } from '../observability/heap-monitor.service';
+import { CircuitBreaker, CircuitBreakerOpenError } from '../stellar/utils/circuit-breaker';
+import { isRetryableStellarError } from '../stellar/utils/stellar-retry';
 
 interface RpcContractEvent {
   id: string;
@@ -46,6 +48,7 @@ export class SorobanIndexerService implements OnModuleInit {
   private readonly pageSize: number;
   private readonly filterContractIds: string[];
   private readonly http: AxiosInstance;
+  private readonly circuitBreaker: CircuitBreaker;
 
   private lastIndexedLedger: number | null = null;
   private lastCursor: string | null = null;
@@ -100,6 +103,13 @@ export class SorobanIndexerService implements OnModuleInit {
         10,
       ),
       headers: { 'Content-Type': 'application/json' },
+    });
+
+    this.circuitBreaker = new CircuitBreaker({
+      name: 'soroban-rpc',
+      failureThreshold: 5,
+      resetTimeoutMs: 30000,
+      shouldTrip: (err) => true,
     });
   }
 
@@ -312,12 +322,15 @@ export class SorobanIndexerService implements OnModuleInit {
       return cached;
     }
 
-    const { data } = await this.http.post('', {
-      jsonrpc: '2.0',
-      id: Date.now(),
-      method,
-      params,
-    });
+    const { data } = await this.circuitBreaker.execute(
+      () => this.http.post('', {
+        jsonrpc: '2.0',
+        id: Date.now(),
+        method,
+        params,
+      }),
+      'soroban-rpc',
+    );
     if (typeof data !== 'object' || data === null) {
       throw new Error('Invalid RPC response: expected object');
     }

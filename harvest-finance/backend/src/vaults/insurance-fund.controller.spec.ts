@@ -7,6 +7,7 @@ import { InsuranceFundService, InsuranceFundStats } from './insurance-fund.servi
 import { Vault, VaultType, VaultStatus } from '../database/entities/vault.entity';
 import { InsuranceClaim, InsuranceClaimStatus } from '../database/entities/insurance-claim.entity';
 import { User, UserRole } from '../database/entities/user.entity';
+import { PlatformCircuitBreakerService } from '../common/circuit-breaker/platform-circuit-breaker.service';
 
 const USER_ID = 'user-11111111-1111-1111-1111-111111111111';
 const ADMIN_ID = 'admin-22222222-2222-2222-2222-222222222222';
@@ -38,6 +39,7 @@ describe('InsuranceFundController', () => {
       controllers: [InsuranceFundController],
       providers: [
         { provide: InsuranceFundService, useValue: mockInsuranceFundService },
+        { provide: PlatformCircuitBreakerService, useValue: { isActive: jest.fn().mockResolvedValue(false) } },
       ],
     }).compile();
 

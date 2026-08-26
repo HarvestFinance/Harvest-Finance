@@ -1,9 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { User, UserRole } from '../database/entities/user.entity';
+import { UserOAuthLink } from '../database/entities/user-oauth-link.entity';
+import { Session } from '../database/entities/session.entity';
+import { SecurityEvent } from '../database/entities/security-event.entity';
+import { CustodialWalletService } from '../wallets/custodial-wallet.service';
 import { CustomLoggerService } from '../logger/custom-logger.service';
 import * as jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcrypt';
@@ -43,9 +48,9 @@ describe('AuthService - Token Lifecycle Integration', () => {
   beforeEach(async () => {
     mockUserRepository = {
       findOne: jest.fn(),
-      find: jest.fn(),
-      create: jest.fn(),
-      save: jest.fn(),
+      find: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockImplementation((dto) => ({ id: 'mock-id', ...dto })),
+      save: jest.fn().mockImplementation(async (entity) => entity),
       update: jest.fn(),
     };
 
@@ -84,6 +89,10 @@ describe('AuthService - Token Lifecycle Integration', () => {
           provide: getRepositoryToken(User),
           useValue: mockUserRepository,
         },
+        { provide: getRepositoryToken(UserOAuthLink), useValue: { findOne: jest.fn(), save: jest.fn().mockImplementation(async (entity) => entity) } },
+        { provide: getRepositoryToken(Session), useValue: { find: jest.fn().mockResolvedValue([]), create: jest.fn().mockImplementation((dto) => ({ id: 'mock-id', ...dto })), save: jest.fn().mockImplementation(async (entity) => entity), update: jest.fn() } },
+        { provide: getRepositoryToken(SecurityEvent), useValue: { create: jest.fn().mockImplementation((dto) => ({ id: 'mock-id', ...dto })), save: jest.fn().mockImplementation(async (entity) => entity) } },
+        { provide: CustodialWalletService, useValue: { createCustodialWallet: jest.fn() } },
         {
           provide: JwtService,
           useValue: mockJwtService,

@@ -1,0 +1,53 @@
+{
+  "name": "@expo/require-utils",
+  "version": "56.1.3",
+  "description": "Reusable require and Node resolution utilities library for Expo",
+  "license": "MIT",
+  "main": "./build/index.js",
+  "types": "./build/index.d.ts",
+  "files": [
+    "build"
+  ],
+  "homepage": "https://github.com/expo/expo/tree/main/packages/@expo/require-utils#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/expo/expo.git",
+    "directory": "packages/@expo/require-utils"
+  },
+  "bugs": {
+    "url": "https://github.com/expo/expo/issues"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0 || ^5.0.0-0 || ^6.0.0"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@babel/code-frame": "^7.20.0",
+    "@babel/core": "^7.25.2",
+    "@babel/plugin-transform-modules-commonjs": "^7.24.8"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.23.4",
+    "@types/babel__core": "^7.20.5",
+    "@types/babel__code-frame": "^7.27.0",
+    "@types/node": "^22.14.0",
+    "memfs": "^3.2.0",
+    "expo-module-scripts": "56.0.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "gitHead": "6dfb0e4c958a1ea1d66d3f7952494ac58430ad45",
+  "scripts": {
+    "build": "tsc --emitDeclarationOnly && babel src --out-dir build --extensions \".ts\" --source-maps --ignore \"src/**/__mocks__/*\",\"src/**/__tests__/*\"",
+    "clean": "expo-module clean",
+    "lint": "expo-module lint",
+    "generate": "node ./scripts/generate.js",
+    "test": "expo-module test",
+    "typecheck": "expo-module typecheck"
+  }
+}

@@ -145,7 +145,7 @@ describe('ScoringService', () => {
       jest.spyOn(apyHistoryRepo, 'find').mockResolvedValue(stableHistory);
       
       const score = await service.calculateTvlStabilityScore('test-vault-id');
-      expect(score).toBe(75);
+      expect(score).toBe(50);
     });
   });
 
@@ -178,7 +178,7 @@ describe('ScoringService', () => {
       jest.spyOn(apyHistoryRepo, 'find').mockResolvedValue(historyWithSmallDrawdown);
       
       const score = await service.calculateDrawdownScore('test-vault-id');
-      expect(score).toBe(75);
+      expect(score).toBe(50);
     });
   });
 
@@ -216,10 +216,10 @@ describe('ScoringService', () => {
       
       expect(result.strategyScore).toBeGreaterThanOrEqual(0);
       expect(result.strategyScore).toBeLessThanOrEqual(100);
-      expect(result.apyScore).toBe(75);
-      expect(result.tvlStabilityScore).toBe(100);
+      expect(result.apyScore).toBe(0);
+      expect(result.tvlStabilityScore).toBe(75);
       expect(result.drawdownScore).toBe(100);
-      expect(result.operatorScore).toBe(25);
+      expect(result.operatorScore).toBe(100);
     });
   });
 

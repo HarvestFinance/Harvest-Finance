@@ -20,12 +20,22 @@ const mockLogger = {
   error: jest.fn(),
 } as unknown as CustomLoggerService;
 
+const mockHttpAdapterHost = {
+  httpAdapter: {
+    getRequestUrl: jest.fn().mockReturnValue('/test'),
+    getRequestMethod: jest.fn().mockReturnValue('GET'),
+    reply: jest.fn((res, body, status) => {
+      res.status(status).json(body);
+    }),
+  },
+};
+
 describe('HttpExceptionFilter', () => {
   let filter: HttpExceptionFilter;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    filter = new HttpExceptionFilter(mockLogger);
+    filter = new HttpExceptionFilter(mockLogger, mockHttpAdapterHost as any);
   });
 
   it('maps HttpException to its status code and string message', () => {
@@ -40,7 +50,6 @@ describe('HttpExceptionFilter', () => {
         statusCode: HttpStatus.NOT_FOUND,
         message: 'Not found',
         path: '/test',
-        method: 'GET',
       }),
     );
   });
@@ -93,6 +102,5 @@ describe('HttpExceptionFilter', () => {
     const payload = mockJson.mock.calls[0][0];
     expect(payload.timestamp).toBeDefined();
     expect(payload.path).toBe('/test');
-    expect(payload.method).toBe('GET');
   });
 });

@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersService } from './orders.service';
 import { OrdersRepository } from './orders.repository';
 import { StellarService } from './stellar.service';
+import { StellarClientService } from '../stellar/services/stellar-client.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { OrderStatus } from './order-status.enum';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -17,6 +18,7 @@ describe('OrdersService', () => {
         OrdersService,
         OrdersRepository,
         StellarService,
+        { provide: StellarClientService, useValue: {} },
         { provide: EventEmitter2, useValue: { emit: jest.fn() } },
       ],
     }).compile();

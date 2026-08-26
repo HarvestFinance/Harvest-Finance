@@ -1,0 +1,59 @@
+name: Swift
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: apple
+
+jobs:
+  build-and-test:
+    name: Build & test
+    # The package declares swift-tools-version 6.2, which requires Xcode 26+.
+    runs-on: macos-26
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Select Xcode
+        # Pin to an Xcode that ships Swift 6.2 (required by Package.swift).
+        run: sudo xcode-select -switch /Applications/Xcode_26.4.1.app
+
+      - name: Cache SwiftPM build
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: apple/.build
+          key: spm-${{ runner.os }}-${{ hashFiles('apple/Package.resolved') }}
+          restore-keys: |
+            spm-${{ runner.os }}-
+
+      - name: Resolve dependencies
+        run: swift package resolve
+
+      - name: Build release tool
+        # Runs `npm run build` (apple/build.js): builds the universal
+        # (arm64 + x86_64) release plugin binary, copies it to
+        # apple/ExpoModulesMacros-tool, and strips it.
+        working-directory: ${{ github.workspace }}
+        run: npm run build
+
+      - name: Verify universal binary
+        run: |
+          archs="$(lipo -archs ExpoModulesMacros-tool)"
+          echo "Architectures: $archs"
+          case "$archs" in *arm64*) ;; *) echo "Missing arm64 slice"; exit 1;; esac
+          case "$archs" in *x86_64*) ;; *) echo "Missing x86_64 slice"; exit 1;; esac
+          arch -arm64 ./ExpoModulesMacros-tool < /dev/null
+          arch -x86_64 ./ExpoModulesMacros-tool < /dev/null
+
+      - name: Test
+        run: swift test -v
