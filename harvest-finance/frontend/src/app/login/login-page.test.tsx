@@ -1,4 +1,3 @@
-import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import LoginPage from './page';
 import { useAuthStore } from '@/lib/stores/auth-store';
