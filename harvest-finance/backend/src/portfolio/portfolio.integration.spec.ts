@@ -5,6 +5,7 @@ import { StellarService } from '../stellar/services/stellar.service';
 import { Deposit, DepositStatus } from '../database/entities/deposit.entity';
 import { Vault, VaultType } from '../database/entities/vault.entity';
 import { User } from '../database/entities/user.entity';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 const USER_ID = '11111111-1111-1111-1111-111111111111';
 const VAULT_A_ID = '22222222-2222-2222-2222-222222222222';
@@ -56,6 +57,7 @@ describe('PortfolioService — Balance Aggregation Integration', () => {
         },
         { provide: getRepositoryToken(Vault), useValue: mockVaultRepository },
         { provide: getRepositoryToken(User), useValue: mockUserRepository },
+        { provide: CACHE_MANAGER, useValue: { get: jest.fn(), set: jest.fn(), del: jest.fn() } },
       ],
     }).compile();
 

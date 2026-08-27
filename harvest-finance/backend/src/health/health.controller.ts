@@ -10,6 +10,9 @@ import { RedisHealthIndicator } from './redis.health';
 import { StellarHealthIndicator } from './stellar.health';
 import { StellarClientService } from '../stellar/services/stellar-client.service';
 
+import { SorobanHealthIndicator } from './soroban.health';
+import { ChainAdapterHealthIndicator } from './chain-adapter.health';
+
 @ApiTags('health')
 @SkipThrottle()
 @Controller('health')
@@ -20,6 +23,8 @@ export class HealthController {
     private redis: RedisHealthIndicator,
     private stellar: StellarHealthIndicator,
     private stellarClient: StellarClientService,
+    private soroban: SorobanHealthIndicator,
+    private chainAdapters: ChainAdapterHealthIndicator,
   ) {}
 
   @Get()
@@ -38,6 +43,8 @@ export class HealthController {
       () => this.db.pingCheck('database', { timeout: 3000 }),
       () => this.redis.isHealthy('redis'),
       () => this.stellar.isHealthy('stellar-horizon'),
+      () => this.soroban.isHealthy('soroban-rpc'),
+      () => this.chainAdapters.isHealthy('chain-adapters'),
       () => {
         const { status, isConnected, lastEventTime } =
           this.stellarClient.getStreamHealth();

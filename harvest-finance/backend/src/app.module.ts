@@ -13,9 +13,12 @@ import { Keyv } from 'keyv';
 import { CacheableMemory } from 'cacheable';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { TypeOrmLogger } from './database/typeorm-logger';
+import { CustomLoggerService } from './logger/custom-logger.service';
 import { buildThrottlerOptions } from './common/config/throttler.config';
 import { CommonModule } from './common/common.module';
 import { RequestValidationMiddleware } from './common/middleware/request-validation.middleware';
+import { TracingMiddleware } from './observability/tracing.service';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { VaultsModule } from './vaults/vaults.module';
@@ -123,8 +126,8 @@ import { QueuesModule } from './queues/queues.module';
       useFactory: buildThrottlerOptions,
     }),
     TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
+      imports: [ConfigModule, LoggerModule],
+      useFactory: (configService: ConfigService, loggerService: CustomLoggerService) => ({
         type: 'postgres',
         host: configService.get<string>('DB_HOST'),
         port: configService.get<number>('DB_PORT'),
@@ -215,9 +218,10 @@ YieldAnalytics,
         ],
         synchronize: false,
         migrationsRun: false,
-        logging: configService.get<string>('NODE_ENV') === 'development',
+        logging: ['query', 'error', 'schema', 'warn', 'info', 'log'],
+        logger: new TypeOrmLogger(loggerService, 100),
       }),
-      inject: [ConfigService],
+      inject: [ConfigService, CustomLoggerService],
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
@@ -291,7 +295,7 @@ YieldAnalytics,
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(RequestValidationMiddleware, HttpLoggerMiddleware)
+      .apply(TracingMiddleware, RequestValidationMiddleware, HttpLoggerMiddleware)
       .forRoutes('*');
   }
 }

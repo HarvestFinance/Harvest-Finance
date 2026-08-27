@@ -1,0 +1,15 @@
+{
+  "name": "@expo/expo-modules-macros-plugin",
+  "version": "0.2.2",
+  "description": "Swift macro plugin for Expo modules",
+  "license": "MIT",
+  "author": "650 Industries, Inc.",
+  "homepage": "https://github.com/expo/expo-modules-macros-plugin",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/expo/expo-modules-macros-plugin.git"
+  },
+  "scripts": {
+    "build": "node apple/build.js"
+  }
+}

@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Modal, ModalHeader, ModalBody, Button, Stack, Alert, cn } from '@/components/ui';
+import { Modal, ModalHeader, ModalBody, Button, Stack } from '@/components/ui';
+import Image from 'next/image';
 import { useWalletStore } from '@/store/wallet';
 import { 
   Loader2, 
@@ -149,7 +150,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({ isOpen, 
               >
                 <div className="flex items-center gap-5">
                   <div className="w-14 h-14 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl flex items-center justify-center shadow-xl transition-all group-hover:scale-110 group-hover:rotate-3 duration-500">
-                    <img src="https://www.freighter.app/static/media/freighter-logo.8e6b2c6e.svg" alt="Freighter" className="w-8 h-8" />
+                    <Image src="https://www.freighter.app/static/media/freighter-logo.8e6b2c6e.svg" alt="Freighter" width={32} height={32} className="w-8 h-8" unoptimized />
                   </div>
                   <div className="text-left">
                     <p className="font-black text-gray-900 dark:text-white text-xl tracking-tighter">Freighter Wallet</p>

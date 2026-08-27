@@ -1,10 +1,28 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useSyncExternalStore } from 'react';
 import { syncService } from '@/lib/sync-service';
+
+function subscribe(callback: () => void) {
+  if (typeof window === 'undefined') return () => {};
+  window.addEventListener('online', callback);
+  window.addEventListener('offline', callback);
+  return () => {
+    window.removeEventListener('online', callback);
+    window.removeEventListener('offline', callback);
+  };
+}
+
+function getSnapshot() {
+  return typeof navigator !== 'undefined' ? navigator.onLine : true;
+}
+
+function getServerSnapshot() {
+  return true;
+}
 
 export function useSync() {
   const [queuedCount, setQueuedCount] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [isOnline, setIsOnline] = useState(true);
+  const isOnline = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   const sync = useCallback(async () => {
     if (!navigator.onLine || isSyncing) return;
@@ -16,19 +34,12 @@ export function useSync() {
   }, [isSyncing]);
 
   useEffect(() => {
-    const handleStatusChange = () => {
-      setIsOnline(navigator.onLine);
-      if (navigator.onLine) {
-        void sync();
-      }
-    };
+    if (isOnline) {
+      void sync();
+    }
+  }, [isOnline, sync]);
 
-    setIsOnline(navigator.onLine);
-    handleStatusChange();
-
-    window.addEventListener('online', handleStatusChange);
-    window.addEventListener('offline', handleStatusChange);
-
+  useEffect(() => {
     const interval = setInterval(async () => {
       const count = await syncService.getQueuedCount();
       setQueuedCount(count);
@@ -36,12 +47,8 @@ export function useSync() {
 
     void syncService.getQueuedCount().then(setQueuedCount);
 
-    return () => {
-      window.removeEventListener('online', handleStatusChange);
-      window.removeEventListener('offline', handleStatusChange);
-      clearInterval(interval);
-    };
-  }, [sync]);
+    return () => clearInterval(interval);
+  }, []);
 
   const queueAction = async (url: string, method: string, body: unknown, headers: Record<string, string> = {}) => {
     const action = await syncService.queueAction(url, method, body, headers);

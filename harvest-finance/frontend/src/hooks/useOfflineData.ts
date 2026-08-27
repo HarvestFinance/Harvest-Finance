@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { db, VaultData, TransactionData, AIRecommendation, OfflineAction } from '@/lib/db';
+import { db, VaultData, TransactionData, AIRecommendation } from '@/lib/db';
 import { syncManager, SyncStatus, NetworkStatus } from '@/lib/db';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import { apiRequest } from '@/lib/api/client';
@@ -166,7 +166,7 @@ export function useOfflineData(): UseOfflineDataReturn {
     } else {
       await loadCachedData();
     }
-  }, [isOnline, fetchFreshData]);
+  }, [isOnline, fetchFreshData, loadCachedData]);
 
   return {
     isOnline,

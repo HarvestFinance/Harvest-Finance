@@ -1,0 +1,101 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "expo.modules.webview",
+    "module": "expo.modules.webview",
+    "version": "56.0.5",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.3.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "expo.modules.webview-56.0.5.aar",
+          "url": "expo.modules.webview-56.0.5.aar",
+          "size": 79547,
+          "sha512": "a2189c75c72183393f9f0b09ea27acfdcf1115de603c6aeabe770033ac63605e1cf4c42885ab2eade0670f818206ebaff6fd9da76d9ab208437f2455480416c8",
+          "sha256": "2d319293dab9a90216f66c1788188656d5960a77f6cb14baaceeaa4eff370b7e",
+          "sha1": "cf6f303d804c70cdc5c9017061e15abca2d8fe92",
+          "md5": "bdf9e479ed6126b897f25a9eae36be19"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib-jdk7",
+          "version": {
+            "requires": "2.1.20"
+          }
+        },
+        {
+          "group": "org.jetbrains",
+          "module": "annotations",
+          "version": {
+            "requires": "23.0.0"
+          }
+        },
+        {
+          "group": "io.github.lukmccall.pika",
+          "module": "pika-api",
+          "version": {
+            "requires": "0.3.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "expo.modules.webview-56.0.5.aar",
+          "url": "expo.modules.webview-56.0.5.aar",
+          "size": 79547,
+          "sha512": "a2189c75c72183393f9f0b09ea27acfdcf1115de603c6aeabe770033ac63605e1cf4c42885ab2eade0670f818206ebaff6fd9da76d9ab208437f2455480416c8",
+          "sha256": "2d319293dab9a90216f66c1788188656d5960a77f6cb14baaceeaa4eff370b7e",
+          "sha1": "cf6f303d804c70cdc5c9017061e15abca2d8fe92",
+          "md5": "bdf9e479ed6126b897f25a9eae36be19"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseSourcePublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "expo.modules.webview-56.0.5-sources.jar",
+          "url": "expo.modules.webview-56.0.5-sources.jar",
+          "size": 9240,
+          "sha512": "af10aa93c91a33454740d77a569ff4d507aca5ef3a448faa52f62eb836c59ca8e9a49c8be803e1c924d34005c4d66284d0e39920515c28cc206d56205dbfbeb4",
+          "sha256": "d185b319e0ffc038ab8bd032558f9afc64761d41f56f05e6209c81d82707c2cf",
+          "sha1": "586617cb9a09324361bd311e113a7e444869da36",
+          "md5": "932bedab44acc8021def2aed0a6cbd45"
+        }
+      ]
+    }
+  ]
+}

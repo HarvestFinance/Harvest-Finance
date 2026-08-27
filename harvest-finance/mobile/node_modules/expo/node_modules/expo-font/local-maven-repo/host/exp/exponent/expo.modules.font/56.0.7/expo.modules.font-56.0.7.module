@@ -1,0 +1,105 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "host.exp.exponent",
+    "module": "expo.modules.font",
+    "version": "56.0.7",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.3.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "expo.modules.font-56.0.7.aar",
+          "url": "expo.modules.font-56.0.7.aar",
+          "size": 29409,
+          "sha512": "27cd5270fb4a9e9c93cecfde8eb7521dea8ba1d6ff2523d2512ecdafa7a58b68c5c1e07c331f3c6bc16af18f8289d55bd01ace60feca7af8aaa2f6e9f3b487e1",
+          "sha256": "d7ea73905f045bfec5b9c40172b9b29f327d7a80a0bf05389d12966d157a1430",
+          "sha1": "fdbabf0bc0ff373a82455dd35dac3f173ddf7bc5",
+          "md5": "da93e2606379f644a84bc11ff6d556aa"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib-jdk7",
+          "version": {
+            "requires": "2.1.20"
+          }
+        },
+        {
+          "group": "org.jetbrains",
+          "module": "annotations",
+          "version": {
+            "requires": "23.0.0"
+          }
+        },
+        {
+          "group": "com.facebook.react",
+          "module": "react-android"
+        },
+        {
+          "group": "io.github.lukmccall.pika",
+          "module": "pika-api",
+          "version": {
+            "requires": "0.3.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "expo.modules.font-56.0.7.aar",
+          "url": "expo.modules.font-56.0.7.aar",
+          "size": 29409,
+          "sha512": "27cd5270fb4a9e9c93cecfde8eb7521dea8ba1d6ff2523d2512ecdafa7a58b68c5c1e07c331f3c6bc16af18f8289d55bd01ace60feca7af8aaa2f6e9f3b487e1",
+          "sha256": "d7ea73905f045bfec5b9c40172b9b29f327d7a80a0bf05389d12966d157a1430",
+          "sha1": "fdbabf0bc0ff373a82455dd35dac3f173ddf7bc5",
+          "md5": "da93e2606379f644a84bc11ff6d556aa"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseSourcePublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "expo.modules.font-56.0.7-sources.jar",
+          "url": "expo.modules.font-56.0.7-sources.jar",
+          "size": 4135,
+          "sha512": "99aeb8a7c324e889d4140890af18771545c97a69e128bf6a3fb2e70f3ddde11ec292c4d8e3b6470f0c7d0db50db21b782e1382767807899c9b1faf4552f0d41d",
+          "sha256": "87a25fe7ac775341198279e739706b7594f5a863da55f215422209e737e5562f",
+          "sha1": "2d3a69f03341b6061aaf25ae2eb2e5e44e2fdacc",
+          "md5": "63ef1824563284a8ea1d55302b68a3a5"
+        }
+      ]
+    }
+  ]
+}

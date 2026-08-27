@@ -61,13 +61,20 @@ export class CustomLoggerService implements LoggerService {
   }
 }
 
+import { getTraceContext } from '../observability/tracing.service';
+
 function unpack(
   message: LogPayload,
   context?: string,
 ): { fields: Record<string, unknown>; msg: string } {
+  const traceCtx = getTraceContext();
+  const baseFields = traceCtx
+    ? { context, traceId: traceCtx.traceId, spanId: traceCtx.spanId, requestId: traceCtx.requestId }
+    : { context };
+
   if (message instanceof Error) {
     return {
-      fields: { context, err: message },
+      fields: { ...baseFields, err: message },
       msg: message.message,
     };
   }
@@ -75,7 +82,7 @@ function unpack(
     const obj = message as Record<string, unknown>;
     const { msg, message: msgAlt, ...rest } = obj;
     return {
-      fields: { context, ...rest },
+      fields: { ...baseFields, ...rest },
       msg:
         typeof msg === 'string'
           ? msg
@@ -84,9 +91,9 @@ function unpack(
             : '',
     };
   }
-  if (message == null) return { fields: { context }, msg: '' };
-  if (typeof message === 'string') return { fields: { context }, msg: message };
-  return { fields: { context }, msg: safeStringify(message) };
+  if (message == null) return { fields: { ...baseFields }, msg: '' };
+  if (typeof message === 'string') return { fields: { ...baseFields }, msg: message };
+  return { fields: { ...baseFields }, msg: safeStringify(message) };
 }
 
 function safeStringify(value: unknown): string {

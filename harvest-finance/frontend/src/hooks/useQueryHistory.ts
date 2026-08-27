@@ -7,16 +7,15 @@ import {
 
 export function useQueryHistory() {
   const [history, setHistory] = useState<QueryHistoryItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
 
   const load = useCallback(async (searchTerm?: string) => {
-    setIsLoading(true);
-    setError(null);
     try {
       const data = await fetchQueryHistory(searchTerm);
       setHistory(data);
+      setError(null);
     } catch {
       setError('Could not load query history. Please try again.');
     } finally {
@@ -30,6 +29,8 @@ export function useQueryHistory() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
+      setIsLoading(true);
+      setError(null);
       load(search || undefined);
     }, 400);
     return () => clearTimeout(timer);
@@ -51,6 +52,10 @@ export function useQueryHistory() {
     search,
     setSearch,
     removeItem,
-    refresh: () => load(search || undefined),
+    refresh: () => {
+      setIsLoading(true);
+      setError(null);
+      void load(search || undefined);
+    },
   };
 }

@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -17,8 +18,8 @@ describe('StellarStrategy', () => {
 
   const mockUserRepository = {
     findOne: jest.fn(),
-    create: jest.fn(),
-    save: jest.fn(),
+    create: jest.fn().mockImplementation((dto) => ({ id: 'mock-id', ...dto })),
+    save: jest.fn().mockImplementation(async (entity) => entity),
     update: jest.fn(),
   };
 

@@ -6,8 +6,10 @@ import { DataSource } from 'typeorm';
 import { EventBus } from '@nestjs/cqrs';
 import { Vault } from '../database/entities/vault.entity';
 import { VaultDebitedEvent } from './cqrs/events/vault-debited.event';
+import { NotificationsService } from '../notifications/notifications.service';
 
 describe('WithdrawalQueueService', () => {
+  const mockVaultRepository = { findOne: jest.fn() };
   let service: WithdrawalQueueService;
   let eventBus: EventBus;
   let dataSource: DataSource;
@@ -51,6 +53,14 @@ describe('WithdrawalQueueService', () => {
           provide: EventBus,
           useValue: mockEventBus,
         },
+        {
+          provide: getRepositoryToken(Vault),
+          useValue: mockVaultRepository,
+        },
+        {
+          provide: NotificationsService,
+          useValue: { create: jest.fn() },
+        },
       ],
     }).compile();
 
@@ -84,6 +94,7 @@ describe('WithdrawalQueueService', () => {
       w3.status = WithdrawalStatus.QUEUED;
 
       mockEntityManager.find.mockResolvedValueOnce([w1, w2, w3]);
+      mockVaultRepository.findOne.mockResolvedValueOnce({ id: 'v1', totalDeposits: 1000 });
 
       await service.processQueue('v1', 250);
 

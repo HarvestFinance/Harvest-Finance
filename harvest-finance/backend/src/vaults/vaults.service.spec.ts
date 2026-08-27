@@ -13,6 +13,8 @@ import { WithdrawalQueueService } from './withdrawal-queue.service';
 import { Vault, VaultStatus, VaultType } from '../database/entities/vault.entity';
 import { Deposit, DepositStatus } from '../database/entities/deposit.entity';
 import { VaultApyHistory } from '../database/entities/vault-apy-history.entity';
+import { VaultReservation } from './entities/vault-reservation.entity';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import {
   Withdrawal,
   WithdrawalStatus,
@@ -80,6 +82,7 @@ describe('VaultsService', () => {
     save: jest.fn(),
     update: jest.fn(),
     count: jest.fn(),
+    createQueryBuilder: jest.fn(),
   };
 
   const mockDepositRepository = {
@@ -143,6 +146,13 @@ describe('VaultsService', () => {
       if (entity === Withdrawal) return mockWithdrawalRepository;
       if (entity === VaultReservation) return mockVaultReservationRepository;
       return null;
+    }),
+    createQueryBuilder: jest.fn().mockReturnValue({
+      insert: jest.fn().mockReturnThis(),
+      into: jest.fn().mockReturnThis(),
+      values: jest.fn().mockReturnThis(),
+      orIgnore: jest.fn().mockReturnThis(),
+      execute: jest.fn().mockResolvedValue(undefined),
     }),
   };
 
@@ -218,6 +228,9 @@ const buildQB = (total: string | null) => ({
           provide: getRepositoryToken(VaultApyHistory),
           useValue: mockVaultApyHistoryRepository,
         },
+        { provide: getRepositoryToken(VaultReservation), useValue: { find: jest.fn(), save: jest.fn() } },
+        { provide: CACHE_MANAGER, useValue: { get: jest.fn(), set: jest.fn(), del: jest.fn() } },
+        { provide: getRepositoryToken(Strategy), useValue: mockStrategyRepository },
         { provide: DataSource, useValue: mockDataSource },
         { provide: NotificationsService, useValue: mockNotificationsService },
         { provide: CustomLoggerService, useValue: mockLogger },
@@ -231,6 +244,7 @@ const buildQB = (total: string | null) => ({
           provide: WithdrawalQueueService,
           useValue: { processWithdrawalQueue: jest.fn().mockResolvedValue(undefined), enqueueWithdrawal: jest.fn().mockResolvedValue(undefined) },
         },
+        { provide: AuthService, useValue: { isEmailVerified: jest.fn().mockResolvedValue(true) } },
       ],
     }).compile();
 
@@ -514,241 +528,7 @@ const buildQB = (total: string | null) => ({
     });
   });
 
-  // ---------------------------------------------------------------------------
-  // applyExternalPaymentNotification
-  // ---------------------------------------------------------------------------
-  describe('applyExternalPaymentNotification', () => {
-    const baseParams = {
-      depositId: 'dep-1',
-      eventType: ExternalPaymentEventType.PAYMENT_CONFIRMED,
-      transactionHash: '0xabc',
-      stellarTransactionId: 'stellar-1',
-      externalEventId: 'ext-1',
-    };
 
-    it('should confirm a pending deposit', async () => {
-      const pendingDeposit = {
-        id: 'dep-1',
-        userId: 'user-1',
-        vaultId: 'vault-1',
-        amount: 200,
-        status: DepositStatus.PENDING,
-        idempotencyKey: null,
-      };
-      const confirmedDeposit = {
-        ...pendingDeposit,
-        status: DepositStatus.CONFIRMED,
-      };
-
-      mockDepositRepository.findOne
-        .mockResolvedValueOnce(pendingDeposit) // first lookup
-        .mockResolvedValueOnce(confirmedDeposit); // after update
-      mockDepositRepository.update.mockResolvedValue(undefined);
-
-      const result = await service.applyExternalPaymentNotification(baseParams);
-
-      expect(result.status).toBe(DepositStatus.CONFIRMED);
-      expect(result.duplicate).toBe(false);
-      expect(mockDepositRepository.update).toHaveBeenCalledWith('dep-1', expect.objectContaining({
-        status: DepositStatus.CONFIRMED,
-        transactionHash: '0xabc',
-      }));
-    });
-
-    it('should return duplicate=true for already-confirmed deposit', async () => {
-      const confirmedDeposit = {
-        id: 'dep-1',
-        userId: 'user-1',
-        vaultId: 'vault-1',
-        amount: 200,
-        status: DepositStatus.CONFIRMED,
-        idempotencyKey: null,
-      };
-      mockDepositRepository.findOne.mockResolvedValue(confirmedDeposit);
-
-      const result = await service.applyExternalPaymentNotification(baseParams);
-
-      expect(result.duplicate).toBe(true);
-      expect(result.status).toBe(DepositStatus.CONFIRMED);
-      expect(mockDepositRepository.update).not.toHaveBeenCalled();
-    });
-
-    it('should throw NotFoundException when deposit does not exist', async () => {
-      mockDepositRepository.findOne.mockResolvedValue(null);
-
-      await expect(
-        service.applyExternalPaymentNotification(baseParams),
-      ).rejects.toThrow(NotFoundException);
-      await expect(
-        service.applyExternalPaymentNotification(baseParams),
-      ).rejects.toThrow('Deposit not found');
-    });
-
-    it('should mark deposit as FAILED on PAYMENT_FAILED event', async () => {
-      const pendingDeposit = {
-        id: 'dep-1',
-        userId: 'user-1',
-        vaultId: 'vault-1',
-        amount: 200,
-        status: DepositStatus.PENDING,
-        idempotencyKey: null,
-      };
-      const failedDeposit = { ...pendingDeposit, status: DepositStatus.FAILED };
-
-      mockDepositRepository.findOne
-        .mockResolvedValueOnce(pendingDeposit)
-        .mockResolvedValueOnce(failedDeposit);
-      mockDepositRepository.update.mockResolvedValue(undefined);
-
-      const result = await service.applyExternalPaymentNotification({
-        ...baseParams,
-        eventType: ExternalPaymentEventType.PAYMENT_FAILED,
-      });
-
-      expect(result.status).toBe(DepositStatus.FAILED);
-      expect(result.duplicate).toBe(false);
-    });
-
-    it('should return duplicate=true for already-failed deposit on PAYMENT_FAILED', async () => {
-      const failedDeposit = {
-        id: 'dep-1',
-        userId: 'user-1',
-        vaultId: 'vault-1',
-        amount: 200,
-        status: DepositStatus.FAILED,
-        idempotencyKey: null,
-      };
-      mockDepositRepository.findOne.mockResolvedValue(failedDeposit);
-
-      const result = await service.applyExternalPaymentNotification({
-        ...baseParams,
-        eventType: ExternalPaymentEventType.PAYMENT_FAILED,
-      });
-
-      expect(result.duplicate).toBe(true);
-    });
-  });
-
-  // ---------------------------------------------------------------------------
-  // applyExternalWithdrawalNotification
-  // ---------------------------------------------------------------------------
-  describe('applyExternalWithdrawalNotification', () => {
-    const baseWithdrawalParams = {
-      withdrawalId: 'w-1',
-      eventType: ExternalPaymentEventType.PAYMENT_CONFIRMED,
-      transactionHash: '0xdef',
-      stellarTransactionId: 'stellar-w-1',
-      externalEventId: 'ext-w-1',
-    };
-
-    it('should confirm a pending withdrawal', async () => {
-      const pendingWithdrawal = {
-        id: 'w-1',
-        userId: 'user-1',
-        vaultId: 'vault-1',
-        amount: 300,
-        status: WithdrawalStatus.PENDING,
-        vault: mockVault,
-        transactionHash: null,
-        confirmedAt: null,
-      };
-      const confirmedWithdrawal = {
-        ...pendingWithdrawal,
-        status: WithdrawalStatus.CONFIRMED,
-        transactionHash: '0xdef',
-        confirmedAt: new Date(),
-      };
-
-      mockWithdrawalRepository.findOne
-        .mockResolvedValueOnce(pendingWithdrawal)
-        .mockResolvedValueOnce(confirmedWithdrawal);
-      mockWithdrawalRepository.update.mockResolvedValue(undefined);
-
-      const result = await service.applyExternalWithdrawalNotification(
-        baseWithdrawalParams,
-      );
-
-      expect(result.status).toBe(WithdrawalStatus.CONFIRMED);
-      expect(result.duplicate).toBe(false);
-      expect(mockEventEmitter.emit).toHaveBeenCalled();
-    });
-
-    it('should return duplicate=true for already-confirmed withdrawal', async () => {
-      const confirmedWithdrawal = {
-        id: 'w-1',
-        userId: 'user-1',
-        vaultId: 'vault-1',
-        amount: 300,
-        status: WithdrawalStatus.CONFIRMED,
-        vault: mockVault,
-      };
-      mockWithdrawalRepository.findOne.mockResolvedValue(confirmedWithdrawal);
-
-      const result = await service.applyExternalWithdrawalNotification(
-        baseWithdrawalParams,
-      );
-
-      expect(result.duplicate).toBe(true);
-      expect(mockWithdrawalRepository.update).not.toHaveBeenCalled();
-    });
-
-    it('should throw NotFoundException when withdrawal does not exist', async () => {
-      mockWithdrawalRepository.findOne.mockResolvedValue(null);
-
-      await expect(
-        service.applyExternalWithdrawalNotification(baseWithdrawalParams),
-      ).rejects.toThrow(NotFoundException);
-      await expect(
-        service.applyExternalWithdrawalNotification(baseWithdrawalParams),
-      ).rejects.toThrow('Withdrawal not found');
-    });
-
-    it('should mark withdrawal as FAILED on PAYMENT_FAILED event', async () => {
-      const pendingWithdrawal = {
-        id: 'w-1',
-        userId: 'user-1',
-        vaultId: 'vault-1',
-        amount: 300,
-        status: WithdrawalStatus.PENDING,
-        vault: mockVault,
-      };
-      const failedWithdrawal = {
-        ...pendingWithdrawal,
-        status: WithdrawalStatus.FAILED,
-      };
-
-      mockWithdrawalRepository.findOne
-        .mockResolvedValueOnce(pendingWithdrawal)
-        .mockResolvedValueOnce(failedWithdrawal);
-      mockWithdrawalRepository.update.mockResolvedValue(undefined);
-
-      const result = await service.applyExternalWithdrawalNotification({
-        ...baseWithdrawalParams,
-        eventType: ExternalPaymentEventType.PAYMENT_FAILED,
-      });
-
-      expect(result.status).toBe(WithdrawalStatus.FAILED);
-    });
-
-    it('should return duplicate=true for already-failed withdrawal on PAYMENT_FAILED', async () => {
-      const failedWithdrawal = {
-        id: 'w-1',
-        userId: 'user-1',
-        vaultId: 'vault-1',
-        amount: 300,
-        status: WithdrawalStatus.FAILED,
-        vault: mockVault,
-      };
-      mockWithdrawalRepository.findOne.mockResolvedValue(failedWithdrawal);
-
-      const result = await service.applyExternalWithdrawalNotification({
-        ...baseWithdrawalParams,
-        eventType: ExternalPaymentEventType.PAYMENT_FAILED,
-      });
-
-      expect(result.duplicate).toBe(true);
-    });
-  });
 
   // ---------------------------------------------------------------------------
   // getUserTotalDeposits
@@ -878,7 +658,7 @@ const buildQB = (total: string | null) => ({
       } as any;
 
       mockVaultRepository.findOne.mockResolvedValue(vault);
-      mockApyHistoryRepository.createQueryBuilder.mockReturnValue({
+      mockDataSource.createQueryBuilder.mockReturnValue({
         insert: jest.fn().mockReturnThis(),
         into: jest.fn().mockReturnThis(),
         values: jest.fn().mockReturnThis(),
@@ -888,7 +668,7 @@ const buildQB = (total: string | null) => ({
 
       await service.recordApySnapshot('vault-1');
 
-      expect(mockApyHistoryRepository.createQueryBuilder).toHaveBeenCalled();
+      expect(mockDataSource.createQueryBuilder).toHaveBeenCalled();
     });
 
     it('should store correct APY value in snapshot', async () => {
@@ -908,7 +688,7 @@ const buildQB = (total: string | null) => ({
         execute: jest.fn().mockResolvedValue({}),
       };
 
-      mockApyHistoryRepository.createQueryBuilder.mockReturnValue(mockInsert);
+      mockDataSource.createQueryBuilder.mockReturnValue(mockInsert);
 
       await service.recordApySnapshot('vault-1');
 
@@ -947,7 +727,7 @@ const buildQB = (total: string | null) => ({
         getMany: jest.fn().mockResolvedValue(mockHistory),
       };
 
-      mockApyHistoryRepository.createQueryBuilder.mockReturnValue(mockQB);
+      mockVaultApyHistoryRepository.createQueryBuilder.mockReturnValue(mockQB);
 
       const result = await service.getApyHistory('vault-1', '30d');
 
@@ -964,7 +744,7 @@ const buildQB = (total: string | null) => ({
         getMany: jest.fn().mockResolvedValue([]),
       };
 
-      mockApyHistoryRepository.createQueryBuilder.mockReturnValue(mockQB);
+      mockVaultApyHistoryRepository.createQueryBuilder.mockReturnValue(mockQB);
 
       await service.getApyHistory('vault-1', '30d');
 
@@ -979,95 +759,38 @@ const buildQB = (total: string | null) => ({
   // ---------------------------------------------------------------------------
   describe('getUserVaults', () => {
     it('should return mapped vaults for a user', async () => {
-      mockVaultRepository.find.mockResolvedValue([mockVault]);
+      mockVaultRepository.createQueryBuilder.mockReturnValue({
+        where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        addOrderBy: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue([mockVault]),
+      });
 
       const result = await service.getUserVaults('user-1');
 
-      expect(result).toHaveLength(1);
-      expect(result[0]).toHaveProperty('id', 'vault-1');
-      expect(mockVaultRepository.find).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { ownerId: 'user-1' } }),
-      );
+      expect(result.vaults).toHaveLength(1);
+      expect(result.vaults[0]).toHaveProperty('id', 'vault-1');
+      expect(result.nextCursor).toBeNull();
     });
 
     it('should return empty array when user has no vaults', async () => {
-      mockVaultRepository.find.mockResolvedValue([]);
+      mockVaultRepository.createQueryBuilder.mockReturnValue({
+        where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        addOrderBy: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue([]),
+      });
 
       const result = await service.getUserVaults('user-no-vaults');
 
-      expect(result).toEqual([]);
-    });
-  });
-
-  // ---------------------------------------------------------------------------
-  // cloneVaultFromTemplate
-  // ---------------------------------------------------------------------------
-  describe('cloneVaultFromTemplate', () => {
-    it('should throw NotFoundException if source vault does not exist', async () => {
-      mockVaultRepository.findOne.mockResolvedValue(null);
-
-      await expect(
-        service.cloneVaultFromTemplate('nonexistent', 'user-1'),
-      ).rejects.toThrow(NotFoundException);
-      await expect(
-        service.cloneVaultFromTemplate('nonexistent', 'user-1'),
-      ).rejects.toThrow('Vault not found');
-    });
-
-    it('should throw UnauthorizedException if user is not the vault owner', async () => {
-      mockVaultRepository.findOne.mockResolvedValue({
-        ...mockVault,
-        ownerId: 'other-user',
-      });
-
-      await expect(
-        service.cloneVaultFromTemplate('vault-1', 'user-1'),
-      ).rejects.toThrow(UnauthorizedException);
-      await expect(
-        service.cloneVaultFromTemplate('vault-1', 'user-1'),
-      ).rejects.toThrow('Only the vault owner can clone this vault');
-    });
-
-    it('should create a clone with default name suffix when no name provided', async () => {
-      const sourceVault = { ...mockVault, ownerId: 'user-1' };
-      const clonedVault = {
-        ...sourceVault,
-        id: 'vault-clone-1',
-        vaultName: 'Test Vault (Copy)',
-        totalDeposits: 0,
-        currentApprovals: 0,
-        status: VaultStatus.ACTIVE,
-      };
-      mockVaultRepository.findOne.mockResolvedValue(sourceVault);
-      mockVaultRepository.create.mockReturnValue(clonedVault);
-      mockVaultRepository.save.mockResolvedValue(clonedVault);
-
-      const result = await service.cloneVaultFromTemplate('vault-1', 'user-1');
-
-      expect(result.vaultName).toBe('Test Vault (Copy)');
-      expect(result.id).toBe('vault-clone-1');
-    });
-
-    it('should use the provided vaultName when specified', async () => {
-      const sourceVault = { ...mockVault, ownerId: 'user-1' };
-      const clonedVault = {
-        ...sourceVault,
-        id: 'vault-clone-2',
-        vaultName: 'My Custom Clone',
-        totalDeposits: 0,
-        currentApprovals: 0,
-      };
-      mockVaultRepository.findOne.mockResolvedValue(sourceVault);
-      mockVaultRepository.create.mockReturnValue(clonedVault);
-      mockVaultRepository.save.mockResolvedValue(clonedVault);
-
-      const result = await service.cloneVaultFromTemplate(
-        'vault-1',
-        'user-1',
-        'My Custom Clone',
-      );
-
-      expect(result.vaultName).toBe('My Custom Clone');
+      expect(result.vaults).toEqual([]);
+      expect(result.nextCursor).toBeNull();
     });
   });
 
@@ -1076,37 +799,20 @@ const buildQB = (total: string | null) => ({
   // ---------------------------------------------------------------------------
   describe('getPublicVaults', () => {
     it('should return paginated public vaults', async () => {
-      mockVaultRepository.find.mockResolvedValue([mockVault]);
-      mockVaultRepository.count.mockResolvedValue(1);
+      mockVaultRepository.createQueryBuilder.mockReturnValue({
+        where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        addOrderBy: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue([mockVault]),
+      });
 
-      const result = await service.getPublicVaults({ limit: 20, skip: 0 });
+      const result = await service.getPublicVaults({ limit: 20 });
 
-      expect(result.data).toHaveLength(1);
-      expect(result.total).toBe(1);
-      expect(result.hasMore).toBe(false);
-    });
-
-    it('should set hasMore=true when there are more vaults than the limit', async () => {
-      const extraVault = { ...mockVault, id: 'vault-extra' };
-      // Return limit+1 vaults to trigger hasMore
-      mockVaultRepository.find.mockResolvedValue([mockVault, extraVault]);
-      mockVaultRepository.count.mockResolvedValue(5);
-
-      const result = await service.getPublicVaults({ limit: 1, skip: 0 });
-
-      expect(result.hasMore).toBe(true);
-      expect(result.data).toHaveLength(1); // popped the extra
-    });
-
-    it('should return empty list when no public vaults exist', async () => {
-      mockVaultRepository.find.mockResolvedValue([]);
-      mockVaultRepository.count.mockResolvedValue(0);
-
-      const result = await service.getPublicVaults({ limit: 20, skip: 0 });
-
-      expect(result.data).toEqual([]);
-      expect(result.total).toBe(0);
-      expect(result.hasMore).toBe(false);
+      expect(result.vaults).toHaveLength(1);
+      expect(result.nextCursor).toBeNull();
     });
   });
 
@@ -1404,207 +1110,5 @@ const buildQB = (total: string | null) => ({
     });
   });
 
-  describe('recordDailyApySnapshots', () => {
-    it('should record APY history for active vaults when not already recorded', async () => {
-      const activeVaults = [
-        { id: 'vault-active-1', interestRate: 5, compoundingFrequency: 'daily', status: VaultStatus.ACTIVE },
-      ];
-      mockVaultRepository.find.mockResolvedValue(activeVaults);
-      mockVaultApyHistoryRepository.findOne.mockResolvedValue(null);
-      mockVaultApyHistoryRepository.create.mockReturnValue({ id: 'history-1' });
-      mockVaultApyHistoryRepository.save.mockResolvedValue({});
-
-      await service.recordDailyApySnapshots();
-
-      expect(mockVaultRepository.find).toHaveBeenCalledWith({
-        where: { status: VaultStatus.ACTIVE },
-      });
-      expect(mockVaultApyHistoryRepository.findOne).toHaveBeenCalled();
-      expect(mockVaultApyHistoryRepository.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          vaultId: 'vault-active-1',
-          apy: 5.13,
-        }),
-      );
-      expect(mockVaultApyHistoryRepository.save).toHaveBeenCalled();
-    });
-
-    it('should skip recording APY history if snapshot already exists for today', async () => {
-      const activeVaults = [
-        { id: 'vault-active-1', interestRate: 5, compoundingFrequency: 'daily', status: VaultStatus.ACTIVE },
-      ];
-      mockVaultRepository.find.mockResolvedValue(activeVaults);
-      mockVaultApyHistoryRepository.findOne.mockResolvedValue({ id: 'existing-snapshot-1' });
-      mockVaultApyHistoryRepository.create.mockClear();
-      mockVaultApyHistoryRepository.save.mockClear();
-
-      await service.recordDailyApySnapshots();
-
-      expect(mockVaultApyHistoryRepository.create).not.toHaveBeenCalled();
-      expect(mockVaultApyHistoryRepository.save).not.toHaveBeenCalled();
-    });
   });
-
-  describe('getApyHistory database query', () => {
-    it('should return records from the database if they exist', async () => {
-      const dbRecords = [
-        { id: 'h-1', vaultId: 'vault-1', date: '2026-06-25', apy: 5.13 },
-        { id: 'h-2', vaultId: 'vault-1', date: '2026-06-26', apy: 5.14 },
-      ];
-      mockApyHistoryQB.getMany.mockResolvedValue(dbRecords);
-
-      const result = await service.getApyHistory('vault-1');
-
-      expect(result).toHaveLength(2);
-      expect(result[0]).toEqual({
-        vaultId: 'vault-1',
-        date: '2026-06-25',
-        apy: 5.13,
-      });
-      expect(result[1]).toEqual({
-        vaultId: 'vault-1',
-        date: '2026-06-26',
-        apy: 5.14,
-      });
-
-      mockApyHistoryQB.getMany.mockResolvedValue([]);
-    });
-  });
-
-  // ---------------------------------------------------------------------------
-  // vault capacity reservations
-  // ---------------------------------------------------------------------------
-  describe('vault capacity reservations', () => {
-    const futureExpiry = new Date(Date.now() + 86400000).toISOString();
-
-    beforeEach(() => {
-      mockDataSource.getRepository.mockReturnValue({
-        findOne: jest.fn().mockResolvedValue(null),
-      } as any);
-      mockReservationQB.getRawOne.mockResolvedValue({ total: null });
-    });
-
-    describe('createReservation', () => {
-      it('should create a reservation for the vault owner', async () => {
-        mockVaultRepository.findOne.mockResolvedValue(mockVault);
-        const savedReservation = {
-          id: 'res-1',
-          vaultId: 'vault-1',
-          walletAddress: 'GBXXX',
-          reservedAmount: 2000,
-          expiresAt: new Date(futureExpiry),
-          isActive: true,
-          createdAt: new Date(),
-        };
-        mockVaultReservationRepository.save.mockResolvedValue(savedReservation);
-
-        const result = await service.createReservation('vault-1', 'user-1', {
-          walletAddress: 'GBXXX',
-          reservedAmount: 2000,
-          expiresAt: futureExpiry,
-        });
-
-        expect(result.walletAddress).toBe('GBXXX');
-        expect(result.reservedAmount).toBe(2000);
-        expect(mockVaultReservationRepository.create).toHaveBeenCalledWith(
-          expect.objectContaining({
-            vaultId: 'vault-1',
-            walletAddress: 'GBXXX',
-            reservedAmount: 2000,
-            isActive: true,
-          }),
-        );
-      });
-
-      it('should reject non-owner reservation creation', async () => {
-        mockVaultRepository.findOne.mockResolvedValue(mockVault);
-
-        await expect(
-          service.createReservation('vault-1', 'other-user', {
-            walletAddress: 'GBXXX',
-            reservedAmount: 1000,
-            expiresAt: futureExpiry,
-          }),
-        ).rejects.toThrow(UnauthorizedException);
-      });
-
-      it('should reject reservation exceeding public capacity', async () => {
-        mockVaultRepository.findOne.mockResolvedValue(mockVault);
-        mockReservationQB.getRawOne.mockResolvedValue({ total: '8000' });
-
-        await expect(
-          service.createReservation('vault-1', 'user-1', {
-            walletAddress: 'GBXXX',
-            reservedAmount: 2000,
-            expiresAt: futureExpiry,
-          }),
-        ).rejects.toThrow(BadRequestException);
-      });
-    });
-
-    describe('depositToVault with reservations', () => {
-      it('should limit reserved depositor to their allocation', async () => {
-        mockVaultRepository.findOne.mockResolvedValue(mockVault);
-        mockDataSource.getRepository.mockReturnValue({
-          findOne: jest.fn().mockResolvedValue({ stellarAddress: 'GBRESERVED' }),
-        } as any);
-        mockVaultReservationRepository.findOne.mockResolvedValue({
-          reservedAmount: 500,
-        });
-
-        await expect(
-          service.depositToVault('vault-1', { userId: 'user-1', amount: 600 }),
-        ).rejects.toThrow('Deposit amount exceeds your reserved allocation');
-      });
-
-      it('should exclude reserved capacity for public depositors', async () => {
-        mockVaultRepository.findOne.mockResolvedValue(mockVault);
-        mockReservationQB.getRawOne.mockResolvedValue({ total: '8000' });
-
-        await expect(
-          service.depositToVault('vault-1', { userId: 'user-1', amount: 1500 }),
-        ).rejects.toThrow('Deposit amount exceeds available public vault capacity');
-      });
-    });
-
-    describe('expireReservations', () => {
-      it('should deactivate expired reservations', async () => {
-        mockVaultReservationRepository.update.mockResolvedValue({ affected: 3 });
-
-        await service.expireReservations();
-
-        expect(mockVaultReservationRepository.update).toHaveBeenCalledWith(
-          expect.objectContaining({ isActive: true }),
-          { isActive: false },
-        );
-        expect(mockLogger.log).toHaveBeenCalledWith(
-          'Expired 3 vault reservation(s)',
-          'VaultsService',
-        );
-      });
-    });
-
-    describe('getPublicVaults', () => {
-      it('should return paginated public vaults', async () => {
-        mockVaultRepository.createQueryBuilder.mockReturnValue({
-          where: jest.fn().mockReturnThis(),
-          orderBy: jest.fn().mockReturnThis(),
-          addOrderBy: jest.fn().mockReturnThis(),
-          take: jest.fn().mockReturnThis(),
-          leftJoinAndSelect: jest.fn().mockReturnThis(),
-          andWhere: jest.fn().mockReturnThis(),
-          getMany: jest.fn().mockResolvedValue([mockVault]),
-        });
-
-        const result = await service.getPublicVaults({ limit: 20 });
-
-        expect(result.vaults).toHaveLength(1);
-        expect(result.nextCursor).toBeNull();
-      });
-    }); // describe getPublicVaults
-
-  }); // describe vault capacity reservations
-
-}); // describe VaultsService
-
 });

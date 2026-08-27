@@ -11,6 +11,7 @@ import { ConnectionStatus } from "@/components/layout/ConnectionStatus";
 import { I18nRuntimeProvider } from "@/lib/i18n";
 import { MswProvider } from "@/components/providers/MswProvider";
 import { DesignTokenStyles } from "@/components/ui/theme/DesignTokenStyles";
+import { ErrorBoundaryProvider } from "@/components/ErrorBoundaryProvider";
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -86,10 +87,12 @@ export default async function RootLayout({
                 <a href="#main-content" className="skip-link">
                   Skip to main content
                 </a>
-                {children}
-                <MilestoneToastContainer />
-                <ReactToastProvider />
-                <ConnectionStatus />
+                <ErrorBoundaryProvider>
+                  {children}
+                  <MilestoneToastContainer />
+                  <ReactToastProvider />
+                  <ConnectionStatus />
+                </ErrorBoundaryProvider>
               </QueryProvider>
             </MswProvider>
           </ThemeProvider>

@@ -29,6 +29,14 @@ import { QueueProducerService } from './queue-producer.service';
     BullModule.registerQueue(
       { name: QUEUE_NOTIFICATIONS },
       { name: QUEUE_EXPORTS },
+      { 
+        name: 'oracle',
+        defaultJobOptions: { attempts: 5, backoff: { type: 'exponential', delay: 2000 }, removeOnComplete: 100, removeOnFail: 200 }
+      },
+      { 
+        name: 'yield',
+        defaultJobOptions: { attempts: 5, backoff: { type: 'exponential', delay: 2000 }, removeOnComplete: 100, removeOnFail: 200 }
+      }
     ),
     NotificationsModule,
     ExportModule,

@@ -64,8 +64,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
           (exceptionResponse as any).code ||
           this.getErrorCodeFromStatus(status);
       }
-    } else if (exception instanceof Error) {
-      message = exception.message;
     }
 
     if (errorCode === 'INTERNAL_SERVER_ERROR' && status !== HttpStatus.INTERNAL_SERVER_ERROR) {
@@ -73,8 +71,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     // Determine error code: prefer existing errorCode on exception, fallback to status code
-    const errorCode =
-      (exception as any).errorCode ||
+    const finalErrorCode =
+      (exception as any).errorCode || errorCode ||
       (exception instanceof HttpException ? status.toString() : '500');
 
     const errorResponse = {
@@ -83,7 +81,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         typeof message === 'string'
           ? message
           : (message as any).message || message,
-      errorCode: errorCode,
+      errorCode: finalErrorCode,
       timestamp: new Date().toISOString(),
       path: httpAdapter.getRequestUrl(request),
       requestId: requestId,
@@ -104,6 +102,19 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     httpAdapter.reply(response, errorResponse, status);
+  }
+
+  private getErrorCodeFromStatus(status: number): string {
+    switch (status) {
+      case HttpStatus.BAD_REQUEST: return 'BAD_REQUEST';
+      case HttpStatus.UNAUTHORIZED: return 'UNAUTHORIZED';
+      case HttpStatus.FORBIDDEN: return 'FORBIDDEN';
+      case HttpStatus.NOT_FOUND: return 'NOT_FOUND';
+      case HttpStatus.CONFLICT: return 'CONFLICT';
+      case HttpStatus.UNPROCESSABLE_ENTITY: return 'VALIDATION_ERROR';
+      case HttpStatus.TOO_MANY_REQUESTS: return 'RATE_LIMIT_EXCEEDED';
+      default: return 'INTERNAL_SERVER_ERROR';
+    }
   }
 }
 

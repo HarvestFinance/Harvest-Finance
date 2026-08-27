@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -7,6 +8,16 @@ import * as jwt from 'jsonwebtoken';
 import { AuthService } from './auth.service';
 import { User, UserRole } from '../database/entities/user.entity';
 import { CustomLoggerService } from '../logger/custom-logger.service';
+import { UserOAuthLink } from '../database/entities/user-oauth-link.entity';
+import { Session } from '../database/entities/session.entity';
+import { SecurityEvent } from '../database/entities/security-event.entity';
+import { CustodialWalletService } from '../wallets/custodial-wallet.service';
+import * as bcrypt from 'bcrypt';
+
+jest.mock('bcrypt', () => ({
+  compare: jest.fn(),
+  hash: jest.fn(),
+}));
 
 /**
  * Comprehensive Token Expiry Validation Tests
@@ -27,6 +38,7 @@ describe('AuthService - Token Expiry Validation', () => {
   let mockConfigService: any;
   let mockCacheManager: any;
   let mockLogger: any;
+  let mockSessionRepository: any;
 
   const mockUser: Partial<User> = {
     id: '123e4567-e89b-12d3-a456-426614174000',
@@ -49,9 +61,9 @@ describe('AuthService - Token Expiry Validation', () => {
 
     mockUserRepository = {
       findOne: jest.fn(),
-      find: jest.fn(),
-      create: jest.fn(),
-      save: jest.fn(),
+      find: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockImplementation((dto) => ({ id: 'mock-id', ...dto })),
+      save: jest.fn().mockImplementation(async (entity) => entity),
       update: jest.fn(),
     };
 
@@ -75,6 +87,15 @@ describe('AuthService - Token Expiry Validation', () => {
     mockCacheManager = {
       get: jest.fn(),
       set: jest.fn(),
+      del: jest.fn(),
+    };
+
+    mockSessionRepository = {
+      find: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockImplementation((dto) => ({ id: 'mock-session-id', ...dto })),
+      save: jest.fn().mockImplementation(async (entity) => entity),
+      update: jest.fn(),
+      delete: jest.fn(),
     };
 
     mockLogger = {
@@ -93,6 +114,18 @@ describe('AuthService - Token Expiry Validation', () => {
           useValue: mockUserRepository,
         },
         {
+          provide: getRepositoryToken(UserOAuthLink),
+          useValue: { findOne: jest.fn(), save: jest.fn().mockImplementation(async (entity) => entity) },
+        },
+        {
+          provide: getRepositoryToken(Session),
+          useValue: mockSessionRepository,
+        },
+        {
+          provide: getRepositoryToken(SecurityEvent),
+          useValue: { create: jest.fn().mockImplementation((dto) => ({ id: 'mock-id', ...dto })), save: jest.fn().mockImplementation(async (entity) => entity) },
+        },
+        {
           provide: JwtService,
           useValue: mockJwtService,
         },
@@ -107,6 +140,10 @@ describe('AuthService - Token Expiry Validation', () => {
         {
           provide: CustomLoggerService,
           useValue: mockLogger,
+        },
+        {
+          provide: CustodialWalletService,
+          useValue: { createCustodialWallet: jest.fn() },
         },
       ],
     }).compile();
@@ -496,6 +533,8 @@ describe('AuthService - Token Expiry Validation', () => {
       });
 
       mockUserRepository.findOne.mockResolvedValue(mockUser);
+      mockSessionRepository.find.mockResolvedValue([{ refreshToken: 'hashed' }]);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       mockJwtService.signAsync.mockResolvedValue('new_access_token');
 
       const result = await service.refresh({

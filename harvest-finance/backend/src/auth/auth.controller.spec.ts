@@ -1,5 +1,6 @@
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
+
 import { Test, TestingModule } from '@nestjs/testing';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { StellarStrategy } from './strategies/stellar.strategy';
@@ -106,10 +107,11 @@ describe('AuthController', () => {
 
       mockAuthService.login.mockResolvedValue(mockAuthResponse);
 
-      const result = await controller.login(loginDto);
+      const mockReq = { headers: {} } as any;
+      const result = await controller.login(loginDto, mockReq);
 
       expect(result).toEqual(mockAuthResponse);
-      expect(mockAuthService.login).toHaveBeenCalledWith(loginDto);
+      expect(mockAuthService.login).toHaveBeenCalledWith(loginDto, undefined, undefined);
     });
   });
 

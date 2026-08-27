@@ -164,7 +164,7 @@ export const useAIAssistantStore = create<AIAssistantState>((set, get) => ({
       if (mapped.length > 0) {
         set((state) => ({ messages: [...state.messages, ...mapped] }));
       }
-    } catch (e) {
+    } catch {
       // ignore
     }
   },
@@ -214,10 +214,10 @@ try {
     };
     try {
       sessionStorage.setItem(key, JSON.stringify(toStore));
-    } catch (e) {
+    } catch {
       // ignore storage errors
     }
   });
-} catch (e) {
+} catch {
   // server-side or storage not available
 }

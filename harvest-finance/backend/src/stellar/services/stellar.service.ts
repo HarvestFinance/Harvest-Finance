@@ -1129,7 +1129,7 @@ export class StellarService implements OnModuleInit {
       if (err instanceof FeeCapExceededException) {
         throw err;
       }
-      console.error('Error in getBaseFee:', err);
+      this.logger.error('Error in getBaseFee:', err);
       this.logger.warn('Could not fetch fee stats, using default 100 stroops');
       return '100';
     }

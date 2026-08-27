@@ -1,0 +1,1734 @@
+
+> backend@0.0.1 test
+> jest --testPathIgnorePatterns=src/stellar/tests
+
+FAIL src/vaults/vaults.integration.spec.ts
+  ● Test suite failed to run
+
+    [96msrc/vaults/vaults.integration.spec.ts[0m:[93m884[0m:[93m1[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m884[0m });
+    [7m   [0m [91m~[0m
+    [96msrc/vaults/vaults.integration.spec.ts[0m:[93m884[0m:[93m2[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m884[0m });
+    [7m   [0m [91m ~[0m
+
+FAIL src/auth/token-expiry.spec.ts
+  ● AuthService - Token Expiry Validation › Refresh Token Service Behavior with Expiry › should accept valid refresh token and generate new access token
+
+    UnauthorizedException: Invalid or expired refresh token
+
+      401 |     if (!matchedSession) {
+      402 |       // Token is cryptographically valid but not in the DB — treat as stolen
+    > 403 |       throw new UnauthorizedException('Invalid or expired refresh token');
+          |             ^
+      404 |     }
+      405 |
+      406 |     // Step 3 — reuse detection: token was already consumed
+
+      at AuthService.refresh (auth/auth.service.ts:403:13)
+      at Object.<anonymous> (auth/token-expiry.spec.ts:522:22)
+
+FAIL src/auth/auth.service.spec.ts (6.429 s)
+  ● AuthService › refresh › should successfully refresh token
+
+    UnauthorizedException: Invalid or expired refresh token
+
+      401 |     if (!matchedSession) {
+      402 |       // Token is cryptographically valid but not in the DB — treat as stolen
+    > 403 |       throw new UnauthorizedException('Invalid or expired refresh token');
+          |             ^
+      404 |     }
+      405 |
+      406 |     // Step 3 — reuse detection: token was already consumed
+
+      at AuthService.refresh (auth/auth.service.ts:403:13)
+      at Object.<anonymous> (auth/auth.service.spec.ts:252:22)
+
+  ● AuthService › validatePasswordStrength › should reject breached passwords found in HIBP database
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: undefined
+
+      750 |
+      751 |       // This password will pass all local checks but fail HIBP
+    > 752 |       await expect(
+          |             ^
+      753 |         service.validatePasswordStrength('Password123!@'),
+      754 |       ).rejects.toThrow(BadRequestException);
+      755 |       await expect(
+
+      at expect (../node_modules/expect/build/index.js:2116:15)
+      at Object.<anonymous> (auth/auth.service.spec.ts:752:13)
+
+FAIL src/auth/token-lifecycle.spec.ts
+  ● AuthService - Token Lifecycle Integration › Login and Token Generation Workflow › should generate tokens during login with correct expiry settings
+
+    TypeError: this.cacheManager.del is not a function
+
+      339 |
+      340 |   private async resetLoginAttempts(userId: string): Promise<void> {
+    > 341 |     await this.cacheManager.del(this.lockoutAttemptsKey(userId));
+          |                             ^
+      342 |   }
+      343 |
+      344 |   /**
+
+      at AuthService.resetLoginAttempts (auth/auth.service.ts:341:29)
+      at AuthService.login (auth/auth.service.ts:287:16)
+      at Object.<anonymous> (auth/token-lifecycle.spec.ts:254:22)
+
+  ● AuthService - Token Lifecycle Integration › Refresh Token Workflow with Expiry › should allow token refresh within access token expiry window
+
+    UnauthorizedException: Invalid or expired refresh token
+
+      401 |     if (!matchedSession) {
+      402 |       // Token is cryptographically valid but not in the DB — treat as stolen
+    > 403 |       throw new UnauthorizedException('Invalid or expired refresh token');
+          |             ^
+      404 |     }
+      405 |
+      406 |     // Step 3 — reuse detection: token was already consumed
+
+      at AuthService.refresh (auth/auth.service.ts:403:13)
+      at Object.<anonymous> (auth/token-lifecycle.spec.ts:299:22)
+
+  ● AuthService - Token Lifecycle Integration › Refresh Token Workflow with Expiry › should allow refresh even near the end of refresh token validity
+
+    UnauthorizedException: Invalid or expired refresh token
+
+      401 |     if (!matchedSession) {
+      402 |       // Token is cryptographically valid but not in the DB — treat as stolen
+    > 403 |       throw new UnauthorizedException('Invalid or expired refresh token');
+          |             ^
+      404 |     }
+      405 |
+      406 |     // Step 3 — reuse detection: token was already consumed
+
+      at AuthService.refresh (auth/auth.service.ts:403:13)
+      at Object.<anonymous> (auth/token-lifecycle.spec.ts:325:22)
+
+  ● AuthService - Token Lifecycle Integration › Reset Token Lifecycle › should accept reset token within validity window
+
+    BadRequestException: Password must be at least 12 characters long
+
+      853 |     // Check minimum length (12 characters)
+      854 |     if (password.length < 12) {
+    > 855 |       throw new BadRequestException(
+          |             ^
+      856 |         'Password must be at least 12 characters long',
+      857 |       );
+      858 |     }
+
+      at AuthService.validatePasswordStrength (auth/auth.service.ts:855:13)
+      at AuthService.resetPassword (auth/auth.service.ts:636:16)
+      at Object.<anonymous> (auth/token-lifecycle.spec.ts:587:36)
+
+[31m[Nest] 50  - [39m08/27/2026, 4:36:21 AM [31m  ERROR[39m [38;5;3m[SorobanIndexerService] [39m[31mSoroban indexer poll failed: RPC unavailable[39m
+Error: RPC unavailable
+    at Object.<anonymous> (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/src/soroban/soroban-indexer.service.spec.ts:358:25)
+    at Promise.finally.completed (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-circus/build/jestAdapterInit.js:1557:28)
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-circus/build/jestAdapterInit.js:1497:10)
+    at _callCircusTest (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-circus/build/jestAdapterInit.js:1007:40)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at _runTest (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-circus/build/jestAdapterInit.js:947:3)
+    at /home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-circus/build/jestAdapterInit.js:849:7
+    at _runTestsForDescribeBlock (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-circus/build/jestAdapterInit.js:862:11)
+    at _runTestsForDescribeBlock (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at _runTestsForDescribeBlock (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at run (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-circus/build/jestAdapterInit.js:761:3)
+    at runAndTransformResultsToJestFormat (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-circus/build/jestAdapterInit.js:1918:21)
+    at jestAdapter (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-circus/build/runner.js:101:19)
+    at runTestInternal (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-runner/build/testWorker.js:275:16)
+    at runTest (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-runner/build/testWorker.js:343:7)
+    at Object.worker (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-runner/build/testWorker.js:497:12)
+[31m[Nest] 50  - [39m08/27/2026, 4:36:21 AM [31m  ERROR[39m [38;5;3m[SorobanIndexerService] [39m[31mSoroban indexer poll failed: RPC error[39m
+Error: RPC error
+    at Object.<anonymous> (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/src/soroban/soroban-indexer.service.spec.ts:379:40)
+    at Promise.finally.completed (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-circus/build/jestAdapterInit.js:1557:28)
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-circus/build/jestAdapterInit.js:1497:10)
+    at _callCircusTest (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-circus/build/jestAdapterInit.js:1007:40)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at _runTest (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-circus/build/jestAdapterInit.js:947:3)
+    at /home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-circus/build/jestAdapterInit.js:849:7
+    at _runTestsForDescribeBlock (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-circus/build/jestAdapterInit.js:862:11)
+    at _runTestsForDescribeBlock (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at _runTestsForDescribeBlock (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at run (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-circus/build/jestAdapterInit.js:761:3)
+    at runAndTransformResultsToJestFormat (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-circus/build/jestAdapterInit.js:1918:21)
+    at jestAdapter (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-circus/build/runner.js:101:19)
+    at runTestInternal (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-runner/build/testWorker.js:275:16)
+    at runTest (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-runner/build/testWorker.js:343:7)
+    at Object.worker (/home/ezekiel001/Harvest-Finance/harvest-finance/backend/node_modules/jest-runner/build/testWorker.js:497:12)
+PASS src/soroban/soroban-indexer.service.spec.ts
+FAIL src/vaults/vaults.service.spec.ts (8.585 s)
+  ● VaultsService › applyExternalPaymentNotification › should confirm a pending deposit
+
+    TypeError: service.applyExternalPaymentNotification is not a function
+
+      552 |       mockDepositRepository.update.mockResolvedValue(undefined);
+      553 |
+    > 554 |       const result = await service.applyExternalPaymentNotification(baseParams);
+          |                                    ^
+      555 |
+      556 |       expect(result.status).toBe(DepositStatus.CONFIRMED);
+      557 |       expect(result.duplicate).toBe(false);
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:554:36)
+
+  ● VaultsService › applyExternalPaymentNotification › should return duplicate=true for already-confirmed deposit
+
+    TypeError: service.applyExternalPaymentNotification is not a function
+
+      573 |       mockDepositRepository.findOne.mockResolvedValue(confirmedDeposit);
+      574 |
+    > 575 |       const result = await service.applyExternalPaymentNotification(baseParams);
+          |                                    ^
+      576 |
+      577 |       expect(result.duplicate).toBe(true);
+      578 |       expect(result.status).toBe(DepositStatus.CONFIRMED);
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:575:36)
+
+  ● VaultsService › applyExternalPaymentNotification › should throw NotFoundException when deposit does not exist
+
+    TypeError: service.applyExternalPaymentNotification is not a function
+
+      584 |
+      585 |       await expect(
+    > 586 |         service.applyExternalPaymentNotification(baseParams),
+          |                 ^
+      587 |       ).rejects.toThrow(NotFoundException);
+      588 |       await expect(
+      589 |         service.applyExternalPaymentNotification(baseParams),
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:586:17)
+
+  ● VaultsService › applyExternalPaymentNotification › should mark deposit as FAILED on PAYMENT_FAILED event
+
+    TypeError: service.applyExternalPaymentNotification is not a function
+
+      607 |       mockDepositRepository.update.mockResolvedValue(undefined);
+      608 |
+    > 609 |       const result = await service.applyExternalPaymentNotification({
+          |                                    ^
+      610 |         ...baseParams,
+      611 |         eventType: ExternalPaymentEventType.PAYMENT_FAILED,
+      612 |       });
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:609:36)
+
+  ● VaultsService › applyExternalPaymentNotification › should return duplicate=true for already-failed deposit on PAYMENT_FAILED
+
+    TypeError: service.applyExternalPaymentNotification is not a function
+
+      627 |       mockDepositRepository.findOne.mockResolvedValue(failedDeposit);
+      628 |
+    > 629 |       const result = await service.applyExternalPaymentNotification({
+          |                                    ^
+      630 |         ...baseParams,
+      631 |         eventType: ExternalPaymentEventType.PAYMENT_FAILED,
+      632 |       });
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:629:36)
+
+  ● VaultsService › applyExternalWithdrawalNotification › should confirm a pending withdrawal
+
+    TypeError: service.applyExternalWithdrawalNotification is not a function
+
+      671 |       mockWithdrawalRepository.update.mockResolvedValue(undefined);
+      672 |
+    > 673 |       const result = await service.applyExternalWithdrawalNotification(
+          |                                    ^
+      674 |         baseWithdrawalParams,
+      675 |       );
+      676 |
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:673:36)
+
+  ● VaultsService › applyExternalWithdrawalNotification › should return duplicate=true for already-confirmed withdrawal
+
+    TypeError: service.applyExternalWithdrawalNotification is not a function
+
+      691 |       mockWithdrawalRepository.findOne.mockResolvedValue(confirmedWithdrawal);
+      692 |
+    > 693 |       const result = await service.applyExternalWithdrawalNotification(
+          |                                    ^
+      694 |         baseWithdrawalParams,
+      695 |       );
+      696 |
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:693:36)
+
+  ● VaultsService › applyExternalWithdrawalNotification › should throw NotFoundException when withdrawal does not exist
+
+    TypeError: service.applyExternalWithdrawalNotification is not a function
+
+      703 |
+      704 |       await expect(
+    > 705 |         service.applyExternalWithdrawalNotification(baseWithdrawalParams),
+          |                 ^
+      706 |       ).rejects.toThrow(NotFoundException);
+      707 |       await expect(
+      708 |         service.applyExternalWithdrawalNotification(baseWithdrawalParams),
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:705:17)
+
+  ● VaultsService › applyExternalWithdrawalNotification › should mark withdrawal as FAILED on PAYMENT_FAILED event
+
+    TypeError: service.applyExternalWithdrawalNotification is not a function
+
+      729 |       mockWithdrawalRepository.update.mockResolvedValue(undefined);
+      730 |
+    > 731 |       const result = await service.applyExternalWithdrawalNotification({
+          |                                    ^
+      732 |         ...baseWithdrawalParams,
+      733 |         eventType: ExternalPaymentEventType.PAYMENT_FAILED,
+      734 |       });
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:731:36)
+
+  ● VaultsService › applyExternalWithdrawalNotification › should return duplicate=true for already-failed withdrawal on PAYMENT_FAILED
+
+    TypeError: service.applyExternalWithdrawalNotification is not a function
+
+      748 |       mockWithdrawalRepository.findOne.mockResolvedValue(failedWithdrawal);
+      749 |
+    > 750 |       const result = await service.applyExternalWithdrawalNotification({
+          |                                    ^
+      751 |         ...baseWithdrawalParams,
+      752 |         eventType: ExternalPaymentEventType.PAYMENT_FAILED,
+      753 |       });
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:750:36)
+
+  ● VaultsService › recordApySnapshot › should create an APY history snapshot for a vault
+
+    TypeError: this.dataSource.createQueryBuilder is not a function
+
+      879 |
+      880 |     await this.dataSource
+    > 881 |       .createQueryBuilder()
+          |        ^
+      882 |       .insert()
+      883 |       .into('vault_apy_history')
+      884 |       .values({
+
+      at VaultsService.recordApySnapshot (vaults/vaults.service.ts:881:8)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:895:7)
+
+  ● VaultsService › recordApySnapshot › should store correct APY value in snapshot
+
+    TypeError: this.dataSource.createQueryBuilder is not a function
+
+      879 |
+      880 |     await this.dataSource
+    > 881 |       .createQueryBuilder()
+          |        ^
+      882 |       .insert()
+      883 |       .into('vault_apy_history')
+      884 |       .values({
+
+      at VaultsService.recordApySnapshot (vaults/vaults.service.ts:881:8)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:919:7)
+
+  ● VaultsService › getApyHistory › should return APY history from database
+
+    TypeError: this.cacheManager.get is not a function
+
+      1057 |   ): Promise<any[]> {
+      1058 |     const cacheKey = `vaults:apy-history:${vaultId ?? 'all'}:${timeRange}`;
+    > 1059 |     const cached = await this.cacheManager.get<any[]>(cacheKey);
+           |                                            ^
+      1060 |     if (cached) return cached;
+      1061 |
+      1062 |     const now = new Date();
+
+      at VaultsService.getApyHistory (vaults/vaults.service.ts:1059:44)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:958:36)
+
+  ● VaultsService › getApyHistory › should filter by vaultId when provided
+
+    TypeError: this.cacheManager.get is not a function
+
+      1057 |   ): Promise<any[]> {
+      1058 |     const cacheKey = `vaults:apy-history:${vaultId ?? 'all'}:${timeRange}`;
+    > 1059 |     const cached = await this.cacheManager.get<any[]>(cacheKey);
+           |                                            ^
+      1060 |     if (cached) return cached;
+      1061 |
+      1062 |     const now = new Date();
+
+      at VaultsService.getApyHistory (vaults/vaults.service.ts:1059:44)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:975:21)
+
+  ● VaultsService › getApyHistory › getUserVaults › should return mapped vaults for a user
+
+    TypeError: this.vaultRepository.createQueryBuilder is not a function
+
+      679 |
+      680 |     const qb = this.vaultRepository
+    > 681 |       .createQueryBuilder('vault')
+          |        ^
+      682 |       .where('vault.ownerId = :userId', { userId })
+      683 |       .orderBy('vault.createdAt', 'DESC')
+      684 |       .addOrderBy('vault.id', 'DESC')
+
+      at VaultsService.getUserVaults (vaults/vaults.service.ts:681:8)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:990:36)
+
+  ● VaultsService › getApyHistory › getUserVaults › should return empty array when user has no vaults
+
+    TypeError: this.vaultRepository.createQueryBuilder is not a function
+
+      679 |
+      680 |     const qb = this.vaultRepository
+    > 681 |       .createQueryBuilder('vault')
+          |        ^
+      682 |       .where('vault.ownerId = :userId', { userId })
+      683 |       .orderBy('vault.createdAt', 'DESC')
+      684 |       .addOrderBy('vault.id', 'DESC')
+
+      at VaultsService.getUserVaults (vaults/vaults.service.ts:681:8)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1002:36)
+
+  ● VaultsService › getApyHistory › cloneVaultFromTemplate › should throw NotFoundException if source vault does not exist
+
+    TypeError: service.cloneVaultFromTemplate is not a function
+
+      1014 |
+      1015 |       await expect(
+    > 1016 |         service.cloneVaultFromTemplate('nonexistent', 'user-1'),
+           |                 ^
+      1017 |       ).rejects.toThrow(NotFoundException);
+      1018 |       await expect(
+      1019 |         service.cloneVaultFromTemplate('nonexistent', 'user-1'),
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1016:17)
+
+  ● VaultsService › getApyHistory › cloneVaultFromTemplate › should throw UnauthorizedException if user is not the vault owner
+
+    TypeError: service.cloneVaultFromTemplate is not a function
+
+      1028 |
+      1029 |       await expect(
+    > 1030 |         service.cloneVaultFromTemplate('vault-1', 'user-1'),
+           |                 ^
+      1031 |       ).rejects.toThrow(UnauthorizedException);
+      1032 |       await expect(
+      1033 |         service.cloneVaultFromTemplate('vault-1', 'user-1'),
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1030:17)
+
+  ● VaultsService › getApyHistory › cloneVaultFromTemplate › should create a clone with default name suffix when no name provided
+
+    TypeError: service.cloneVaultFromTemplate is not a function
+
+      1049 |       mockVaultRepository.save.mockResolvedValue(clonedVault);
+      1050 |
+    > 1051 |       const result = await service.cloneVaultFromTemplate('vault-1', 'user-1');
+           |                                    ^
+      1052 |
+      1053 |       expect(result.vaultName).toBe('Test Vault (Copy)');
+      1054 |       expect(result.id).toBe('vault-clone-1');
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1051:36)
+
+  ● VaultsService › getApyHistory › cloneVaultFromTemplate › should use the provided vaultName when specified
+
+    TypeError: service.cloneVaultFromTemplate is not a function
+
+      1068 |       mockVaultRepository.save.mockResolvedValue(clonedVault);
+      1069 |
+    > 1070 |       const result = await service.cloneVaultFromTemplate(
+           |                                    ^
+      1071 |         'vault-1',
+      1072 |         'user-1',
+      1073 |         'My Custom Clone',
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1070:36)
+
+  ● VaultsService › getApyHistory › getPublicVaults › should return paginated public vaults
+
+    TypeError: this.cacheManager.get is not a function
+
+      728 |
+      729 |     if (cacheable) {
+    > 730 |       const cached = await this.cacheManager.get<{
+          |                                              ^
+      731 |         vaults: VaultResponseDto[];
+      732 |         nextCursor: string | null;
+      733 |       }>(cacheKey);
+
+      at VaultsService.getPublicVaults (vaults/vaults.service.ts:730:46)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1088:36)
+
+  ● VaultsService › getApyHistory › getPublicVaults › should set hasMore=true when there are more vaults than the limit
+
+    TypeError: this.cacheManager.get is not a function
+
+      728 |
+      729 |     if (cacheable) {
+    > 730 |       const cached = await this.cacheManager.get<{
+          |                                              ^
+      731 |         vaults: VaultResponseDto[];
+      732 |         nextCursor: string | null;
+      733 |       }>(cacheKey);
+
+      at VaultsService.getPublicVaults (vaults/vaults.service.ts:730:46)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1101:36)
+
+  ● VaultsService › getApyHistory › getPublicVaults › should return empty list when no public vaults exist
+
+    TypeError: this.cacheManager.get is not a function
+
+      728 |
+      729 |     if (cacheable) {
+    > 730 |       const cached = await this.cacheManager.get<{
+          |                                              ^
+      731 |         vaults: VaultResponseDto[];
+      732 |         nextCursor: string | null;
+      733 |       }>(cacheKey);
+
+      at VaultsService.getPublicVaults (vaults/vaults.service.ts:730:46)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1111:36)
+
+  ● VaultsService › getApyHistory › pauseVault › should throw UnauthorizedException if user is not the owner
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: {"approvalStatus": "PENDING", "approvalThreshold": 1, "apr": 5, "apy": 5.13, "assetPair": "XLM/USDC", "availableCapacity": 9000, "compoundingFrequency": "daily", "createdAt": 2025-01-01T00:00:00.000Z, "currentApprovals": 0, "description": "Test vault description", "entryFeeBps": 0, "exitFeeBps": 0, "feeAddress": null, "id": "vault-1", "interestRate": 5, "isPublic": true, "lockPeriodEnd": 2027-01-01T00:00:00.000Z, "maturityDate": 2030-01-01T00:00:00.000Z, "maxCapacity": 10000, "ownerId": "owner-2", "performanceFeeBps": 0, "requiresMultiSignature": false, "status": "ACTIVE", "symbol": "TEST", "totalDeposits": 1000, "type": "CROP_PRODUCTION", "updatedAt": 2025-01-01T00:00:00.000Z, "utilizationPercentage": 10, "vaultName": "Test Vault"}
+
+      1177 |       } as any);
+      1178 |
+    > 1179 |       await expect(
+           |             ^
+      1180 |         service.pauseVault('vault-1', 'user-1'),
+      1181 |       ).rejects.toThrow(UnauthorizedException);
+      1182 |     });
+
+      at expect (../node_modules/expect/build/index.js:2116:15)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1179:13)
+
+  ● VaultsService › getApyHistory › resumeVault › should throw UnauthorizedException if user is not the owner
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: {"approvalStatus": "PENDING", "approvalThreshold": 1, "apr": 5, "apy": 5.13, "assetPair": "XLM/USDC", "availableCapacity": 9000, "compoundingFrequency": "daily", "createdAt": 2025-01-01T00:00:00.000Z, "currentApprovals": 0, "description": "Test vault description", "entryFeeBps": 0, "exitFeeBps": 0, "feeAddress": null, "id": "vault-1", "interestRate": 5, "isPublic": true, "lockPeriodEnd": 2027-01-01T00:00:00.000Z, "maturityDate": 2030-01-01T00:00:00.000Z, "maxCapacity": 10000, "ownerId": "owner-2", "performanceFeeBps": 0, "requiresMultiSignature": false, "status": "FROZEN", "symbol": "TEST", "totalDeposits": 1000, "type": "CROP_PRODUCTION", "updatedAt": 2025-01-01T00:00:00.000Z, "utilizationPercentage": 10, "vaultName": "Test Vault"}
+
+      1233 |       } as any);
+      1234 |
+    > 1235 |       await expect(
+           |             ^
+      1236 |         service.resumeVault('vault-1', 'user-1'),
+      1237 |       ).rejects.toThrow(UnauthorizedException);
+      1238 |     });
+
+      at expect (../node_modules/expect/build/index.js:2116:15)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1235:13)
+
+  ● VaultsService › getApyHistory › updateVaultMultiSignatureConfig › should throw UnauthorizedException for non-owner, non-admin
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: {"approvalStatus": "PENDING", "approvalThreshold": 1, "apr": 5, "apy": 5.13, "assetPair": "XLM/USDC", "availableCapacity": 9000, "compoundingFrequency": "daily", "createdAt": 2025-01-01T00:00:00.000Z, "currentApprovals": 0, "description": "Test vault description", "entryFeeBps": 0, "exitFeeBps": 0, "feeAddress": null, "id": "vault-1", "interestRate": 5, "isPublic": true, "lockPeriodEnd": 2027-01-01T00:00:00.000Z, "maturityDate": 2030-01-01T00:00:00.000Z, "maxCapacity": 10000, "ownerId": "owner-2", "performanceFeeBps": 0, "requiresMultiSignature": false, "status": "ACTIVE", "symbol": "TEST", "totalDeposits": 1000, "type": "CROP_PRODUCTION", "updatedAt": 2025-01-01T00:00:00.000Z, "utilizationPercentage": 10, "vaultName": "Test Vault"}
+
+      1271 |       } as any);
+      1272 |
+    > 1273 |       await expect(
+           |             ^
+      1274 |         service.updateVaultMultiSignatureConfig('vault-1', 'user-1', true, 2),
+      1275 |       ).rejects.toThrow(UnauthorizedException);
+      1276 |     });
+
+      at expect (../node_modules/expect/build/index.js:2116:15)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1273:13)
+
+  ● VaultsService › getApyHistory › getApyHistory › should return APY history for default 30 days
+
+    TypeError: this.cacheManager.get is not a function
+
+      1057 |   ): Promise<any[]> {
+      1058 |     const cacheKey = `vaults:apy-history:${vaultId ?? 'all'}:${timeRange}`;
+    > 1059 |     const cached = await this.cacheManager.get<any[]>(cacheKey);
+           |                                            ^
+      1060 |     if (cached) return cached;
+      1061 |
+      1062 |     const now = new Date();
+
+      at VaultsService.getApyHistory (vaults/vaults.service.ts:1059:44)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1303:36)
+
+  ● VaultsService › getApyHistory › getApyHistory › should return APY history for a specific vault
+
+    TypeError: this.cacheManager.get is not a function
+
+      1057 |   ): Promise<any[]> {
+      1058 |     const cacheKey = `vaults:apy-history:${vaultId ?? 'all'}:${timeRange}`;
+    > 1059 |     const cached = await this.cacheManager.get<any[]>(cacheKey);
+           |                                            ^
+      1060 |     if (cached) return cached;
+      1061 |
+      1062 |     const now = new Date();
+
+      at VaultsService.getApyHistory (vaults/vaults.service.ts:1059:44)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1310:36)
+
+  ● VaultsService › getApyHistory › getApyHistory › should return 7 data points for 7d range
+
+    TypeError: this.cacheManager.get is not a function
+
+      1057 |   ): Promise<any[]> {
+      1058 |     const cacheKey = `vaults:apy-history:${vaultId ?? 'all'}:${timeRange}`;
+    > 1059 |     const cached = await this.cacheManager.get<any[]>(cacheKey);
+           |                                            ^
+      1060 |     if (cached) return cached;
+      1061 |
+      1062 |     const now = new Date();
+
+      at VaultsService.getApyHistory (vaults/vaults.service.ts:1059:44)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1316:36)
+
+  ● VaultsService › getApyHistory › getApyHistory › should return 90 data points for 90d range
+
+    TypeError: this.cacheManager.get is not a function
+
+      1057 |   ): Promise<any[]> {
+      1058 |     const cacheKey = `vaults:apy-history:${vaultId ?? 'all'}:${timeRange}`;
+    > 1059 |     const cached = await this.cacheManager.get<any[]>(cacheKey);
+           |                                            ^
+      1060 |     if (cached) return cached;
+      1061 |
+      1062 |     const now = new Date();
+
+      at VaultsService.getApyHistory (vaults/vaults.service.ts:1059:44)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1321:36)
+
+  ● VaultsService › getApyHistory › getApyHistory › should return 365 data points for all-time range
+
+    TypeError: this.cacheManager.get is not a function
+
+      1057 |   ): Promise<any[]> {
+      1058 |     const cacheKey = `vaults:apy-history:${vaultId ?? 'all'}:${timeRange}`;
+    > 1059 |     const cached = await this.cacheManager.get<any[]>(cacheKey);
+           |                                            ^
+      1060 |     if (cached) return cached;
+      1061 |
+      1062 |     const now = new Date();
+
+      at VaultsService.getApyHistory (vaults/vaults.service.ts:1059:44)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1326:36)
+
+  ● VaultsService › getApyHistory › getApyHistory › should return 30 data points for unknown range (default fallback)
+
+    TypeError: this.cacheManager.get is not a function
+
+      1057 |   ): Promise<any[]> {
+      1058 |     const cacheKey = `vaults:apy-history:${vaultId ?? 'all'}:${timeRange}`;
+    > 1059 |     const cached = await this.cacheManager.get<any[]>(cacheKey);
+           |                                            ^
+      1060 |     if (cached) return cached;
+      1061 |
+      1062 |     const now = new Date();
+
+      at VaultsService.getApyHistory (vaults/vaults.service.ts:1059:44)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1331:36)
+
+  ● VaultsService › getApyHistory › getApyHistory › each data point should have date, apy, and vaultId fields
+
+    TypeError: this.cacheManager.get is not a function
+
+      1057 |   ): Promise<any[]> {
+      1058 |     const cacheKey = `vaults:apy-history:${vaultId ?? 'all'}:${timeRange}`;
+    > 1059 |     const cached = await this.cacheManager.get<any[]>(cacheKey);
+           |                                            ^
+      1060 |     if (cached) return cached;
+      1061 |
+      1062 |     const now = new Date();
+
+      at VaultsService.getApyHistory (vaults/vaults.service.ts:1059:44)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1336:36)
+
+  ● VaultsService › getApyHistory › recordDailyApySnapshots › should record APY history for active vaults when not already recorded
+
+    TypeError: service.recordDailyApySnapshots is not a function
+
+      1421 |       mockVaultApyHistoryRepository.save.mockResolvedValue({});
+      1422 |
+    > 1423 |       await service.recordDailyApySnapshots();
+           |                     ^
+      1424 |
+      1425 |       expect(mockVaultRepository.find).toHaveBeenCalledWith({
+      1426 |         where: { status: VaultStatus.ACTIVE },
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1423:21)
+
+  ● VaultsService › getApyHistory › recordDailyApySnapshots › should skip recording APY history if snapshot already exists for today
+
+    TypeError: service.recordDailyApySnapshots is not a function
+
+      1445 |       mockVaultApyHistoryRepository.save.mockClear();
+      1446 |
+    > 1447 |       await service.recordDailyApySnapshots();
+           |                     ^
+      1448 |
+      1449 |       expect(mockVaultApyHistoryRepository.create).not.toHaveBeenCalled();
+      1450 |       expect(mockVaultApyHistoryRepository.save).not.toHaveBeenCalled();
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1447:21)
+
+  ● VaultsService › getApyHistory › getApyHistory database query › should return records from the database if they exist
+
+    TypeError: this.cacheManager.get is not a function
+
+      1057 |   ): Promise<any[]> {
+      1058 |     const cacheKey = `vaults:apy-history:${vaultId ?? 'all'}:${timeRange}`;
+    > 1059 |     const cached = await this.cacheManager.get<any[]>(cacheKey);
+           |                                            ^
+      1060 |     if (cached) return cached;
+      1061 |
+      1062 |     const now = new Date();
+
+      at VaultsService.getApyHistory (vaults/vaults.service.ts:1059:44)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1462:36)
+
+  ● VaultsService › getApyHistory › vault capacity reservations › createReservation › should create a reservation for the vault owner
+
+    TypeError: service.createReservation is not a function
+
+      1505 |         mockVaultReservationRepository.save.mockResolvedValue(savedReservation);
+      1506 |
+    > 1507 |         const result = await service.createReservation('vault-1', 'user-1', {
+           |                                      ^
+      1508 |           walletAddress: 'GBXXX',
+      1509 |           reservedAmount: 2000,
+      1510 |           expiresAt: futureExpiry,
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1507:38)
+
+  ● VaultsService › getApyHistory › vault capacity reservations › createReservation › should reject non-owner reservation creation
+
+    TypeError: service.createReservation is not a function
+
+      1527 |
+      1528 |         await expect(
+    > 1529 |           service.createReservation('vault-1', 'other-user', {
+           |                   ^
+      1530 |             walletAddress: 'GBXXX',
+      1531 |             reservedAmount: 1000,
+      1532 |             expiresAt: futureExpiry,
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1529:19)
+
+  ● VaultsService › getApyHistory › vault capacity reservations › createReservation › should reject reservation exceeding public capacity
+
+    TypeError: service.createReservation is not a function
+
+      1540 |
+      1541 |         await expect(
+    > 1542 |           service.createReservation('vault-1', 'user-1', {
+           |                   ^
+      1543 |             walletAddress: 'GBXXX',
+      1544 |             reservedAmount: 2000,
+      1545 |             expiresAt: futureExpiry,
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1542:19)
+
+  ● VaultsService › getApyHistory › vault capacity reservations › depositToVault with reservations › should limit reserved depositor to their allocation
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: {"deposit": {"amount": 200, "confirmedAt": undefined, "createdAt": undefined, "id": "dep-1", "status": "CONFIRMED", "transactionHash": undefined, "userId": "user-1", "vaultId": "vault-1"}, "feeAmount": 0, "netAmount": 600, "userTotalDeposits": 0, "vault": {"approvalStatus": "PENDING", "approvalThreshold": 1, "apr": 5, "apy": 5.13, "assetPair": "XLM/USDC", "availableCapacity": 9000, "compoundingFrequency": "daily", "createdAt": 2025-01-01T00:00:00.000Z, "currentApprovals": 0, "description": "Test vault description", "entryFeeBps": 0, "exitFeeBps": 0, "feeAddress": null, "id": "vault-1", "interestRate": 5, "isPublic": true, "lockPeriodEnd": 2027-01-01T00:00:00.000Z, "maturityDate": 2030-01-01T00:00:00.000Z, "maxCapacity": 10000, "ownerId": "user-1", "performanceFeeBps": 0, "requiresMultiSignature": false, "status": "ACTIVE", "symbol": "TEST", "totalDeposits": 900, "type": "CROP_PRODUCTION", "updatedAt": 2025-01-01T00:00:00.000Z, "utilizationPercentage": 10, "vaultName": "Test Vault"}}
+
+      1559 |         });
+      1560 |
+    > 1561 |         await expect(
+           |               ^
+      1562 |           service.depositToVault('vault-1', { userId: 'user-1', amount: 600 }),
+      1563 |         ).rejects.toThrow('Deposit amount exceeds your reserved allocation');
+      1564 |       });
+
+      at expect (../node_modules/expect/build/index.js:2116:15)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1561:15)
+
+  ● VaultsService › getApyHistory › vault capacity reservations › depositToVault with reservations › should exclude reserved capacity for public depositors
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: {"deposit": {"amount": 200, "confirmedAt": undefined, "createdAt": undefined, "id": "dep-1", "status": "FAILED", "transactionHash": undefined, "userId": "user-1", "vaultId": "vault-1"}, "feeAmount": 0, "netAmount": 1500, "userTotalDeposits": 0, "vault": {"approvalStatus": "PENDING", "approvalThreshold": 1, "apr": 5, "apy": 5.13, "assetPair": "XLM/USDC", "availableCapacity": 9000, "compoundingFrequency": "daily", "createdAt": 2025-01-01T00:00:00.000Z, "currentApprovals": 0, "description": "Test vault description", "entryFeeBps": 0, "exitFeeBps": 0, "feeAddress": null, "id": "vault-1", "interestRate": 5, "isPublic": true, "lockPeriodEnd": 2027-01-01T00:00:00.000Z, "maturityDate": 2030-01-01T00:00:00.000Z, "maxCapacity": 10000, "ownerId": "user-1", "performanceFeeBps": 0, "requiresMultiSignature": false, "status": "ACTIVE", "symbol": "TEST", "totalDeposits": 900, "type": "CROP_PRODUCTION", "updatedAt": 2025-01-01T00:00:00.000Z, "utilizationPercentage": 10, "vaultName": "Test Vault"}}
+
+      1568 |         mockReservationQB.getRawOne.mockResolvedValue({ total: '8000' });
+      1569 |
+    > 1570 |         await expect(
+           |               ^
+      1571 |           service.depositToVault('vault-1', { userId: 'user-1', amount: 1500 }),
+      1572 |         ).rejects.toThrow('Deposit amount exceeds available public vault capacity');
+      1573 |       });
+
+      at expect (../node_modules/expect/build/index.js:2116:15)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1570:15)
+
+  ● VaultsService › getApyHistory › vault capacity reservations › expireReservations › should deactivate expired reservations
+
+    TypeError: service.expireReservations is not a function
+
+      1578 |         mockVaultReservationRepository.update.mockResolvedValue({ affected: 3 });
+      1579 |
+    > 1580 |         await service.expireReservations();
+           |                       ^
+      1581 |
+      1582 |         expect(mockVaultReservationRepository.update).toHaveBeenCalledWith(
+      1583 |           expect.objectContaining({ isActive: true }),
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1580:23)
+
+  ● VaultsService › getApyHistory › vault capacity reservations › getPublicVaults › should return paginated public vaults
+
+    TypeError: Cannot read properties of undefined (reading 'mockReturnValue')
+
+      1593 |     describe('getPublicVaults', () => {
+      1594 |       it('should return paginated public vaults', async () => {
+    > 1595 |         mockVaultRepository.createQueryBuilder.mockReturnValue({
+           |                                                ^
+      1596 |           where: jest.fn().mockReturnThis(),
+      1597 |           orderBy: jest.fn().mockReturnThis(),
+      1598 |           addOrderBy: jest.fn().mockReturnThis(),
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1595:48)
+
+PASS src/vaults/insurance-fund.service.spec.ts
+[31m[Nest] 50  - [39m08/27/2026, 4:36:23 AM [31m  ERROR[39m [38;5;3m[StellarService] [39m[31mError in getBaseFee:[39m
+[31m[Nest] 50  - [39m08/27/2026, 4:36:23 AM [31m  ERROR[39m [38;5;3m[StellarService] [39mError: Horizon down
+    at Object.<anonymous> [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39msrc/stellar/services/stellar.service.spec.ts:549:72[90m)[39m
+    at Promise.finally.completed [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-circus[24m/build/jestAdapterInit.js:1557:28[90m)[39m
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-circus[24m/build/jestAdapterInit.js:1497:10[90m)[39m
+    at _callCircusTest [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-circus[24m/build/jestAdapterInit.js:1007:40[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
+    at _runTest [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-circus[24m/build/jestAdapterInit.js:947:3[90m)[39m
+    at [90m/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-circus[24m/build/jestAdapterInit.js:849:7
+    at _runTestsForDescribeBlock [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-circus[24m/build/jestAdapterInit.js:862:11[90m)[39m
+    at _runTestsForDescribeBlock [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-circus[24m/build/jestAdapterInit.js:857:11[90m)[39m
+    at run [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-circus[24m/build/jestAdapterInit.js:761:3[90m)[39m
+    at runAndTransformResultsToJestFormat [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-circus[24m/build/jestAdapterInit.js:1918:21[90m)[39m
+    at jestAdapter [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-circus[24m/build/runner.js:101:19[90m)[39m
+    at runTestInternal [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-runner[24m/build/testWorker.js:275:16[90m)[39m
+    at runTest [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-runner[24m/build/testWorker.js:343:7[90m)[39m
+    at Object.worker [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-runner[24m/build/testWorker.js:497:12[90m)[39m
+PASS src/stellar/services/stellar.service.spec.ts
+FAIL src/auth/strategies/stellar.strategy.spec.ts
+  ● StellarStrategy › validate › should throw error for missing server signature
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Server signature missing or invalid"
+    Received message:   "Invalid sequence number"
+
+          209 |     // Check sequence number is 1 for a challenge transaction created from an account with sequence 0
+          210 |       if (transaction.sequence !== '0') {
+        > 211 |         throw new UnauthorizedException('Invalid sequence number');
+              |               ^
+          212 |     }
+          213 |   }
+          214 |
+
+      at StellarStrategy.validateTransactionStructure (auth/strategies/stellar.strategy.ts:211:15)
+      at StellarStrategy.validate (auth/strategies/stellar.strategy.ts:132:12)
+      at Object.<anonymous> (auth/strategies/stellar.strategy.spec.ts:441:18)
+      at Object.toThrow (../node_modules/expect/build/index.js:2155:20)
+      at Object.<anonymous> (auth/strategies/stellar.strategy.spec.ts:442:17)
+
+PASS src/soroban/tests/soroban-cursor-persistence.spec.ts
+PASS src/auth/logout-ttl.spec.ts
+PASS src/vaults/deposit.repository.spec.ts
+PASS src/portfolio/portfolio.integration.spec.ts
+PASS src/auth/stellar.integration.spec.ts
+PASS src/analytics/scoring.service.spec.ts
+PASS src/realtime/vault.gateway.spec.ts
+PASS src/auth/auth.controller.spec.ts
+PASS src/farm-vaults/farm-vaults.service.spec.ts
+PASS src/vaults/insurance-fund.controller.spec.ts
+PASS src/soroban/tests/soroban-indexer-filter.spec.ts
+PASS src/common/interceptors/response.interceptor.spec.ts
+PASS src/auth/strategies/jwt-expiry.spec.ts
+[31m[Nest] 50  - [39m08/27/2026, 4:36:28 AM [31m  ERROR[39m [38;5;3m[YieldAnalyticsService] [39m[31mError processing HardWork events:[39m
+[31m[Nest] 50  - [39m08/27/2026, 4:36:28 AM [31m  ERROR[39m [38;5;3m[YieldAnalyticsService] [39mError: Database error
+    at Object.<anonymous> [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39msrc/yield-analytics/yield-analytics.service.spec.ts:111:9[90m)[39m
+    at Promise.finally.completed [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-circus[24m/build/jestAdapterInit.js:1557:28[90m)[39m
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-circus[24m/build/jestAdapterInit.js:1497:10[90m)[39m
+    at _callCircusTest [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-circus[24m/build/jestAdapterInit.js:1007:40[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
+    at _runTest [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-circus[24m/build/jestAdapterInit.js:947:3[90m)[39m
+    at [90m/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-circus[24m/build/jestAdapterInit.js:849:7
+    at _runTestsForDescribeBlock [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-circus[24m/build/jestAdapterInit.js:862:11[90m)[39m
+    at _runTestsForDescribeBlock [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-circus[24m/build/jestAdapterInit.js:857:11[90m)[39m
+    at _runTestsForDescribeBlock [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-circus[24m/build/jestAdapterInit.js:857:11[90m)[39m
+    at run [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-circus[24m/build/jestAdapterInit.js:761:3[90m)[39m
+    at runAndTransformResultsToJestFormat [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-circus[24m/build/jestAdapterInit.js:1918:21[90m)[39m
+    at jestAdapter [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-circus[24m/build/runner.js:101:19[90m)[39m
+    at runTestInternal [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-runner[24m/build/testWorker.js:275:16[90m)[39m
+    at runTest [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-runner[24m/build/testWorker.js:343:7[90m)[39m
+    at Object.worker [90m(/home/ezekiel001/Harvest-Finance/harvest-finance/backend/[39mnode_modules/[4mjest-runner[24m/build/testWorker.js:497:12[90m)[39m
+PASS src/yield-analytics/yield-analytics.service.spec.ts
+PASS src/vaults/account-merge-detection.service.spec.ts
+[31m[Nest] 50  - [39m08/27/2026, 4:36:29 AM [31m  ERROR[39m [38;5;3m[HarvestService] [39m[31mBlockchain connection not initialized[39m
+[31m[Nest] 50  - [39m08/27/2026, 4:36:29 AM [31m  ERROR[39m [38;5;3m[HarvestService] [39m[31mHarvest failed for vault 0x1234567890123456789012345678901234567890: Vault 0x1234567890123456789012345678901234567890 is not registered with the controller[39m
+[31m[Nest] 50  - [39m08/27/2026, 4:36:29 AM [31m  ERROR[39m [38;5;3m[HarvestService] [39m[31mHarvest failed for vault 0x1234567890123456789012345678901234567890: No strategy set for vault 0x1234567890123456789012345678901234567890[39m
+[31m[Nest] 50  - [39m08/27/2026, 4:36:29 AM [31m  ERROR[39m [38;5;3m[HarvestService] [39m[31mHarvest failed for vault 0x1234567890123456789012345678901234567890: Transaction failed[39m
+[31m[Nest] 50  - [39m08/27/2026, 4:36:29 AM [31m  ERROR[39m [38;5;3m[HarvestService] [39m[31mHarvest failed for vault 0x1234567890123456789012345678901234567890: Transaction failed[39m
+PASS src/harvest/harvest.service.spec.ts
+PASS src/vaults/vaults.apy.spec.ts
+[31m[Nest] 50  - [39m08/27/2026, 4:36:30 AM [31m  ERROR[39m [38;5;3m[VaultAccountMonitorService] [39m[31m{"event":"vault_account_merged","vaultId":"vault-1","stellarAccountAddress":"GABC1234567890123456789012345678901234567890123456","timestamp":"2026-08-27T09:36:30.203Z","action":"vault_suspended"}[39m
+[31m[Nest] 50  - [39m08/27/2026, 4:36:30 AM [31m  ERROR[39m [38;5;3m[VaultAccountMonitorService] [39m[31m{"event":"vault_account_merged","vaultId":"vault-1","stellarAccountAddress":"GABC1234567890123456789012345678901234567890123456","timestamp":"2026-08-27T09:36:30.212Z","action":"vault_suspended"}[39m
+PASS src/vaults/vault-account-monitor.service.spec.ts
+PASS src/auth/auth.oauth.spec.ts
+PASS src/wallets/custodial-wallet.service.spec.ts
+PASS src/verification/services/verification.service.spec.ts
+PASS src/common/circuit-breaker/platform-circuit-breaker.service.spec.ts
+PASS src/common/sanitization/input-sanitizer.service.spec.ts
+PASS src/common/filters/soroban-exception.filter.spec.ts
+PASS src/common/cache/contract-cache.service.spec.ts
+[31m[Nest] 50  - [39m08/27/2026, 4:36:31 AM [31m  ERROR[39m [38;5;3m[WithdrawalQueueService] [39m[31mVault v1 not found[39m
+PASS src/vaults/withdrawal-queue.service.spec.ts
+PASS src/multi-chain/adapters/solana-yield.adapter.spec.ts
+PASS src/harvest/harvest-scheduler.service.spec.ts
+PASS src/multi-chain/adapters/stellar-yield.adapter.spec.ts
+PASS src/yield-analytics/yield-analytics.controller.spec.ts
+PASS src/export/export.service.spec.ts
+PASS src/admin/circuit-breaker.controller.spec.ts
+PASS src/stellar/utils/stellar-retry.spec.ts
+PASS src/common/interceptors/versioning.interceptor.spec.ts
+PASS src/vaults/simulation.service.spec.ts
+PASS src/config/env.validation.spec.ts
+PASS src/payments/payment.service.spec.ts
+PASS src/vaults/deposit-event.service.spec.ts
+PASS src/soroban/tests/ttl-stress-test.spec.ts
+PASS src/common/utils/retry.spec.ts
+PASS src/common/filters/http-exception.filter.spec.ts
+PASS src/coop-marketplace/custom-logger.service.spec.ts
+PASS src/multi-chain/multi-chain.service.spec.ts
+[33m[Nest] 50  - [39m08/27/2026, 4:36:35 AM [33m   WARN[39m [38;5;3m[MultiChainService] [39m[33mAdapter 'ethereum' failed for user=user-2: RPC down[39m
+PASS src/database/migrations/1700000000013-CreateInsuranceClaims.spec.ts
+PASS src/common/guards/platform-circuit-breaker.guard.spec.ts
+PASS src/verification/services/payment.service.spec.ts
+PASS src/orders/orders.service.spec.ts
+PASS src/notifications/notification.helper.spec.ts
+PASS src/verification/services/gps-validation.service.spec.ts
+PASS src/stellar/utils/circuit-breaker.spec.ts
+PASS src/soroban/parsers/contract-version-registry.spec.ts
+PASS src/webhooks/webhooks.service.spec.ts
+PASS src/common/config/throttler.config.spec.ts
+PASS src/soroban/parsers/event-parser.factory.spec.ts
+PASS src/farm-vaults/farm-vaults.dto.spec.ts
+PASS src/multi-chain/adapters/solana-vault.strategy.spec.ts
+PASS src/realtime/realtime.gateway.spec.ts
+PASS src/webhooks/webhook-signature.service.spec.ts
+PASS src/vaults/cqrs/commands/handlers/deposit-funds.handler.spec.ts
+PASS src/app.controller.spec.ts
+PASS src/vaults/cqrs/queries/handlers/get-vault-balance.handler.spec.ts
+
+Summary of all failing tests
+FAIL vaults/vaults.integration.spec.ts
+  ● Test suite failed to run
+
+    [96msrc/vaults/vaults.integration.spec.ts[0m:[93m884[0m:[93m1[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m884[0m });
+    [7m   [0m [91m~[0m
+    [96msrc/vaults/vaults.integration.spec.ts[0m:[93m884[0m:[93m2[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m884[0m });
+    [7m   [0m [91m ~[0m
+
+FAIL auth/token-expiry.spec.ts
+  ● AuthService - Token Expiry Validation › Refresh Token Service Behavior with Expiry › should accept valid refresh token and generate new access token
+
+    UnauthorizedException: Invalid or expired refresh token
+
+      401 |     if (!matchedSession) {
+      402 |       // Token is cryptographically valid but not in the DB — treat as stolen
+    > 403 |       throw new UnauthorizedException('Invalid or expired refresh token');
+          |             ^
+      404 |     }
+      405 |
+      406 |     // Step 3 — reuse detection: token was already consumed
+
+      at AuthService.refresh (auth/auth.service.ts:403:13)
+      at Object.<anonymous> (auth/token-expiry.spec.ts:522:22)
+
+FAIL auth/auth.service.spec.ts (6.429 s)
+  ● AuthService › refresh › should successfully refresh token
+
+    UnauthorizedException: Invalid or expired refresh token
+
+      401 |     if (!matchedSession) {
+      402 |       // Token is cryptographically valid but not in the DB — treat as stolen
+    > 403 |       throw new UnauthorizedException('Invalid or expired refresh token');
+          |             ^
+      404 |     }
+      405 |
+      406 |     // Step 3 — reuse detection: token was already consumed
+
+      at AuthService.refresh (auth/auth.service.ts:403:13)
+      at Object.<anonymous> (auth/auth.service.spec.ts:252:22)
+
+  ● AuthService › validatePasswordStrength › should reject breached passwords found in HIBP database
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: undefined
+
+      750 |
+      751 |       // This password will pass all local checks but fail HIBP
+    > 752 |       await expect(
+          |             ^
+      753 |         service.validatePasswordStrength('Password123!@'),
+      754 |       ).rejects.toThrow(BadRequestException);
+      755 |       await expect(
+
+      at expect (../node_modules/expect/build/index.js:2116:15)
+      at Object.<anonymous> (auth/auth.service.spec.ts:752:13)
+
+FAIL auth/token-lifecycle.spec.ts
+  ● AuthService - Token Lifecycle Integration › Login and Token Generation Workflow › should generate tokens during login with correct expiry settings
+
+    TypeError: this.cacheManager.del is not a function
+
+      339 |
+      340 |   private async resetLoginAttempts(userId: string): Promise<void> {
+    > 341 |     await this.cacheManager.del(this.lockoutAttemptsKey(userId));
+          |                             ^
+      342 |   }
+      343 |
+      344 |   /**
+
+      at AuthService.resetLoginAttempts (auth/auth.service.ts:341:29)
+      at AuthService.login (auth/auth.service.ts:287:16)
+      at Object.<anonymous> (auth/token-lifecycle.spec.ts:254:22)
+
+  ● AuthService - Token Lifecycle Integration › Refresh Token Workflow with Expiry › should allow token refresh within access token expiry window
+
+    UnauthorizedException: Invalid or expired refresh token
+
+      401 |     if (!matchedSession) {
+      402 |       // Token is cryptographically valid but not in the DB — treat as stolen
+    > 403 |       throw new UnauthorizedException('Invalid or expired refresh token');
+          |             ^
+      404 |     }
+      405 |
+      406 |     // Step 3 — reuse detection: token was already consumed
+
+      at AuthService.refresh (auth/auth.service.ts:403:13)
+      at Object.<anonymous> (auth/token-lifecycle.spec.ts:299:22)
+
+  ● AuthService - Token Lifecycle Integration › Refresh Token Workflow with Expiry › should allow refresh even near the end of refresh token validity
+
+    UnauthorizedException: Invalid or expired refresh token
+
+      401 |     if (!matchedSession) {
+      402 |       // Token is cryptographically valid but not in the DB — treat as stolen
+    > 403 |       throw new UnauthorizedException('Invalid or expired refresh token');
+          |             ^
+      404 |     }
+      405 |
+      406 |     // Step 3 — reuse detection: token was already consumed
+
+      at AuthService.refresh (auth/auth.service.ts:403:13)
+      at Object.<anonymous> (auth/token-lifecycle.spec.ts:325:22)
+
+  ● AuthService - Token Lifecycle Integration › Reset Token Lifecycle › should accept reset token within validity window
+
+    BadRequestException: Password must be at least 12 characters long
+
+      853 |     // Check minimum length (12 characters)
+      854 |     if (password.length < 12) {
+    > 855 |       throw new BadRequestException(
+          |             ^
+      856 |         'Password must be at least 12 characters long',
+      857 |       );
+      858 |     }
+
+      at AuthService.validatePasswordStrength (auth/auth.service.ts:855:13)
+      at AuthService.resetPassword (auth/auth.service.ts:636:16)
+      at Object.<anonymous> (auth/token-lifecycle.spec.ts:587:36)
+
+FAIL vaults/vaults.service.spec.ts (8.585 s)
+  ● VaultsService › applyExternalPaymentNotification › should confirm a pending deposit
+
+    TypeError: service.applyExternalPaymentNotification is not a function
+
+      552 |       mockDepositRepository.update.mockResolvedValue(undefined);
+      553 |
+    > 554 |       const result = await service.applyExternalPaymentNotification(baseParams);
+          |                                    ^
+      555 |
+      556 |       expect(result.status).toBe(DepositStatus.CONFIRMED);
+      557 |       expect(result.duplicate).toBe(false);
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:554:36)
+
+  ● VaultsService › applyExternalPaymentNotification › should return duplicate=true for already-confirmed deposit
+
+    TypeError: service.applyExternalPaymentNotification is not a function
+
+      573 |       mockDepositRepository.findOne.mockResolvedValue(confirmedDeposit);
+      574 |
+    > 575 |       const result = await service.applyExternalPaymentNotification(baseParams);
+          |                                    ^
+      576 |
+      577 |       expect(result.duplicate).toBe(true);
+      578 |       expect(result.status).toBe(DepositStatus.CONFIRMED);
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:575:36)
+
+  ● VaultsService › applyExternalPaymentNotification › should throw NotFoundException when deposit does not exist
+
+    TypeError: service.applyExternalPaymentNotification is not a function
+
+      584 |
+      585 |       await expect(
+    > 586 |         service.applyExternalPaymentNotification(baseParams),
+          |                 ^
+      587 |       ).rejects.toThrow(NotFoundException);
+      588 |       await expect(
+      589 |         service.applyExternalPaymentNotification(baseParams),
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:586:17)
+
+  ● VaultsService › applyExternalPaymentNotification › should mark deposit as FAILED on PAYMENT_FAILED event
+
+    TypeError: service.applyExternalPaymentNotification is not a function
+
+      607 |       mockDepositRepository.update.mockResolvedValue(undefined);
+      608 |
+    > 609 |       const result = await service.applyExternalPaymentNotification({
+          |                                    ^
+      610 |         ...baseParams,
+      611 |         eventType: ExternalPaymentEventType.PAYMENT_FAILED,
+      612 |       });
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:609:36)
+
+  ● VaultsService › applyExternalPaymentNotification › should return duplicate=true for already-failed deposit on PAYMENT_FAILED
+
+    TypeError: service.applyExternalPaymentNotification is not a function
+
+      627 |       mockDepositRepository.findOne.mockResolvedValue(failedDeposit);
+      628 |
+    > 629 |       const result = await service.applyExternalPaymentNotification({
+          |                                    ^
+      630 |         ...baseParams,
+      631 |         eventType: ExternalPaymentEventType.PAYMENT_FAILED,
+      632 |       });
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:629:36)
+
+  ● VaultsService › applyExternalWithdrawalNotification › should confirm a pending withdrawal
+
+    TypeError: service.applyExternalWithdrawalNotification is not a function
+
+      671 |       mockWithdrawalRepository.update.mockResolvedValue(undefined);
+      672 |
+    > 673 |       const result = await service.applyExternalWithdrawalNotification(
+          |                                    ^
+      674 |         baseWithdrawalParams,
+      675 |       );
+      676 |
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:673:36)
+
+  ● VaultsService › applyExternalWithdrawalNotification › should return duplicate=true for already-confirmed withdrawal
+
+    TypeError: service.applyExternalWithdrawalNotification is not a function
+
+      691 |       mockWithdrawalRepository.findOne.mockResolvedValue(confirmedWithdrawal);
+      692 |
+    > 693 |       const result = await service.applyExternalWithdrawalNotification(
+          |                                    ^
+      694 |         baseWithdrawalParams,
+      695 |       );
+      696 |
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:693:36)
+
+  ● VaultsService › applyExternalWithdrawalNotification › should throw NotFoundException when withdrawal does not exist
+
+    TypeError: service.applyExternalWithdrawalNotification is not a function
+
+      703 |
+      704 |       await expect(
+    > 705 |         service.applyExternalWithdrawalNotification(baseWithdrawalParams),
+          |                 ^
+      706 |       ).rejects.toThrow(NotFoundException);
+      707 |       await expect(
+      708 |         service.applyExternalWithdrawalNotification(baseWithdrawalParams),
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:705:17)
+
+  ● VaultsService › applyExternalWithdrawalNotification › should mark withdrawal as FAILED on PAYMENT_FAILED event
+
+    TypeError: service.applyExternalWithdrawalNotification is not a function
+
+      729 |       mockWithdrawalRepository.update.mockResolvedValue(undefined);
+      730 |
+    > 731 |       const result = await service.applyExternalWithdrawalNotification({
+          |                                    ^
+      732 |         ...baseWithdrawalParams,
+      733 |         eventType: ExternalPaymentEventType.PAYMENT_FAILED,
+      734 |       });
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:731:36)
+
+  ● VaultsService › applyExternalWithdrawalNotification › should return duplicate=true for already-failed withdrawal on PAYMENT_FAILED
+
+    TypeError: service.applyExternalWithdrawalNotification is not a function
+
+      748 |       mockWithdrawalRepository.findOne.mockResolvedValue(failedWithdrawal);
+      749 |
+    > 750 |       const result = await service.applyExternalWithdrawalNotification({
+          |                                    ^
+      751 |         ...baseWithdrawalParams,
+      752 |         eventType: ExternalPaymentEventType.PAYMENT_FAILED,
+      753 |       });
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:750:36)
+
+  ● VaultsService › recordApySnapshot › should create an APY history snapshot for a vault
+
+    TypeError: this.dataSource.createQueryBuilder is not a function
+
+      879 |
+      880 |     await this.dataSource
+    > 881 |       .createQueryBuilder()
+          |        ^
+      882 |       .insert()
+      883 |       .into('vault_apy_history')
+      884 |       .values({
+
+      at VaultsService.recordApySnapshot (vaults/vaults.service.ts:881:8)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:895:7)
+
+  ● VaultsService › recordApySnapshot › should store correct APY value in snapshot
+
+    TypeError: this.dataSource.createQueryBuilder is not a function
+
+      879 |
+      880 |     await this.dataSource
+    > 881 |       .createQueryBuilder()
+          |        ^
+      882 |       .insert()
+      883 |       .into('vault_apy_history')
+      884 |       .values({
+
+      at VaultsService.recordApySnapshot (vaults/vaults.service.ts:881:8)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:919:7)
+
+  ● VaultsService › getApyHistory › should return APY history from database
+
+    TypeError: this.cacheManager.get is not a function
+
+      1057 |   ): Promise<any[]> {
+      1058 |     const cacheKey = `vaults:apy-history:${vaultId ?? 'all'}:${timeRange}`;
+    > 1059 |     const cached = await this.cacheManager.get<any[]>(cacheKey);
+           |                                            ^
+      1060 |     if (cached) return cached;
+      1061 |
+      1062 |     const now = new Date();
+
+      at VaultsService.getApyHistory (vaults/vaults.service.ts:1059:44)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:958:36)
+
+  ● VaultsService › getApyHistory › should filter by vaultId when provided
+
+    TypeError: this.cacheManager.get is not a function
+
+      1057 |   ): Promise<any[]> {
+      1058 |     const cacheKey = `vaults:apy-history:${vaultId ?? 'all'}:${timeRange}`;
+    > 1059 |     const cached = await this.cacheManager.get<any[]>(cacheKey);
+           |                                            ^
+      1060 |     if (cached) return cached;
+      1061 |
+      1062 |     const now = new Date();
+
+      at VaultsService.getApyHistory (vaults/vaults.service.ts:1059:44)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:975:21)
+
+  ● VaultsService › getApyHistory › getUserVaults › should return mapped vaults for a user
+
+    TypeError: this.vaultRepository.createQueryBuilder is not a function
+
+      679 |
+      680 |     const qb = this.vaultRepository
+    > 681 |       .createQueryBuilder('vault')
+          |        ^
+      682 |       .where('vault.ownerId = :userId', { userId })
+      683 |       .orderBy('vault.createdAt', 'DESC')
+      684 |       .addOrderBy('vault.id', 'DESC')
+
+      at VaultsService.getUserVaults (vaults/vaults.service.ts:681:8)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:990:36)
+
+  ● VaultsService › getApyHistory › getUserVaults › should return empty array when user has no vaults
+
+    TypeError: this.vaultRepository.createQueryBuilder is not a function
+
+      679 |
+      680 |     const qb = this.vaultRepository
+    > 681 |       .createQueryBuilder('vault')
+          |        ^
+      682 |       .where('vault.ownerId = :userId', { userId })
+      683 |       .orderBy('vault.createdAt', 'DESC')
+      684 |       .addOrderBy('vault.id', 'DESC')
+
+      at VaultsService.getUserVaults (vaults/vaults.service.ts:681:8)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1002:36)
+
+  ● VaultsService › getApyHistory › cloneVaultFromTemplate › should throw NotFoundException if source vault does not exist
+
+    TypeError: service.cloneVaultFromTemplate is not a function
+
+      1014 |
+      1015 |       await expect(
+    > 1016 |         service.cloneVaultFromTemplate('nonexistent', 'user-1'),
+           |                 ^
+      1017 |       ).rejects.toThrow(NotFoundException);
+      1018 |       await expect(
+      1019 |         service.cloneVaultFromTemplate('nonexistent', 'user-1'),
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1016:17)
+
+  ● VaultsService › getApyHistory › cloneVaultFromTemplate › should throw UnauthorizedException if user is not the vault owner
+
+    TypeError: service.cloneVaultFromTemplate is not a function
+
+      1028 |
+      1029 |       await expect(
+    > 1030 |         service.cloneVaultFromTemplate('vault-1', 'user-1'),
+           |                 ^
+      1031 |       ).rejects.toThrow(UnauthorizedException);
+      1032 |       await expect(
+      1033 |         service.cloneVaultFromTemplate('vault-1', 'user-1'),
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1030:17)
+
+  ● VaultsService › getApyHistory › cloneVaultFromTemplate › should create a clone with default name suffix when no name provided
+
+    TypeError: service.cloneVaultFromTemplate is not a function
+
+      1049 |       mockVaultRepository.save.mockResolvedValue(clonedVault);
+      1050 |
+    > 1051 |       const result = await service.cloneVaultFromTemplate('vault-1', 'user-1');
+           |                                    ^
+      1052 |
+      1053 |       expect(result.vaultName).toBe('Test Vault (Copy)');
+      1054 |       expect(result.id).toBe('vault-clone-1');
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1051:36)
+
+  ● VaultsService › getApyHistory › cloneVaultFromTemplate › should use the provided vaultName when specified
+
+    TypeError: service.cloneVaultFromTemplate is not a function
+
+      1068 |       mockVaultRepository.save.mockResolvedValue(clonedVault);
+      1069 |
+    > 1070 |       const result = await service.cloneVaultFromTemplate(
+           |                                    ^
+      1071 |         'vault-1',
+      1072 |         'user-1',
+      1073 |         'My Custom Clone',
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1070:36)
+
+  ● VaultsService › getApyHistory › getPublicVaults › should return paginated public vaults
+
+    TypeError: this.cacheManager.get is not a function
+
+      728 |
+      729 |     if (cacheable) {
+    > 730 |       const cached = await this.cacheManager.get<{
+          |                                              ^
+      731 |         vaults: VaultResponseDto[];
+      732 |         nextCursor: string | null;
+      733 |       }>(cacheKey);
+
+      at VaultsService.getPublicVaults (vaults/vaults.service.ts:730:46)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1088:36)
+
+  ● VaultsService › getApyHistory › getPublicVaults › should set hasMore=true when there are more vaults than the limit
+
+    TypeError: this.cacheManager.get is not a function
+
+      728 |
+      729 |     if (cacheable) {
+    > 730 |       const cached = await this.cacheManager.get<{
+          |                                              ^
+      731 |         vaults: VaultResponseDto[];
+      732 |         nextCursor: string | null;
+      733 |       }>(cacheKey);
+
+      at VaultsService.getPublicVaults (vaults/vaults.service.ts:730:46)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1101:36)
+
+  ● VaultsService › getApyHistory › getPublicVaults › should return empty list when no public vaults exist
+
+    TypeError: this.cacheManager.get is not a function
+
+      728 |
+      729 |     if (cacheable) {
+    > 730 |       const cached = await this.cacheManager.get<{
+          |                                              ^
+      731 |         vaults: VaultResponseDto[];
+      732 |         nextCursor: string | null;
+      733 |       }>(cacheKey);
+
+      at VaultsService.getPublicVaults (vaults/vaults.service.ts:730:46)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1111:36)
+
+  ● VaultsService › getApyHistory › pauseVault › should throw UnauthorizedException if user is not the owner
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: {"approvalStatus": "PENDING", "approvalThreshold": 1, "apr": 5, "apy": 5.13, "assetPair": "XLM/USDC", "availableCapacity": 9000, "compoundingFrequency": "daily", "createdAt": 2025-01-01T00:00:00.000Z, "currentApprovals": 0, "description": "Test vault description", "entryFeeBps": 0, "exitFeeBps": 0, "feeAddress": null, "id": "vault-1", "interestRate": 5, "isPublic": true, "lockPeriodEnd": 2027-01-01T00:00:00.000Z, "maturityDate": 2030-01-01T00:00:00.000Z, "maxCapacity": 10000, "ownerId": "owner-2", "performanceFeeBps": 0, "requiresMultiSignature": false, "status": "ACTIVE", "symbol": "TEST", "totalDeposits": 1000, "type": "CROP_PRODUCTION", "updatedAt": 2025-01-01T00:00:00.000Z, "utilizationPercentage": 10, "vaultName": "Test Vault"}
+
+      1177 |       } as any);
+      1178 |
+    > 1179 |       await expect(
+           |             ^
+      1180 |         service.pauseVault('vault-1', 'user-1'),
+      1181 |       ).rejects.toThrow(UnauthorizedException);
+      1182 |     });
+
+      at expect (../node_modules/expect/build/index.js:2116:15)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1179:13)
+
+  ● VaultsService › getApyHistory › resumeVault › should throw UnauthorizedException if user is not the owner
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: {"approvalStatus": "PENDING", "approvalThreshold": 1, "apr": 5, "apy": 5.13, "assetPair": "XLM/USDC", "availableCapacity": 9000, "compoundingFrequency": "daily", "createdAt": 2025-01-01T00:00:00.000Z, "currentApprovals": 0, "description": "Test vault description", "entryFeeBps": 0, "exitFeeBps": 0, "feeAddress": null, "id": "vault-1", "interestRate": 5, "isPublic": true, "lockPeriodEnd": 2027-01-01T00:00:00.000Z, "maturityDate": 2030-01-01T00:00:00.000Z, "maxCapacity": 10000, "ownerId": "owner-2", "performanceFeeBps": 0, "requiresMultiSignature": false, "status": "FROZEN", "symbol": "TEST", "totalDeposits": 1000, "type": "CROP_PRODUCTION", "updatedAt": 2025-01-01T00:00:00.000Z, "utilizationPercentage": 10, "vaultName": "Test Vault"}
+
+      1233 |       } as any);
+      1234 |
+    > 1235 |       await expect(
+           |             ^
+      1236 |         service.resumeVault('vault-1', 'user-1'),
+      1237 |       ).rejects.toThrow(UnauthorizedException);
+      1238 |     });
+
+      at expect (../node_modules/expect/build/index.js:2116:15)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1235:13)
+
+  ● VaultsService › getApyHistory › updateVaultMultiSignatureConfig › should throw UnauthorizedException for non-owner, non-admin
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: {"approvalStatus": "PENDING", "approvalThreshold": 1, "apr": 5, "apy": 5.13, "assetPair": "XLM/USDC", "availableCapacity": 9000, "compoundingFrequency": "daily", "createdAt": 2025-01-01T00:00:00.000Z, "currentApprovals": 0, "description": "Test vault description", "entryFeeBps": 0, "exitFeeBps": 0, "feeAddress": null, "id": "vault-1", "interestRate": 5, "isPublic": true, "lockPeriodEnd": 2027-01-01T00:00:00.000Z, "maturityDate": 2030-01-01T00:00:00.000Z, "maxCapacity": 10000, "ownerId": "owner-2", "performanceFeeBps": 0, "requiresMultiSignature": false, "status": "ACTIVE", "symbol": "TEST", "totalDeposits": 1000, "type": "CROP_PRODUCTION", "updatedAt": 2025-01-01T00:00:00.000Z, "utilizationPercentage": 10, "vaultName": "Test Vault"}
+
+      1271 |       } as any);
+      1272 |
+    > 1273 |       await expect(
+           |             ^
+      1274 |         service.updateVaultMultiSignatureConfig('vault-1', 'user-1', true, 2),
+      1275 |       ).rejects.toThrow(UnauthorizedException);
+      1276 |     });
+
+      at expect (../node_modules/expect/build/index.js:2116:15)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1273:13)
+
+  ● VaultsService › getApyHistory › getApyHistory › should return APY history for default 30 days
+
+    TypeError: this.cacheManager.get is not a function
+
+      1057 |   ): Promise<any[]> {
+      1058 |     const cacheKey = `vaults:apy-history:${vaultId ?? 'all'}:${timeRange}`;
+    > 1059 |     const cached = await this.cacheManager.get<any[]>(cacheKey);
+           |                                            ^
+      1060 |     if (cached) return cached;
+      1061 |
+      1062 |     const now = new Date();
+
+      at VaultsService.getApyHistory (vaults/vaults.service.ts:1059:44)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1303:36)
+
+  ● VaultsService › getApyHistory › getApyHistory › should return APY history for a specific vault
+
+    TypeError: this.cacheManager.get is not a function
+
+      1057 |   ): Promise<any[]> {
+      1058 |     const cacheKey = `vaults:apy-history:${vaultId ?? 'all'}:${timeRange}`;
+    > 1059 |     const cached = await this.cacheManager.get<any[]>(cacheKey);
+           |                                            ^
+      1060 |     if (cached) return cached;
+      1061 |
+      1062 |     const now = new Date();
+
+      at VaultsService.getApyHistory (vaults/vaults.service.ts:1059:44)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1310:36)
+
+  ● VaultsService › getApyHistory › getApyHistory › should return 7 data points for 7d range
+
+    TypeError: this.cacheManager.get is not a function
+
+      1057 |   ): Promise<any[]> {
+      1058 |     const cacheKey = `vaults:apy-history:${vaultId ?? 'all'}:${timeRange}`;
+    > 1059 |     const cached = await this.cacheManager.get<any[]>(cacheKey);
+           |                                            ^
+      1060 |     if (cached) return cached;
+      1061 |
+      1062 |     const now = new Date();
+
+      at VaultsService.getApyHistory (vaults/vaults.service.ts:1059:44)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1316:36)
+
+  ● VaultsService › getApyHistory › getApyHistory › should return 90 data points for 90d range
+
+    TypeError: this.cacheManager.get is not a function
+
+      1057 |   ): Promise<any[]> {
+      1058 |     const cacheKey = `vaults:apy-history:${vaultId ?? 'all'}:${timeRange}`;
+    > 1059 |     const cached = await this.cacheManager.get<any[]>(cacheKey);
+           |                                            ^
+      1060 |     if (cached) return cached;
+      1061 |
+      1062 |     const now = new Date();
+
+      at VaultsService.getApyHistory (vaults/vaults.service.ts:1059:44)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1321:36)
+
+  ● VaultsService › getApyHistory › getApyHistory › should return 365 data points for all-time range
+
+    TypeError: this.cacheManager.get is not a function
+
+      1057 |   ): Promise<any[]> {
+      1058 |     const cacheKey = `vaults:apy-history:${vaultId ?? 'all'}:${timeRange}`;
+    > 1059 |     const cached = await this.cacheManager.get<any[]>(cacheKey);
+           |                                            ^
+      1060 |     if (cached) return cached;
+      1061 |
+      1062 |     const now = new Date();
+
+      at VaultsService.getApyHistory (vaults/vaults.service.ts:1059:44)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1326:36)
+
+  ● VaultsService › getApyHistory › getApyHistory › should return 30 data points for unknown range (default fallback)
+
+    TypeError: this.cacheManager.get is not a function
+
+      1057 |   ): Promise<any[]> {
+      1058 |     const cacheKey = `vaults:apy-history:${vaultId ?? 'all'}:${timeRange}`;
+    > 1059 |     const cached = await this.cacheManager.get<any[]>(cacheKey);
+           |                                            ^
+      1060 |     if (cached) return cached;
+      1061 |
+      1062 |     const now = new Date();
+
+      at VaultsService.getApyHistory (vaults/vaults.service.ts:1059:44)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1331:36)
+
+  ● VaultsService › getApyHistory › getApyHistory › each data point should have date, apy, and vaultId fields
+
+    TypeError: this.cacheManager.get is not a function
+
+      1057 |   ): Promise<any[]> {
+      1058 |     const cacheKey = `vaults:apy-history:${vaultId ?? 'all'}:${timeRange}`;
+    > 1059 |     const cached = await this.cacheManager.get<any[]>(cacheKey);
+           |                                            ^
+      1060 |     if (cached) return cached;
+      1061 |
+      1062 |     const now = new Date();
+
+      at VaultsService.getApyHistory (vaults/vaults.service.ts:1059:44)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1336:36)
+
+  ● VaultsService › getApyHistory › recordDailyApySnapshots › should record APY history for active vaults when not already recorded
+
+    TypeError: service.recordDailyApySnapshots is not a function
+
+      1421 |       mockVaultApyHistoryRepository.save.mockResolvedValue({});
+      1422 |
+    > 1423 |       await service.recordDailyApySnapshots();
+           |                     ^
+      1424 |
+      1425 |       expect(mockVaultRepository.find).toHaveBeenCalledWith({
+      1426 |         where: { status: VaultStatus.ACTIVE },
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1423:21)
+
+  ● VaultsService › getApyHistory › recordDailyApySnapshots › should skip recording APY history if snapshot already exists for today
+
+    TypeError: service.recordDailyApySnapshots is not a function
+
+      1445 |       mockVaultApyHistoryRepository.save.mockClear();
+      1446 |
+    > 1447 |       await service.recordDailyApySnapshots();
+           |                     ^
+      1448 |
+      1449 |       expect(mockVaultApyHistoryRepository.create).not.toHaveBeenCalled();
+      1450 |       expect(mockVaultApyHistoryRepository.save).not.toHaveBeenCalled();
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1447:21)
+
+  ● VaultsService › getApyHistory › getApyHistory database query › should return records from the database if they exist
+
+    TypeError: this.cacheManager.get is not a function
+
+      1057 |   ): Promise<any[]> {
+      1058 |     const cacheKey = `vaults:apy-history:${vaultId ?? 'all'}:${timeRange}`;
+    > 1059 |     const cached = await this.cacheManager.get<any[]>(cacheKey);
+           |                                            ^
+      1060 |     if (cached) return cached;
+      1061 |
+      1062 |     const now = new Date();
+
+      at VaultsService.getApyHistory (vaults/vaults.service.ts:1059:44)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1462:36)
+
+  ● VaultsService › getApyHistory › vault capacity reservations › createReservation › should create a reservation for the vault owner
+
+    TypeError: service.createReservation is not a function
+
+      1505 |         mockVaultReservationRepository.save.mockResolvedValue(savedReservation);
+      1506 |
+    > 1507 |         const result = await service.createReservation('vault-1', 'user-1', {
+           |                                      ^
+      1508 |           walletAddress: 'GBXXX',
+      1509 |           reservedAmount: 2000,
+      1510 |           expiresAt: futureExpiry,
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1507:38)
+
+  ● VaultsService › getApyHistory › vault capacity reservations › createReservation › should reject non-owner reservation creation
+
+    TypeError: service.createReservation is not a function
+
+      1527 |
+      1528 |         await expect(
+    > 1529 |           service.createReservation('vault-1', 'other-user', {
+           |                   ^
+      1530 |             walletAddress: 'GBXXX',
+      1531 |             reservedAmount: 1000,
+      1532 |             expiresAt: futureExpiry,
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1529:19)
+
+  ● VaultsService › getApyHistory › vault capacity reservations › createReservation › should reject reservation exceeding public capacity
+
+    TypeError: service.createReservation is not a function
+
+      1540 |
+      1541 |         await expect(
+    > 1542 |           service.createReservation('vault-1', 'user-1', {
+           |                   ^
+      1543 |             walletAddress: 'GBXXX',
+      1544 |             reservedAmount: 2000,
+      1545 |             expiresAt: futureExpiry,
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1542:19)
+
+  ● VaultsService › getApyHistory › vault capacity reservations › depositToVault with reservations › should limit reserved depositor to their allocation
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: {"deposit": {"amount": 200, "confirmedAt": undefined, "createdAt": undefined, "id": "dep-1", "status": "CONFIRMED", "transactionHash": undefined, "userId": "user-1", "vaultId": "vault-1"}, "feeAmount": 0, "netAmount": 600, "userTotalDeposits": 0, "vault": {"approvalStatus": "PENDING", "approvalThreshold": 1, "apr": 5, "apy": 5.13, "assetPair": "XLM/USDC", "availableCapacity": 9000, "compoundingFrequency": "daily", "createdAt": 2025-01-01T00:00:00.000Z, "currentApprovals": 0, "description": "Test vault description", "entryFeeBps": 0, "exitFeeBps": 0, "feeAddress": null, "id": "vault-1", "interestRate": 5, "isPublic": true, "lockPeriodEnd": 2027-01-01T00:00:00.000Z, "maturityDate": 2030-01-01T00:00:00.000Z, "maxCapacity": 10000, "ownerId": "user-1", "performanceFeeBps": 0, "requiresMultiSignature": false, "status": "ACTIVE", "symbol": "TEST", "totalDeposits": 900, "type": "CROP_PRODUCTION", "updatedAt": 2025-01-01T00:00:00.000Z, "utilizationPercentage": 10, "vaultName": "Test Vault"}}
+
+      1559 |         });
+      1560 |
+    > 1561 |         await expect(
+           |               ^
+      1562 |           service.depositToVault('vault-1', { userId: 'user-1', amount: 600 }),
+      1563 |         ).rejects.toThrow('Deposit amount exceeds your reserved allocation');
+      1564 |       });
+
+      at expect (../node_modules/expect/build/index.js:2116:15)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1561:15)
+
+  ● VaultsService › getApyHistory › vault capacity reservations › depositToVault with reservations › should exclude reserved capacity for public depositors
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: {"deposit": {"amount": 200, "confirmedAt": undefined, "createdAt": undefined, "id": "dep-1", "status": "FAILED", "transactionHash": undefined, "userId": "user-1", "vaultId": "vault-1"}, "feeAmount": 0, "netAmount": 1500, "userTotalDeposits": 0, "vault": {"approvalStatus": "PENDING", "approvalThreshold": 1, "apr": 5, "apy": 5.13, "assetPair": "XLM/USDC", "availableCapacity": 9000, "compoundingFrequency": "daily", "createdAt": 2025-01-01T00:00:00.000Z, "currentApprovals": 0, "description": "Test vault description", "entryFeeBps": 0, "exitFeeBps": 0, "feeAddress": null, "id": "vault-1", "interestRate": 5, "isPublic": true, "lockPeriodEnd": 2027-01-01T00:00:00.000Z, "maturityDate": 2030-01-01T00:00:00.000Z, "maxCapacity": 10000, "ownerId": "user-1", "performanceFeeBps": 0, "requiresMultiSignature": false, "status": "ACTIVE", "symbol": "TEST", "totalDeposits": 900, "type": "CROP_PRODUCTION", "updatedAt": 2025-01-01T00:00:00.000Z, "utilizationPercentage": 10, "vaultName": "Test Vault"}}
+
+      1568 |         mockReservationQB.getRawOne.mockResolvedValue({ total: '8000' });
+      1569 |
+    > 1570 |         await expect(
+           |               ^
+      1571 |           service.depositToVault('vault-1', { userId: 'user-1', amount: 1500 }),
+      1572 |         ).rejects.toThrow('Deposit amount exceeds available public vault capacity');
+      1573 |       });
+
+      at expect (../node_modules/expect/build/index.js:2116:15)
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1570:15)
+
+  ● VaultsService › getApyHistory › vault capacity reservations › expireReservations › should deactivate expired reservations
+
+    TypeError: service.expireReservations is not a function
+
+      1578 |         mockVaultReservationRepository.update.mockResolvedValue({ affected: 3 });
+      1579 |
+    > 1580 |         await service.expireReservations();
+           |                       ^
+      1581 |
+      1582 |         expect(mockVaultReservationRepository.update).toHaveBeenCalledWith(
+      1583 |           expect.objectContaining({ isActive: true }),
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1580:23)
+
+  ● VaultsService › getApyHistory › vault capacity reservations › getPublicVaults › should return paginated public vaults
+
+    TypeError: Cannot read properties of undefined (reading 'mockReturnValue')
+
+      1593 |     describe('getPublicVaults', () => {
+      1594 |       it('should return paginated public vaults', async () => {
+    > 1595 |         mockVaultRepository.createQueryBuilder.mockReturnValue({
+           |                                                ^
+      1596 |           where: jest.fn().mockReturnThis(),
+      1597 |           orderBy: jest.fn().mockReturnThis(),
+      1598 |           addOrderBy: jest.fn().mockReturnThis(),
+
+      at Object.<anonymous> (vaults/vaults.service.spec.ts:1595:48)
+
+FAIL auth/strategies/stellar.strategy.spec.ts
+  ● StellarStrategy › validate › should throw error for missing server signature
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Server signature missing or invalid"
+    Received message:   "Invalid sequence number"
+
+          209 |     // Check sequence number is 1 for a challenge transaction created from an account with sequence 0
+          210 |       if (transaction.sequence !== '0') {
+        > 211 |         throw new UnauthorizedException('Invalid sequence number');
+              |               ^
+          212 |     }
+          213 |   }
+          214 |
+
+      at StellarStrategy.validateTransactionStructure (auth/strategies/stellar.strategy.ts:211:15)
+      at StellarStrategy.validate (auth/strategies/stellar.strategy.ts:132:12)
+      at Object.<anonymous> (auth/strategies/stellar.strategy.spec.ts:441:18)
+      at Object.toThrow (../node_modules/expect/build/index.js:2155:20)
+      at Object.<anonymous> (auth/strategies/stellar.strategy.spec.ts:442:17)
+
+
+Test Suites: 6 failed, 64 passed, 70 total
+Tests:       51 failed, 3 skipped, 769 passed, 823 total
+Snapshots:   0 total
+Time:        26.93 s
+Ran all test suites.

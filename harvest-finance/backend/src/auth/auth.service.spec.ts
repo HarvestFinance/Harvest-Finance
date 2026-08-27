@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -9,6 +10,7 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
+import { CustodialWalletService } from '../wallets/custodial-wallet.service';
 import { CustomLoggerService } from '../logger/custom-logger.service';
 import { User, UserRole } from '../database/entities/user.entity';
 import { UserOAuthLink } from '../database/entities/user-oauth-link.entity';
@@ -32,6 +34,7 @@ describe('AuthService', () => {
   let mockConfigService: any;
   let mockCacheManager: any;
   let mockLogger: any;
+  let mockSessionRepository: any;
 
   const mockUser: Partial<User> = {
     id: '123e4567-e89b-12d3-a456-426614174000',
@@ -51,10 +54,18 @@ describe('AuthService', () => {
   beforeEach(async () => {
     mockUserRepository = {
       findOne: jest.fn(),
-      find: jest.fn(),
-      create: jest.fn(),
-      save: jest.fn(),
+      find: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockImplementation((dto) => ({ id: 'mock-id', ...dto })),
+      save: jest.fn().mockImplementation(async (user) => user),
       update: jest.fn(),
+    };
+
+    mockSessionRepository = {
+      find: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockImplementation((dto) => ({ id: 'mock-session-id', ...dto })),
+      save: jest.fn().mockImplementation(async (entity) => entity),
+      update: jest.fn(),
+      delete: jest.fn(),
     };
 
     mockJwtService = {
@@ -103,15 +114,15 @@ describe('AuthService', () => {
         },
         {
           provide: getRepositoryToken(UserOAuthLink),
-          useValue: { findOne: jest.fn(), save: jest.fn() },
+          useValue: { findOne: jest.fn(), save: jest.fn().mockImplementation(async (entity) => entity) },
         },
         {
           provide: getRepositoryToken(Session),
-          useValue: { find: jest.fn(), create: jest.fn(), save: jest.fn(), update: jest.fn() },
+          useValue: mockSessionRepository,
         },
         {
           provide: getRepositoryToken(SecurityEvent),
-          useValue: { create: jest.fn(), save: jest.fn() },
+          useValue: { create: jest.fn().mockImplementation((dto) => ({ id: 'mock-id', ...dto })), save: jest.fn().mockImplementation(async (entity) => entity) },
         },
         {
           provide: JwtService,
@@ -130,7 +141,7 @@ describe('AuthService', () => {
           useValue: mockLogger,
         },
         {
-          provide: 'CustodialWalletService',
+          provide: CustodialWalletService,
           useValue: { createCustodialWallet: jest.fn() },
         },
       ],
@@ -245,6 +256,10 @@ describe('AuthService', () => {
         email: mockUser.email,
       });
       mockUserRepository.findOne.mockResolvedValue(mockUser);
+      mockSessionRepository.find.mockResolvedValue([{
+        refreshToken: 'hashed_refresh_token'
+      }]);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       mockJwtService.signAsync.mockResolvedValue('new_access_token');
 
       const result = await service.refresh(refreshTokenDto);
@@ -739,11 +754,11 @@ describe('AuthService', () => {
 
     it('should reject breached passwords found in HIBP database', async () => {
       // Mock a breached password response
-      // The hash of "password" is "CBFDAC6008F9CAB4083784CBD1874F76618D2A97"
-      // We mock the API to return the suffix "DAC6008F9CAB4083784CBD1874F76618D2A97"
+      // The hash of "Password123!@" is "602503E071EA61031EBBE5CB49BC438EF64016C2"
+      // We mock the API to return the suffix "3E071EA61031EBBE5CB49BC438EF64016C2"
       (global as any).fetch.mockResolvedValue({
         ok: true,
-        text: async () => 'DAC6008F9CAB4083784CBD1874F76618D2A97:1000000',
+        text: async () => '3E071EA61031EBBE5CB49BC438EF64016C2:1000000',
       });
 
       // This password will pass all local checks but fail HIBP
