@@ -1,10 +1,5 @@
 import type { NextConfig } from "next";
 import withPWA from "next-pwa";
-import bundleAnalyzer from "@next/bundle-analyzer";
-
-const withBundleAnalyzer = bundleAnalyzer({
-  enabled: process.env.ANALYZE === "true",
-});
 
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -87,4 +82,4 @@ const withPwa = withPWA({
   },
 });
 
-export default withBundleAnalyzer(withPwa(nextConfig));
+export default withPwa(nextConfig);

@@ -12,6 +12,12 @@ import { UserOAuthLink } from '../database/entities/user-oauth-link.entity';
 import { Session } from '../database/entities/session.entity';
 import { SecurityEvent } from '../database/entities/security-event.entity';
 import { CustodialWalletService } from '../wallets/custodial-wallet.service';
+import * as bcrypt from 'bcrypt';
+
+jest.mock('bcrypt', () => ({
+  compare: jest.fn(),
+  hash: jest.fn(),
+}));
 
 /**
  * Comprehensive Token Expiry Validation Tests
@@ -32,6 +38,7 @@ describe('AuthService - Token Expiry Validation', () => {
   let mockConfigService: any;
   let mockCacheManager: any;
   let mockLogger: any;
+  let mockSessionRepository: any;
 
   const mockUser: Partial<User> = {
     id: '123e4567-e89b-12d3-a456-426614174000',
@@ -80,6 +87,15 @@ describe('AuthService - Token Expiry Validation', () => {
     mockCacheManager = {
       get: jest.fn(),
       set: jest.fn(),
+      del: jest.fn(),
+    };
+
+    mockSessionRepository = {
+      find: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockImplementation((dto) => ({ id: 'mock-session-id', ...dto })),
+      save: jest.fn().mockImplementation(async (entity) => entity),
+      update: jest.fn(),
+      delete: jest.fn(),
     };
 
     mockLogger = {
@@ -103,7 +119,7 @@ describe('AuthService - Token Expiry Validation', () => {
         },
         {
           provide: getRepositoryToken(Session),
-          useValue: { find: jest.fn().mockResolvedValue([]), create: jest.fn().mockImplementation((dto) => ({ id: 'mock-id', ...dto })), save: jest.fn().mockImplementation(async (entity) => entity), update: jest.fn() },
+          useValue: mockSessionRepository,
         },
         {
           provide: getRepositoryToken(SecurityEvent),
@@ -517,6 +533,8 @@ describe('AuthService - Token Expiry Validation', () => {
       });
 
       mockUserRepository.findOne.mockResolvedValue(mockUser);
+      mockSessionRepository.find.mockResolvedValue([{ refreshToken: 'hashed' }]);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       mockJwtService.signAsync.mockResolvedValue('new_access_token');
 
       const result = await service.refresh({

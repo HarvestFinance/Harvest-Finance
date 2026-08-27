@@ -34,6 +34,7 @@ describe('AuthService - Token Lifecycle Integration', () => {
   let mockConfigService: any;
   let mockCacheManager: any;
   let mockLogger: any;
+  let mockSessionRepository: any;
 
   const mockUser: Partial<User> = {
     id: '123e4567-e89b-12d3-a456-426614174000',
@@ -54,6 +55,14 @@ describe('AuthService - Token Lifecycle Integration', () => {
       update: jest.fn(),
     };
 
+    mockSessionRepository = {
+      find: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockImplementation((dto) => ({ id: 'mock-session-id', ...dto })),
+      save: jest.fn().mockImplementation(async (entity) => entity),
+      update: jest.fn(),
+      delete: jest.fn(),
+    };
+
     mockJwtService = {
       signAsync: jest.fn(),
       verifyAsync: jest.fn(),
@@ -72,6 +81,7 @@ describe('AuthService - Token Lifecycle Integration', () => {
     mockCacheManager = {
       get: jest.fn(),
       set: jest.fn(),
+      del: jest.fn(),
     };
 
     mockLogger = {
@@ -90,7 +100,7 @@ describe('AuthService - Token Lifecycle Integration', () => {
           useValue: mockUserRepository,
         },
         { provide: getRepositoryToken(UserOAuthLink), useValue: { findOne: jest.fn(), save: jest.fn().mockImplementation(async (entity) => entity) } },
-        { provide: getRepositoryToken(Session), useValue: { find: jest.fn().mockResolvedValue([]), create: jest.fn().mockImplementation((dto) => ({ id: 'mock-id', ...dto })), save: jest.fn().mockImplementation(async (entity) => entity), update: jest.fn() } },
+        { provide: getRepositoryToken(Session), useValue: mockSessionRepository },
         { provide: getRepositoryToken(SecurityEvent), useValue: { create: jest.fn().mockImplementation((dto) => ({ id: 'mock-id', ...dto })), save: jest.fn().mockImplementation(async (entity) => entity) } },
         { provide: CustodialWalletService, useValue: { createCustodialWallet: jest.fn() } },
         {
@@ -293,6 +303,8 @@ describe('AuthService - Token Lifecycle Integration', () => {
         role: mockUser.role,
       });
       mockUserRepository.findOne.mockResolvedValue(mockUser);
+      mockSessionRepository.find.mockResolvedValue([{ refreshToken: 'hashed' }]);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       mockJwtService.signAsync.mockResolvedValue('new_access_token');
 
       // Refresh should succeed within expiry window
@@ -319,6 +331,8 @@ describe('AuthService - Token Lifecycle Integration', () => {
         exp: payload.exp,
       });
       mockUserRepository.findOne.mockResolvedValue(mockUser);
+      mockSessionRepository.find.mockResolvedValue([{ refreshToken: 'hashed' }]);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       mockJwtService.signAsync.mockResolvedValue('new_access_token');
 
       // Refresh should still succeed
@@ -562,7 +576,7 @@ describe('AuthService - Token Lifecycle Integration', () => {
       await expect(
         service.resetPassword({
           token: 'any_token',
-          new_password: 'newpass123',
+          new_password: 'Newpass123456!',
         }),
       ).rejects.toThrow();
 
@@ -586,7 +600,7 @@ describe('AuthService - Token Lifecycle Integration', () => {
 
       const result = await service.resetPassword({
         token: 'reset_token',
-        new_password: 'newpass123',
+        new_password: 'Newpass123456!',
       });
 
       expect(result.success).toBe(true);

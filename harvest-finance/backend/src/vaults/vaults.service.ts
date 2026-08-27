@@ -1129,7 +1129,7 @@ export class VaultsService {
     const vault = await this.getVaultById(vaultId);
 
     // Only vault owner or admin can update multi-signature config
-    if (vault.ownerId !== userId && !this.isCurrentUserAdmin(userId)) {
+    if (vault.ownerId !== userId && !(await this.isCurrentUserAdmin(userId))) {
       throw new UnauthorizedException('Only vault owner or admin can update multi-signature configuration');
     }
 
@@ -1176,7 +1176,7 @@ export class VaultsService {
     const vault = await this.getVaultById(vaultId);
 
     // Only vault owner or admin can request approvals
-    if (vault.ownerId !== userId && !this.isCurrentUserAdmin(userId)) {
+    if (vault.ownerId !== userId && !(await this.isCurrentUserAdmin(userId))) {
       throw new UnauthorizedException('Only vault owner or admin can request approvals');
     }
 
@@ -1273,7 +1273,7 @@ export class VaultsService {
     const vault = await this.getVaultById(vaultId);
 
     // Only vault owner or admin can pause vault
-    if (vault.ownerId !== userId && !this.isCurrentUserAdmin(userId)) {
+    if (vault.ownerId !== userId && !(await this.isCurrentUserAdmin(userId))) {
       throw new UnauthorizedException('Only vault owner or admin can pause vault');
     }
 
@@ -1295,7 +1295,7 @@ export class VaultsService {
     const vault = await this.getVaultById(vaultId);
 
     // Only vault owner or admin can resume vault
-    if (vault.ownerId !== userId && !this.isCurrentUserAdmin(userId)) {
+    if (vault.ownerId !== userId && !(await this.isCurrentUserAdmin(userId))) {
       throw new UnauthorizedException('Only vault owner or admin can resume vault');
     }
 

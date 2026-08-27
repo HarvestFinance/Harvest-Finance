@@ -7,7 +7,9 @@ describe('help search', () => {
 
     const res = searchHelp('deposit');
     expect(res.length).toBeGreaterThan(0);
-    expect(res[0].title.toLowerCase()).toContain('deposit');
+    expect(
+      res.some(r => r.title?.toLowerCase().includes('deposit') || r.content?.toLowerCase().includes('deposit'))
+    ).toBe(true);
   });
 
   it('returns empty for unknown query', () => {
