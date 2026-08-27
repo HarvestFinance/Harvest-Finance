@@ -9,8 +9,7 @@ import {
   Inline, 
   Button, 
   Card, 
-  CardBody, 
-  Badge,
+  CardBody,
   Modal,
   ModalHeader,
   ModalBody,
@@ -23,7 +22,7 @@ import { VaultManagement } from '@/components/Admin/VaultManagement';
 import { UserManagement } from '@/components/Admin/UserManagement';
 import { UserActivity } from '@/components/Admin/UserActivity';
 import { AnalyticsCharts } from '@/components/Admin/AnalyticsCharts';
-import { LayoutDashboard, ShieldCheck, RefreshCw, AlertCircle } from 'lucide-react';
+import { ShieldCheck, RefreshCw, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { pushRoute, routes } from '@/lib/routes';
 import { Can } from '@/components/auth/Can';
@@ -67,7 +66,6 @@ export default function AdminDashboardPage() {
 
   const fetchData = async () => {
     if (!token) return;
-    setIsLoading(true);
     try {
       const authHeader = { Authorization: `Bearer ${token}` };
       const userQuery = userSearch ? `?search=${encodeURIComponent(userSearch)}` : '';
@@ -85,9 +83,9 @@ export default function AdminDashboardPage() {
        setActivity(activityRes.data as Record<string, unknown>[]);
        setUsers(usersRes.data as Record<string, unknown>[]);
        setAnalytics(analyticsRes.data);
-     } catch (err: unknown) {
+     } catch (err: any) {
       console.error('Failed to fetch admin data:', err);
-      setError(err.response?.data?.message || 'Failed to load dashboard data. Ensure you have admin privileges.');
+      setError(err?.response?.data?.message || 'Failed to load dashboard data. Ensure you have admin privileges.');
     } finally {
       setIsLoading(false);
     }
@@ -198,7 +196,7 @@ export default function AdminDashboardPage() {
           <Button 
             variant="outline" 
             leftIcon={<RefreshCw className="w-4 h-4" />} 
-            onClick={fetchData}
+            onClick={() => { setIsLoading(true); void fetchData(); }}
           >
             Refresh Data
           </Button>

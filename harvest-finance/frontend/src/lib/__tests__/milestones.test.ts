@@ -5,7 +5,6 @@ import {
   getAchievedMilestones,
   getNextMilestone,
   getMilestoneNotificationPayload,
-  MILESTONES,
 } from '../milestones';
 
 describe('calculateProgress', () => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { Notification, NotificationType } from '@/types/notification';
 
 const MOCK_NOTIFICATIONS: Notification[] = [
@@ -64,9 +64,6 @@ const MOCK_NOTIFICATIONS: Notification[] = [
 export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
   const [unreadCount, setUnreadCount] = useState(notifications.filter(n => !n.isRead).length);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   const markAsRead = async (id: string) => {
     setNotifications(prev => 
       prev.map(n => n.id === id ? { ...n, isRead: true } : n)
@@ -82,8 +79,8 @@ export function useNotifications() {
   return {
     notifications,
     unreadCount,
-    isLoading,
-    error,
+    isLoading: false,
+    error: null,
     markAsRead,
     markAllAsRead,
     refresh: () => {},

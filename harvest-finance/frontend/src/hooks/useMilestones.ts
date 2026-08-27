@@ -8,7 +8,6 @@ import {
   getNextMilestone,
   getMilestoneNotificationPayload,
   MILESTONES,
-  type Milestone,
 } from '@/lib/milestones';
 import { useToastStore } from '@/lib/stores/notification-store';
 

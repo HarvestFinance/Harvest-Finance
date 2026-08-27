@@ -17,6 +17,10 @@ const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
   reactStrictMode: true,
+  turbopack: {},
+  experimental: {
+    outputFileTracingRoot: __dirname,
+  },
 };
 
 const withPwa = withPWA({

@@ -159,5 +159,11 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
+  },
+  "overrides": {
+    "tablesort": "5.7.0",
+    "@apollo/server-plugin-landing-page-graphql-playground": {
+      "@apollo/server": "$@apollo/server"
+    }
   }
 }

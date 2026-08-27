@@ -2,7 +2,6 @@
 // Soroban i128 conversion utilities for Stellar token amounts
 // 1 USDC = 10,000,000 in i128 (7 decimal places)
 
-const SCALE = 10_000_000n;
 const SCALE_NUM = 10_000_000;
 
 /**

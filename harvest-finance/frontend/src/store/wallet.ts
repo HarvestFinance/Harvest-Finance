@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from 'zustand';
-import freighterApi, { isConnected, getAddress } from '@stellar/freighter-api';
+import { isConnected, getAddress } from '@stellar/freighter-api';
 
 export interface TokenBalance {
   symbol: string;

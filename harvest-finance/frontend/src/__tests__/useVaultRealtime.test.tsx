@@ -256,7 +256,7 @@ describe('useVaultRealtime', () => {
   });
 
   it('should handle reconnect_attempt', () => {
-    const { result } = renderHook(() => useVaultRealtime());
+    renderHook(() => useVaultRealtime());
 
     act(() => {
       simulateEvent('reconnect_attempt', 2);

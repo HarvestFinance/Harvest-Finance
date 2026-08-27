@@ -25,9 +25,6 @@ export function useWeather() {
 
   const loadWeather = useCallback(
     async (request?: WeatherRequest) => {
-      setIsLoading(true);
-      setError(null);
-
       try {
         const summary = await getWeatherSummary({
           token,
@@ -36,6 +33,7 @@ export function useWeather() {
           location: request && 'location' in request ? request.location : undefined,
         });
         setData(summary);
+        setError(null);
       } catch {
         setError('Weather data is unavailable right now. Try again shortly.');
       } finally {
@@ -73,6 +71,8 @@ export function useWeather() {
   }, [loadWeather]);
 
   const refresh = useCallback(() => {
+    setIsLoading(true);
+    setError(null);
     if (data) {
       return loadWeather({
         latitude: data.location.latitude,
