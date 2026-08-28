@@ -88,7 +88,7 @@ jobs:
 
       - run: npm ci
       - run: npm run build
-      - run: npm test -- --forceExit --passWithNoTests || true
+      - run: npm run test:cov -- --forceExit --testPathPattern="(spec|e2e)"
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         if: always()
@@ -151,6 +151,8 @@ jobs:
       - run: npm ci
       - run: npm test -- --passWithNoTests
       - run: npm run test:vitest -- --run --passWithNoTests
+      - name: Frontend accessibility smoke tests
+        run: npm run test -- --testPathPattern="a11y" --passWithNoTests
 
   frontend-build:
     name: Frontend — Next.js Build

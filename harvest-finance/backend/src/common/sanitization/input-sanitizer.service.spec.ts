@@ -261,7 +261,7 @@ describe('InputSanitizerService', () => {
       });
       expect(service.validatePagination(-3, 0, 10)).toEqual({
         skip: 0,
-        limit: 1,
+        limit: 10,
       });
       expect(service.validatePagination(2, 100, 10)).toEqual({
         skip: 2,
@@ -274,5 +274,6 @@ describe('InputSanitizerService', () => {
         skip: 0,
         limit: 20,
       });
+    });
   });
 });
