@@ -158,7 +158,24 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
+<<<<<<< HEAD
+    "testEnvironment": "node",
+    "coverageThreshold": {
+      "global": {
+        "branches": 80,
+        "functions": 80,
+        "lines": 80,
+        "statements": 80
+      }
+=======
     "testEnvironment": "node"
+  },
+  "overrides": {
+    "tablesort": "5.7.0",
+    "@apollo/server-plugin-landing-page-graphql-playground": {
+      "@apollo/server": "$@apollo/server"
+>>>>>>> origin/main
+    }
   },
   "overrides": {
     "tablesort": "5.7.0",

@@ -390,6 +390,31 @@ describe('AuthService', () => {
     });
   });
 
+  describe('changePassword', () => {
+    it('should successfully change password with a valid new password', async () => {
+      const userWithPassword = { ...mockUser, password: 'current_hashed_password' };
+      mockUserRepository.findOne.mockResolvedValue(userWithPassword);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('new_hashed_password');
+      mockUserRepository.update.mockResolvedValue({ affected: 1 });
+
+      const result = await service.changePassword(
+        mockUser.id,
+        'CurrentPass123!@',
+        'NewSecurePass123!@',
+      );
+
+      expect(result).toEqual({
+        success: true,
+        message: 'Password changed successfully',
+      });
+      expect(mockUserRepository.update).toHaveBeenCalledWith(
+        mockUser.id,
+        expect.objectContaining({ password: 'new_hashed_password' }),
+      );
+    });
+  });
+
   describe('account lockout', () => {
      const loginDto = { email: 'test@example.com', password: 'WrongPass123!' };
 

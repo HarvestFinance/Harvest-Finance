@@ -20,7 +20,8 @@ import {
   WithdrawalStatus,
 } from '../database/entities/withdrawal.entity';
 import { Strategy, CompoundingFrequency } from '../database/entities/strategy.entity';
-import { VaultApyHistory } from '../database/entities/vault-apy-history.entity';
+import { VaultApproval } from '../database/entities/vault-approval.entity';
+import { User } from '../database/entities/user.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CustomLoggerService } from '../logger/custom-logger.service';
 import { VaultGateway } from '../realtime/vault.gateway';

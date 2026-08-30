@@ -98,6 +98,24 @@ describe('InputSanitizerService', () => {
       ).toBe(validStellarPublicKey);
     });
 
+    it.each(['', '   ', 'G' + 'A'.repeat(55), validStellarPublicKey.slice(0, -1)])(
+      'rejects invalid public key "%s"',
+      (value) => {
+        expect(() => service.validateStellarPublicKey(value)).toThrow(
+          BadRequestException,
+        );
+      },
+    );
+
+    it.each([null, undefined, 42, {}, []])(
+      'rejects non-string public key value %p',
+      (value) => {
+        expect(() =>
+          service.validateStellarPublicKey(value as unknown as string),
+        ).toThrow(BadRequestException);
+      },
+    );
+
     it('rejects malformed Stellar public keys with format guidance', () => {
       expect(() => service.validateStellarPublicKey('invalid')).toThrow(
         /G-address with a correct Stellar StrKey checksum/,
@@ -173,18 +191,89 @@ describe('InputSanitizerService', () => {
   });
 
   describe('validateAmount', () => {
+    it.each([
+      [0, 0],
+      [100.5, 100.5],
+      ['25.25', 25.25],
+    ])('accepts amount %p and returns %p', (input, expected) => {
+      expect(service.validateAmount(input)).toBe(expected);
+    });
+
+    it.each([
+      [-0.01, 0, 100],
+      [100.01, 0, 100],
+      [10, 11, 20],
+      [10, 0, 9],
+    ])('rejects amount %p outside [%p, %p]', (input, min, max) => {
+      expect(() => service.validateAmount(input, min, max)).toThrow(
+        BadRequestException,
+      );
+    });
+
     it('rejects non-finite amounts with bounds guidance', () => {
       expect(() => service.validateAmount(Number.POSITIVE_INFINITY)).toThrow(
         /finite numeric value/,
       );
     });
+
+    it.each([NaN, Number.NEGATIVE_INFINITY, 'not-a-number', {}])(
+      'rejects non-numeric amount %p',
+      (value) => {
+        expect(() => service.validateAmount(value)).toThrow(BadRequestException);
+      },
+    );
   });
 
   describe('sanitizeString', () => {
+    it('trims surrounding whitespace and removes null bytes', () => {
+      expect(service.sanitizeString('  hello\0 world  ')).toBe('hello world');
+    });
+
+    it('accepts a value exactly at the maximum length', () => {
+      expect(service.sanitizeString('a'.repeat(3), 3)).toBe('aaa');
+    });
+
     it('rejects oversized strings with max length guidance', () => {
       expect(() => service.sanitizeString('abcd', 3)).toThrow(
         /3 characters or fewer/,
       );
+    });
+
+    it.each([null, undefined, 123, {}, []])(
+      'rejects non-string input %p',
+      (value) => {
+        expect(() => service.sanitizeString(value as unknown as string)).toThrow(
+          BadRequestException,
+        );
+      },
+    );
+  });
+
+  describe('validatePagination', () => {
+    it('uses safe defaults when parameters are omitted', () => {
+      expect(service.validatePagination()).toEqual({ skip: 0, limit: 20 });
+    });
+
+    it('floors values and clamps skip and limit to safe bounds', () => {
+      expect(service.validatePagination(4.9, 8.9, 10)).toEqual({
+        skip: 4,
+        limit: 8,
+      });
+      expect(service.validatePagination(-3, 0, 10)).toEqual({
+        skip: 0,
+        limit: 10,
+      });
+      expect(service.validatePagination(2, 100, 10)).toEqual({
+        skip: 2,
+        limit: 10,
+      });
+    });
+
+    it('handles invalid numeric values using defaults', () => {
+      expect(service.validatePagination(NaN, NaN)).toEqual({
+        skip: 0,
+        limit: 20,
+      });
     });
   });
 });

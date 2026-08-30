@@ -5,6 +5,23 @@ import { ApiRequestError } from './types'
 
 const TOKEN_KEYS = ['harvest_auth_token', 'access_token'] as const
 
+const generateRequestId = (): string => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return `req-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+};
+
+const getRequestId = (): string => {
+  if (typeof window === 'undefined') return generateRequestId();
+  let id = sessionStorage.getItem('x-request-id');
+  if (!id) {
+    id = generateRequestId();
+    sessionStorage.setItem('x-request-id', id);
+  }
+  return id;
+};
+
 const isAbortError = (error: unknown): boolean => {
   if (!error) return false
   if (error instanceof DOMException && error.name === 'AbortError') return true
@@ -99,6 +116,11 @@ export async function apiRequest<T>(
     requestHeaders.set('Authorization', `Bearer ${token}`)
   }
 
+  const requestId = getRequestId()
+  if (!requestHeaders.has('X-Request-Id')) {
+    requestHeaders.set('X-Request-Id', requestId)
+  }
+
   try {
     const response = await fetch(url, {
       method,
@@ -106,6 +128,11 @@ export async function apiRequest<T>(
       body: body === undefined ? undefined : JSON.stringify(body),
       signal,
     })
+
+    const responseRequestId = response.headers.get('X-Request-Id')
+    if (responseRequestId && typeof window !== 'undefined') {
+      sessionStorage.setItem('x-request-id', responseRequestId)
+    }
 
     if (!response.ok) {
       const message = await parseErrorMessage(response)
